@@ -7,7 +7,7 @@ function App() {
       <header className="App-header">
         <img src={zacian} className="zacian" alt="zacian" />
 
-        <h1>きょじゅうざん</h1>
+        <h1>ザシアン</h1>
       </header>
     </div>
   );
