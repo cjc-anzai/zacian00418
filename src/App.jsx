@@ -1,10 +1,16 @@
 import zacian from "./assets/zacian.jfif";
+import kyojuzan from "./assets/kyojuzan.gif"; 
 import "./App.css";
+import React, { useState } from "react";
+
 
 function App() {
-  // const technique = () => {
-  //   alert("きょじゅうざん");
-  // };
+  const [isVisible, setIsVisible] = useState(false);
+
+  const technique = () => {
+    setIsVisible(true); 
+  };
+
 
   return (
     <div className="App">
