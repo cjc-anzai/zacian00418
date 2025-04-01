@@ -47,10 +47,6 @@
   display: none;
 }
 
-.flex {
-  display: flex;
-}
-
 /* GIFとh1タグを包むコンテナ */
 .content {
   display: flex;
