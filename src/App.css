@@ -43,20 +43,22 @@
 
 /* ======================================== */
 /* 最初は非表示 */
-.hidden-gif {
+.hidden {
   display: none;
 }
 
-/* GIFをフェードインで表示 */
-.visible-gif {
-  display: block;
+/* GIFとh1タグを包むコンテナ */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   opacity: 1;
   animation: fadeIn 0.5s forwards;
 }
 
 /* フェードアウト時のスタイル */
 .fade-out {
-  animation: fadeOut 0.5s forwards;
+  animation: fadeOut 1s forwards;
 }
 
 @keyframes fadeIn {

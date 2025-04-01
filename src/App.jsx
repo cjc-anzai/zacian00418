@@ -29,18 +29,16 @@ function App() {
     <div className="App">
       <header className="App-header">
       {!isVisible &&(
-        <img src={zacian} className="zacian" alt="zacian" onClick={technique}/>
-      ) && (
-        <h1>ザシアン</h1>
+        <div>
+          <img src={zacian} className="zacian" alt="zacian" onClick={technique}/>
+          <h1>ザシアン</h1>
+        </div>
       )}
       {isVisible && (
-        <img
-          src={kyojuzan}
-          alt="GIF Animation"
-          className={`visible-gif ${isFadingOut ? "fade-out" : ""}`}
-        />
-      ) && (
-        <h1>きょじゅうざん</h1>
+        <div className={`content ${isFadingOut ? "fade-out" : ""}`}>
+          <img src={kyojuzan} alt="GIF Animation" className="visible-gif" />
+          <h1>きょじゅうざん</h1>
+        </div>        
       )}
 
       </header>
