@@ -40,3 +40,25 @@
 .read-the-docs {
   color: #888;
 }
+
+/* ======================================== */
+/* 最初は非表示 */
+.hidden-gif {
+  display: none;
+}
+
+/* GIFが表示されるときのスタイル */
+.visible-gif {
+  display: block;
+  opacity: 0;
+  animation: fadeIn 0.5s forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
