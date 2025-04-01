@@ -2,6 +2,10 @@ import zacian from "./assets/zacian.jfif";
 import "./App.css";
 
 function App() {
+  document.getElementsByClassName("zacian").addEventListener("click", function(){
+    alert("きょじゅうざん");
+  });
+
   return (
     <div className="App">
       <header className="App-header">
