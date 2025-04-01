@@ -10,8 +10,8 @@ function App() {
   const [isFadingOut1, setIsFadingOut1] = useState(false);
   const [isVisible2, setIsVisible2] = useState(false);
   const [isFadingOut2, setIsFadingOut2] = useState(false);
-  const [isVisible3, setIsVisible3] = useState(false);
-  const [isFadingOut3, setIsFadingOut3] = useState(false);
+  // const [isVisible3, setIsVisible3] = useState(false);
+  // const [isFadingOut3, setIsFadingOut3] = useState(false);
 
   const technique1 = () => {
     setIsVisible1(true); 
@@ -39,7 +39,7 @@ function App() {
     <div className="App">
       <header className="App-header">
       {!isVisible1 &&(
-        <div>
+        <div className="button-container">
           <div>
             <img src={zacian} className="zacian" alt="zacian" onClick={technique1}/>
             <h1>ザシアンが現れた！</h1>

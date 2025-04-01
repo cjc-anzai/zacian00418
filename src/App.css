@@ -61,6 +61,14 @@
   animation: fadeOut 1s forwards;
 }
 
+/* ボタンを横並びにする */
+.button-container {
+  display: flex;
+  gap: 10px; /* ボタンの間隔を調整 */
+  justify-content: center; /* 中央揃え */
+  margin-bottom: 20px; /* 下にスペースを作る */
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
