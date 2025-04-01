@@ -8,7 +8,7 @@ import React, { useState } from "react";
 function App() {
   const [zacianIsVisible, setzacianIsVisible] = useState(false);
   const [kyojuzanIsFadingOut, setKyojuzanIsFadingOut] = useState(false);
-  const [habatakukamiIsVisible, setHabatakukamiIsVisible] = useState(false);
+  // const [habatakukamiIsVisible, setHabatakukamiIsVisible] = useState(false);
 
   const kyojuzan = () => {
     setzacianIsVisible(true); 
@@ -20,7 +20,7 @@ function App() {
     }, 6000);
 
     // 7秒後に完全に非表示
-    setTimeout1(() => {
+    setTimeout(() => {
       setzacianIsVisible(false);
       setKyojuzanIsFadingOut(false);
     }, 7000);
