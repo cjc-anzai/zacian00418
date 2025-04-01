@@ -1,6 +1,6 @@
 import zacian from "./assets/zacian.jfif";
 import habatakukami from "./assets/habatakukami.jfif";
-import kyojuzan from "./assets/kyojuzan.gif"; 
+import kyojuzanGif from "./assets/kyojuzan.gif"; 
 import "./App.css";
 import React, { useState } from "react";
 
@@ -9,9 +9,6 @@ function App() {
   const [zacianIsVisible, setzacianIsVisible] = useState(false);
   const [kyojuzanIsFadingOut, setKyojuzanIsFadingOut] = useState(false);
   const [habatakukamiIsVisible, setHabatakukamiIsVisible] = useState(false);
-  const [isFadingOut2, setIsFadingOut2] = useState(false);
-  const [isVisible3, setIsVisible3] = useState(false);
-  // const [isFadingOut3, setIsFadingOut3] = useState(false);
 
   const kyojuzan = () => {
     setzacianIsVisible(true); 
@@ -63,7 +60,7 @@ function App() {
           )}
           {isVisible1 && (
             <div className={`content ${isFadingOut1 ? "fade-out" : ""}`}>
-              <img src={kyojuzan} alt="GIF Animation" className="kyojuzan" />
+              <img src={kyojuzanGif} alt="GIF Animation" className="kyojuzan" />
               <h1>きょじゅうざん</h1>
             </div>        
           )}
