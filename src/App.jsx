@@ -12,10 +12,10 @@ function App() {
     setIsVisible(true); 
     setIsFadingOut(false);
 
-    // 2.5秒後にフェードアウト開始
+    // 6秒後にフェードアウト開始
     setTimeout(() => {
       setIsFadingOut(true);
-    }, 6500);
+    }, 6000);
 
     // 3秒後に完全に非表示
     setTimeout(() => {
@@ -28,16 +28,20 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-      {!isVisible &&<img src={zacian} className="zacian" alt="zacian" onClick={technique}/>}
+      {!isVisible &&(
+        <img src={zacian} className="zacian" alt="zacian" onClick={technique}/>
+      ) && (
+        <h1>ザシアン</h1>
+      )}
       {isVisible && (
         <img
           src={kyojuzan}
           alt="GIF Animation"
           className={`visible-gif ${isFadingOut ? "fade-out" : ""}`}
         />
+      ) && (
+        <h1>きょじゅうざん</h1>
       )}
-
-        <h1>ザシアン</h1>
 
       </header>
     </div>
