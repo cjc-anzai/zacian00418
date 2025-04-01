@@ -7,7 +7,7 @@ import React, { useState } from "react";
 
 function App() {
   const [zacianIsVisible, setzacianIsVisible] = useState(false);
-  const [zacianIsFadingOut, setZacianIsFadingOut] = useState(false);
+  const [kyojuzanIsFadingOut, setKyojuzanIsFadingOut] = useState(false);
   const [habatakukamiIsVisible, setHabatakukamiIsVisible] = useState(false);
   const [isFadingOut2, setIsFadingOut2] = useState(false);
   const [isVisible3, setIsVisible3] = useState(false);
@@ -15,17 +15,17 @@ function App() {
 
   const kyojuzan = () => {
     setzacianIsVisible(true); 
-    zacianIsFadingOut(false);
+    kyojuzanIsFadingOut(false);
 
     // 6秒後にフェードアウト開始
     setTimeout(() => {
-      setZacianIsFadingOut(true);
+      setKyojuzanIsFadingOut(true);
     }, 6000);
 
     // 3秒後に完全に非表示
     setTimeout1(() => {
       setzacianIsVisible(false);
-      setZacianIsFadingOut(false);
+      setKyojuzanIsFadingOut(false);
     }, 7000);
   };
 
