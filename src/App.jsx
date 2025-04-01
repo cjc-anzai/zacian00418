@@ -8,7 +8,7 @@ import React, { useState } from "react";
 function App() {
   const [zacianIsVisible, setzacianIsVisible] = useState(false);
   const [kyojuzanIsFadingOut, setKyojuzanIsFadingOut] = useState(false);
-  // const [habatakukamiIsVisible, setHabatakukamiIsVisible] = useState(false);
+  const [habatakukamiIsVisible, setHabatakukamiIsVisible] = useState(false);
 
   const kyojuzan = () => {
     setzacianIsVisible(true); 
@@ -26,13 +26,13 @@ function App() {
     }, 7000);
   };
 
-  // const habayakukami = () => {
-  //   habatakukamiIsVisible(true); 
-  // };
+  const habayakukami = () => {
+    habatakukamiIsVisible(true); 
+  };
 
-  // const moonForce = () => {
-  //   alert("ムーンフォース");
-  // };
+  const moonForce = () => {
+    alert("ムーンフォース");
+  };
 
 
   return (
@@ -46,12 +46,10 @@ function App() {
                 <h1>ザシアンが現れた！</h1>
               </div>
               <div>
-                {!isVisible2 &&(
-                  <div>
-                    <h1>どうする？</h1>
-                    <button onClick={habayakukami}>ハバタクカミを出す</button>
-                  </div>
-                )}
+                <div>
+                  <h1>どうする？</h1>
+                  <button onClick={habayakukami}>ハバタクカミを出す</button>
+                </div>
               </div>
             </div>
           )}
