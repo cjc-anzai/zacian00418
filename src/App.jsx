@@ -19,22 +19,20 @@ function App() {
       setKyojuzanIsFadingOut(true);
     }, 6000);
 
-    // 3秒後に完全に非表示
+    // 7秒後に完全に非表示
     setTimeout1(() => {
       setzacianIsVisible(false);
       setKyojuzanIsFadingOut(false);
     }, 7000);
   };
 
-  const habayakukami = () => {
-    habatakukamiIsVisible(true); 
-    // setIsVisible3(true); 
-    // setIsFadingOut2(false);
-  };
+  // const habayakukami = () => {
+  //   habatakukamiIsVisible(true); 
+  // };
 
-  const moonForce = () => {
-    alert("ムーンフォース");
-  };
+  // const moonForce = () => {
+  //   alert("ムーンフォース");
+  // };
 
 
   return (
@@ -52,20 +50,19 @@ function App() {
                   <div>
                     <h1>どうする？</h1>
                     <button onClick={habayakukami}>ハバタクカミを出す</button>
-                    {/* <button onClick={houou}>ホウオウをだす</button> */}
                   </div>
                 )}
               </div>
             </div>
           )}
-          {isVisible1 && (
-            <div className={`content ${isFadingOut1 ? "fade-out" : ""}`}>
+          {zacianIsVisible && (
+            <div className={`content ${kyojuzanIsFadingOut ? "fade-out" : ""}`}>
               <img src={kyojuzanGif} alt="GIF Animation" className="kyojuzan" />
               <h1>きょじゅうざん</h1>
             </div>        
           )}
           {habatakukamiIsVisible && (
-            <div className={`content ${isFadingOut2 ? "fade-out" : ""}`}>
+            <div>
               <div>
                 <img src={habatakukami} alt="GIF Animation" className="habatakukami" />
                 <h1>ハバタクカミ</h1>
@@ -73,16 +70,9 @@ function App() {
               <div>
                 <h1>どうする？</h1>
                 <button onClick={moonForce}>ムーンフォース</button>
-                {/* <button onClick={houou}>ホウオウをだす</button> */}
               </div>
             </div>        
           )}
-          {/* {isVisible3 && (
-            <div className={`content ${isFadingOut3 ? "fade-out" : ""}`}>
-              <img src={houou} alt="GIF Animation" className="houou" />
-              <h1>ホウオウ</h1>
-            </div>        
-          )} */}
         </div>
       </header>
     </div>
