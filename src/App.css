@@ -1,80 +1,231 @@
 #root {
-  max-width: 1280px;
+  width: 80%;
   margin: 0 auto;
-  padding: 2rem;
+  /* padding: 2rem; */
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* height: 100vh; 画面全体の高さを占める */
+  flex-direction: column;
+  text-align: center; /* 中央揃えにする */
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App-header {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.battle-area-wrap{
+  width: 100%;
 }
 
-.card {
-  padding: 2em;
+.battle-area {
+  display: flex;
+  justify-content: space-between;
+  width: 80%;
+  max-width: 1200px; /* 必要に応じて調整 */
+  margin: 0 auto;
+  /* padding: 20px; */
 }
 
-.read-the-docs {
-  color: #888;
-}
-
-/* ======================================== */
-/* 最初は非表示 */
-.hidden {
-  display: none;
-}
-
-/* GIFとh1タグを包むコンテナ */
-.content {
+.op-poke-area-wrap,
+.my-poke-area-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  opacity: 1;
-  animation: fadeIn 0.5s forwards;
+  /* justify-content: center; */
+  width: 45%; /* 両方のエリアの幅を同じにする */
+  height: 400px; /* 必要な高さを設定 */
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  background-color: #f4f4f4;
+
+
+  justify-content: space-between;
+  box-sizing: border-box;
+  position: relative;
 }
 
-/* フェードアウト時のスタイル */
-.fade-out {
-  animation: fadeOut 1s forwards;
-}
-
-/* ボタンを横並びにする */
-.button-container {
+/* テキスト系（技名、倒れたテキストなど） */
+.txt-area {
+  height: 100px;
   display: flex;
-  gap: 10px; /* ボタンの間隔を調整 */
-  justify-content: center; /* 中央揃え */
-  margin-bottom: 20px; /* 下にスペースを作る */
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: black;
+  font-size: 1.2rem;
+  flex: 1; /* テキストエリアが残りのスペースを占める */
+  /* min-width: 200px; テキストエリアの最小幅を設定 */
+  width: 100%;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* ポケモン画像と名前のエリア */
+.my-poke-area,
+.op-poke-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* justify-content: end; */
+  flex: 0 0 300px; /* 画像エリアは固定幅を持つ */
+  margin-bottom: 10px;
+
+  position: relative;
+  height: 100%; /* 親がしっかり高さを持っている前提 */
+  justify-content: flex-end; /* 下寄せ or center にするのもアリ */
 }
 
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+.my-poke,
+.op-poke {
+  margin-top: 10px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: black;
+}
+
+
+.op-poke-area-wrap h1,
+.my-poke-area-wrap h1 {
+  font-size: 1.5rem;
+  margin: 10px 0;
+}
+
+.op-poke-area-wrap img,
+.my-poke-area-wrap img {
+  height: 75%;
+  object-fit: contain;
+}
+
+.op-hp-area,
+.my-hp-area {
+  width: 100%;
+  padding: 5px 20px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.op-hp-container,
+.my-hp-container {
+  width: 100%;
+  height: 16px;
+  background-color: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.op-hp-bar,
+.my-hp-bar {
+  height: 100%;
+  background-color: #00ff00;  /* デフォルト：緑 */
+  transition: width 0.5s ease, background-color 0.3s ease;
+}
+
+.cmd-area {
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.cmd-buttons {
+  display: flex;
+  gap: 20px; /* ボタン同士の間隔 */
+}
+
+.cmd-area button {
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.cmd-area button:hover {
+  background-color: #45a049;
+}
+
+
+@keyframes sinkAnimation {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100px); /* 画像が下に100px沈む */
+    opacity: 0;
+  }
+}
+
+/* ポケモンが死亡した場合に適用されるクラス */
+.pokemon-dead {
+  animation: sinkAnimation 2s forwards;
+}
+
+.my-hp-bar.mid,
+.op-hp-bar.mid {
+  background-color: #ffcc00; /* 黄色 */
+}
+
+.my-hp-bar.low,
+.op-hp-bar.low {
+  background-color: #ff0000; /* 赤 */
+}
+
+.select-area {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.op-poke-select, .my-poke-select {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.poke-option, .poke-preview {
+  cursor: pointer;
+  text-align: center;
+  border: 2px solid transparent;
+  padding: 10px;
+  border-radius: 10px;
+  transition: 0.2s;
+}
+
+.poke-option img, .poke-preview img {
+  width: 100px;
+  height: auto;
+}
+
+.poke-option.selected {
+  border: 2px solid #00f;
+  background-color: #eef;
+}
+
+.poke-option span {
+  display: block;
+  margin-top: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.select-actions button {
+  margin: 10px;
+  padding: 10px 20px;
 }
