@@ -9,7 +9,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  /* height: 100vh; 画面全体の高さを占める */
   flex-direction: column;
   text-align: center; /* 中央揃えにする */
 }
@@ -32,7 +31,6 @@
   width: 80%;
   max-width: 1200px; /* 必要に応じて調整 */
   margin: 0 auto;
-  /* padding: 20px; */
 }
 
 .op-poke-area-wrap,
@@ -40,15 +38,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* justify-content: center; */
   width: 45%; /* 両方のエリアの幅を同じにする */
   height: 400px; /* 必要な高さを設定 */
   padding: 10px;
   border: 2px solid #ccc;
   border-radius: 10px;
   background-color: #f4f4f4;
-
-
   justify-content: space-between;
   box-sizing: border-box;
   position: relative;
@@ -65,7 +60,6 @@
   color: black;
   font-size: 1.2rem;
   flex: 1; /* テキストエリアが残りのスペースを占める */
-  /* min-width: 200px; テキストエリアの最小幅を設定 */
   width: 100%;
 }
 
@@ -75,10 +69,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* justify-content: end; */
   flex: 0 0 300px; /* 画像エリアは固定幅を持つ */
   margin-bottom: 10px;
-
   position: relative;
   height: 100%; /* 親がしっかり高さを持っている前提 */
   justify-content: flex-end; /* 下寄せ or center にするのもアリ */
@@ -92,7 +84,6 @@
   color: black;
 }
 
-
 .op-poke-area-wrap h1,
 .my-poke-area-wrap h1 {
   font-size: 1.5rem;
@@ -101,8 +92,11 @@
 
 .op-poke-area-wrap img,
 .my-poke-area-wrap img {
-  height: 75%;
   object-fit: contain;
+  width: 220px;
+  height: 220px;
+  object-fit: cover;
+  display: block;
 }
 
 .op-hp-area,

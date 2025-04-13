@@ -4,74 +4,103 @@ import hououIMG from "./assets/houou.jfif";
 import zacianIMG from "./assets/zacian.jfif";
 import miraidonIMG from "./assets/miraidon.png";
 import mugendainaIMG from "./assets/mugendaina.png";
+import shirobadoIMG from "./assets/shirobado.jfif";
+import kurobadoIMG from "./assets/kurobado.png";
 
 function App() {
 
-  //useState=============================================================================================================
+  //自分と相手のポケモン関係の表示制御
+  const defaultAreaVisible = {
+    name: false,
+    img: false,
+    hp: false,
+    weapon: false,
+    compati: false,
+    dead: false
+  };
 
-  //表示・非表示の設定=====================================================================
-  //自分のポケモン関係
-  const [battleArea, setBattleArea] = useState(false);  //バトルエリア
-  const [myWeaponArea, setMyWeaponArea] = useState(false);  //技名エリア
-  const [myCompatiArea, setMyCompatiArea] = useState(false);  //技相性エリア
-  const [myDeadArea, setMyDeadArea]= useState(false); //死亡表記エリア
-  const [myPokeIMGArea, setMyPokeIMGArea] = useState(false);  //ポケモン画像エリア
-  const [myPokeNameArea, setMyPokeNameArea] = useState(false); //ポケモン名称エリア
-  const [myPokeHPArea, setMyPokeHPArea] = useState(false); //ポケモンHPエリア
+  const [myAreaVisible, setMyAreaVisible] = useState({ ...defaultAreaVisible });
+  const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });
 
-  //相手のポケモン関係
-  const [opWeaponArea, setOpWeaponArea] = useState(false);  //技名エリア
-  const [opCompatiArea, setOpCompatiArea] = useState(false);  //技相性エリア
-  const [opDeadArea, setOpDeadArea] = useState(false);  //死亡表記エリア
-  const [opPokeIMGArea, setOpPokeIMGArea] = useState(false); //ポケモン画像エリア
-  const [opPokeNameArea, setOpPokeNameArea] = useState(false);  //ポケモン名称エリア
-  const [opPokeHPArea, setOpPokeHPArea] = useState(false); //ポケモンHPエリア
 
-  //その他
-  const [battleStart, setBattleStart] = useState(true); //初期表示 
-  const [cmdArea, setCmdArea] = useState(false);  //コマンドエリア
+  //その他表示制御
+  const [otherAreaVisible, setOtherAreaVisible] = useState({
+    start: true,
+    battle: false,
+    actionCmd: false,
+    weaponCmd: false,
+    changeCmd: false,
+    nextPokeCmd: false
+  });
   
-  //文字列・数値を格納する変数===================================================================
-  const [myPokeName, setMyPokeName] = useState("");   //自分のポケモン名称
-  const [opPokeName, setOpPokeName] = useState(""); //相手のポケモン名称
-  const [myPokeIMG, setMyPokeIMG] = useState(null);   //自分のポケモンの画像
-  const [opPokeIMG, setOpPokeIMG] = useState(null);   //相手のポケモンの画像
-  const [myWeaponName, setMyWeaponName] = useState("");   //自分のポケモンの技名
-  const [opWeaponName, setOpWeaponName] = useState(""); //相手のポケモンの技名
-  const [myTurn, setMyTurn] = useState("");
-  const [myCompati, setMyCompati] = useState("");   //自分への技相性
-  const [opCompati, setOpCompati] = useState("");   //相手への技相性
-  const [myDamagePt, setMyDamagePt] = useState(1); //自分へのダメージ数
-  const [opDamagePt, setOpDamagePt] = useState(1); //相手へのダメージ数
-  const [myHp, setMyHp] = useState(100);   // 自分のHP
-  const [opHp, setOpHp] = useState(100); // 相手のHP
-  const [myLife, setMyLife] = useState(2);   // 自分の生存ポケモンの数
-  const [opLife, setOpLife] = useState(2); // 相手の生存ポケモンの数
+  //自分のポケモンのState
+  const [myPokeState, setMyPokeState] = useState({
+    name: "",          //バトル場のポケモン    
+    poke1Name: "",   //１番目に選択したポケモン 
+    poke2Name: "",
+    poke3Name: "",
+    img: null,          
+    weapon: "",     
+    compati: "",        
+    damage: 1,        
+    hp: 100,    //バトル場のポケモンのHP
+    poke1Hp: 100,   //１番目に選択したポケモンのHP
+    poke2Hp: 100,
+    poke3Hp: 100,  
+    life: 3             
+  });
 
-  const [skipTurn, setSkipTurn] = useState(false);
+  //相手のポケモンのState
+  const [opPokeState, setOpPokeState] = useState({
+    name: "",
+    poke1Name: "",   //１番目に選択したポケモン 
+    poke2Name: "",
+    poke3Name: "",        
+    img: null,          
+    weapon: "",     
+    compati: "",        
+    damage: 1,        
+    hp: 100,            
+    life: 3             
+  });
+
   const [isSelecting, setIsSelecting] = useState(false); // 選出中かどうか
   const [selectedOrder, setSelectedOrder] = useState([]); // 選出順（配列で保持）
-
-  //useRef==========================================================================
-  const myHP1 = useRef(100);  //自分のポケモンのHP
-  const myHP2 = useRef(100);
+  const [myTurn, setMyTurn] = useState("");
+  const [skipTurn, setSkipTurn] = useState(false);
   const result = useRef("");  //勝敗を格納する
 
   //一般変数==========================================================================================================================
-  const myPoke1 = "ホウオウ";
-  const myPoke2 = "ムゲンダイナ";
-  const opPoke1 = "ザシアン";
-  const opPoke2 = "ミライドン";
-  const myWeapon1 = "せいなるほのお";
-  const myWeapon2 = "ダイマックスほう";
-  const opWeapon1 = "きょじゅうざん";
-  const opWeapon2 = "イナズマドライブ";
-  let myPokeSpeed = 0;
-  let opPokeSpeed = 0;
+  const myPoke = [
+    {name: "ホウオウ", img: hououIMG, weapon: "せいなるほのお", speed: 90},
+    {name: "ムゲンダイナ", img: mugendainaIMG, weapon: "ダイマックスほう", speed: 130},
+    {name: "白バドレックス", img: shirobadoIMG, weapon: "ブリザードランス", speed: 50}
+  ];
+
+  const opPoke = [
+    {name: "ザシアン", img: zacianIMG, weapon: "きょじゅうざん", speed: 138},
+    {name: "ミライドン", img: miraidonIMG, weapon: "イナズマドライブ", speed: 135},
+    {name: "黒バドレックス", img: kurobadoIMG, weapon: "アストラルビット", speed: 150}
+  ];
+
   const batsugunTxt = "効果はバツグン";
   const toubaiTxt = "等倍ダメージ";
   const imahitotsuTxt = "効果はいまひとつ";
   const mukouTxt = "効果がない";
+
+  const compati = {
+    my: {
+      ホウオウ: { ザシアン: imahitotsuTxt, ミライドン: batsugunTxt, 黒バドレックス: toubaiTxt },
+      ムゲンダイナ: { ザシアン: toubaiTxt, ミライドン: imahitotsuTxt, 黒バドレックス: toubaiTxt },
+      白バドレックス: { ザシアン: batsugunTxt, ミライドン: toubaiTxt, 黒バドレックス: batsugunTxt },
+    },
+    op: {
+      ザシアン: { ホウオウ: batsugunTxt, ムゲンダイナ: mukouTxt, 白バドレックス: imahitotsuTxt },
+      ミライドン: { ホウオウ: imahitotsuTxt, ムゲンダイナ: batsugunTxt, 白バドレックス: batsugunTxt },
+      黒バドレックス: { ホウオウ: toubaiTxt, ムゲンダイナ: toubaiTxt, 白バドレックス: toubaiTxt },
+    },
+  };
+
 
   // ダメージエフェクトのための配列
   const opacityChanges = [
@@ -91,39 +120,26 @@ function App() {
 
   // 自分のポケモン名称がセットされたら、画像をセット。
   useEffect(() => {
-    if(myPokeName !== ""){
-      if(myPokeName === myPoke1){
-        setMyPokeIMG(hououIMG);
-      }
-      else if(myPokeName === myPoke2){
-        setMyPokeIMG(mugendainaIMG);
-      }
-      if(myLife == 1){ //2体編成のための条件式
-        setMyPokeIMGArea(true); 
-        setMyPokeNameArea(true);
-        setMyPokeHPArea(true);
-        setCmdArea(true);
+    if(myPokeState.name !== ""){
+      setMyPokeState(prev => ({...prev, img: myPoke.find(poke => poke.name === myPokeState.name)?.img}));
+      if(myPokeState.life == 2 || myPokeState.life == 1){
+        setMyAreaVisible(prev => ({ ...prev, img: true, name: true, hp: true})); 
+        setOtherAreaVisible(prev => ({ ...prev, actionCmd: true}));
       }
     }
-  }, [myPokeName]);  
+  }, [myPokeState.name]);  
 
   //相手のポケモン名称が決まったら画像をセット
   useEffect(() => {
-    if(opPokeName !== ""){
-      if(opPokeName === opPoke1){
-        setOpPokeIMG(zacianIMG);
-      }
-      else if(opPokeName === opPoke2){
-        setOpPokeIMG(miraidonIMG);
-      }
-      if(opLife == 1){ //2体編成のための条件式
-        setOpPokeIMGArea(true); 
-        setOpPokeNameArea(true);
-        setOpPokeHPArea(true);
-        setCmdArea(true);
+    if(opPokeState.name !== ""){
+      console.log(opPokeState.name + "を出したい");
+      setOpPokeState(prev => ({...prev, img: opPoke.find(poke => poke.name === opPokeState.name)?.img}));
+      if(opPokeState.life == 2 || opPokeState.life == 1){
+        setOpAreaVisible(prev => ({ ...prev, img: true, name: true, hp: true})); 
+        setOtherAreaVisible(prev => ({ ...prev, actionCmd: true}));
       }
     }
-  }, [opPokeName]);
+  }, [opPokeState.name]);
 
 
   //skipTurn===========================================================
@@ -131,12 +147,7 @@ function App() {
   //交代を選択したら相手の技をセットする。
   useEffect(() => {
     if (skipTurn) {
-      if (opPokeName === opPoke1) {
-        setOpWeaponName(opWeapon1 + Math.random());
-      }
-      else if (opPokeName === opPoke2) {
-        setOpWeaponName(opWeapon2 + Math.random());
-      }
+      setOpPokeState(prev => ({...prev, weapon: opPoke.find(poke => poke.name === opPokeState.name)?.weapon + Math.random()}));
     }
   }, [skipTurn]);
   
@@ -145,36 +156,19 @@ function App() {
 
   //自分の技名がセットされたら、相手の技名をセットする。
   useEffect(() => {
-    if(opPokeName !== ""){
-      console.log(myWeaponName + "がセットされた");
-      if (opPokeName === opPoke1) {
-        setOpWeaponName(opWeapon1 + Math.random());
-      }
-      else if (opPokeName === opPoke2) {
-        setOpWeaponName(opWeapon2 + Math.random());
-      }
+    if(opPokeState.name !== ""){
+      console.log(myPokeState.weapon + "がセットされた");
+      setOtherAreaVisible(prev => ({ ...prev, weaponCmd: true}));
     }
-  }, [myWeaponName]);
+  }, [myPokeState.weapon]);
 
   //相手の技名がセットされたら、先攻後攻を決める
   useEffect(() => {
-    if(opPokeName !== ""){
-      console.log(opWeaponName + "がセットされた");
-      // 素早さをセット
-      if(myPokeName === myPoke1){
-        myPokeSpeed = 90;
-      }
-      else if(myPokeName === myPoke2){
-        myPokeSpeed = 130;
-      }
+    if(opPokeState.name !== ""){
+      console.log(opPokeState.weapon + "がセットされた");
+      let myPokeSpeed = myPoke.find(poke => poke.name === myPokeState.name)?.speed;
+      let opPokeSpeed = opPoke.find(poke => poke.name === opPokeState.name)?.speed;
 
-      if(opPokeName === opPoke1){
-        opPokeSpeed = 138;
-      }
-      else if(opPokeName === opPoke2){
-        opPokeSpeed = 135;
-      }
-      
       // 先攻後攻の判定　交代した場合は後攻扱いにする
       if (myPokeSpeed > opPokeSpeed && !skipTurn) {
         setMyTurn("first" + Math.random());
@@ -183,7 +177,7 @@ function App() {
         setMyTurn("after" + Math.random());
       }
     }
-  }, [opWeaponName]);
+  }, [opPokeState.weapon]);
 
 
   //先攻後攻が決まったら技相性をセット=======================================================
@@ -191,41 +185,11 @@ function App() {
     if (myTurn !== "") {
       if(myTurn.includes("first")){   //先攻なら相手の技相性をセット
         console.log("先攻がセットされた");
-        if (myPokeName === myPoke1) {
-          if (opPokeName === opPoke1) {
-            setOpCompati(batsugunTxt + Math.random());
-          }
-          else if (opPokeName === opPoke2) {
-            setOpCompati(imahitotsuTxt + Math.random());
-          }
-        }
-        else if (myPokeName === myPoke2) {
-          if (opPokeName === opPoke1) {
-            setOpCompati(mukouTxt + Math.random());
-          }
-          else if (opPokeName === opPoke2) {
-            setOpCompati(batsugunTxt + Math.random());
-          }  
-        }
+        setOpPokeState(prev => ({...prev, compati: compati.op[opPokeState.name][myPokeState.name] + Math.random()}));
       }
       else if(myTurn.includes("after")){    //後攻なら自分の技相性をセット
         console.log("後攻がセットされた");
-        if (opPokeName === opPoke1) {
-          if (myPokeName === myPoke1) {
-            setMyCompati(imahitotsuTxt + Math.random());
-          }
-          else if (myPokeName === myPoke2) {
-            setMyCompati(toubaiTxt + Math.random());
-          }
-        }
-        else if (opPokeName === opPoke2) {
-          if (myPokeName === myPoke1) {
-            setMyCompati(batsugunTxt + Math.random());
-          }
-          else if (myPokeName === myPoke2) {
-            setMyCompati(imahitotsuTxt + Math.random());
-          }
-        }
+        setMyPokeState(prev => ({...prev, compati: compati.my[myPokeState.name][opPokeState.name] + Math.random()}));
       }
     }
   }, [myTurn]);
@@ -235,318 +199,296 @@ function App() {
 
   //自分の技相性が決まったら、自分へのダメージ数をセット
   useEffect(() => {
-    if(myCompati !== "" && !cmdArea){
-      console.log("自分に" + myCompati);
-      if(myCompati.includes(batsugunTxt)){
-        setMyDamagePt(100 + Math.random());
-      }
-      else if(myCompati.includes(toubaiTxt)){
-        setMyDamagePt(50 + Math.random());
-      }
-      else if(myCompati.includes(imahitotsuTxt)){
-        setMyDamagePt(25 + Math.random());
-      }
-      else{
-        setMyDamagePt(0 + Math.random());
-      }
+    if(myPokeState.compati !== "" && !otherAreaVisible.actionCmd){
+      console.log("自分に" + myPokeState.compati);
+      setMyPokeState(prev => ({...prev, damage: calcDamage(myPokeState.compati) + Math.random()}));
     }
-  }, [myCompati]);
+  }, [myPokeState.compati]);
 
   //相手の技相性が決まったら、相手へのダメージ数をセット
   useEffect(() => {
-    if(opCompati !== "" && !cmdArea){
-      console.log("相手に" + opCompati);
-      if(opCompati.includes(batsugunTxt)){
-        setOpDamagePt(100 + Math.random());
-      }
-      else if(opCompati.includes(toubaiTxt)){
-        setOpDamagePt(50 + Math.random());
-      }
-      else if(opCompati.includes(imahitotsuTxt)){
-        setOpDamagePt(25 + Math.random());
-      }
-      else{
-        setOpDamagePt(0 + Math.random());
-      }
+    if(opPokeState.compati !== "" && !otherAreaVisible.actionCmd){
+      console.log("相手に" + opPokeState.compati);
+      setOpPokeState(prev => ({...prev, damage: calcDamage(opPokeState.compati) + Math.random()}));
     }
-  }, [opCompati]);
+  }, [opPokeState.compati]);
 
 
   //ダメージ数===========================================================
 
   //自分へのダメージ数が決まったら、ダメージエフェクトを呼ぶ
   useEffect(() => {
-    if(myDamagePt != 1){
-      console.log("自分に" + myDamagePt + "ダメージ");
-      setOpWeaponArea(true);
-      setTimeout(() => {  //技名を表示してから１秒後に相手にダメージエフェクト
-        myDamage();
-      }, 1000);
+    if(myPokeState.damage != 1){
+      console.log("自分に" + myPokeState.damage + "ダメージ");
+      setOpAreaVisible(prev => ({ ...prev, weapon: true}));
+      delay(() => myDamage(), 1000);
     } 
-  }, [myDamagePt]);
+  }, [myPokeState.damage]);
 
   //相手へのダメージ数が決まったら、ダメージエフェクトを呼ぶ
   useEffect(() => {
-    if(opDamagePt != 1){
-      console.log("相手に" + opDamagePt + "ダメージ");
-      setMyWeaponArea(true);
-      setTimeout(() => {  //技名を表示してから１秒後に相手にダメージエフェクト
-        opDamage();
-      }, 1000);
+    if(opPokeState.damage != 1){
+      console.log("相手に" + opPokeState.damage + "ダメージ");
+      setMyAreaVisible(prev => ({ ...prev, weapon: true }));
+      delay(() => opDamage(), 1000);
     }
-  }, [opDamagePt]);
+  }, [opPokeState.damage]);
 
 
   // HP==============================================================================
 
   //自分のHPが変わったら、死亡判定
   useEffect(() => {
-    if(myHp != 100){
-      console.log("自分の残りHP" + myHp);
+    if(myPokeState.hp != 100){
+      console.log("自分の残りHP" + myPokeState.hp);
       setTimeout(() => {
-        setMyCompatiArea(false);
-        setOpWeaponArea(false);
+        setMyAreaVisible(prev => ({ ...prev, compati: false}));
+        setOpAreaVisible(prev => ({ ...prev, weapon: false}));
         
-        if(myHp > 0){  //生存してる場合
+        if(myPokeState.hp > 0){  //生存してる場合
           if(!skipTurn){  //交代したターンは攻撃しない
             setTimeout(() => {  //相手の攻撃の１秒後に相手の技相性をセット
               if(myTurn.includes("first")){   //先攻で自分ＨＰが減ったら攻撃ターン終了
-                setCmdArea(true);
+                setOtherAreaVisible(prev => ({ ...prev, actionCmd: true}));
               }
-              else if (myPokeName === myPoke1) {
-                if (opPokeName === opPoke1) {
-                  setOpCompati(batsugunTxt + Math.random());
-                }
-                else if (opPokeName === opPoke2) {
-                  setOpCompati(imahitotsuTxt + Math.random());
-                }
-              }
-              else if (myPokeName === myPoke2) {
-                if (opPokeName === opPoke1) {
-                  setOpCompati(mukouTxt + Math.random());
-                }
-                else if (opPokeName === opPoke2) {
-                  setOpCompati(batsugunTxt + Math.random());
-                }
-              }
+              setOpPokeState(prev => ({...prev, compati: compati.op[opPokeState.name][myPokeState.name] + Math.random()}));
             }, 1000);
           }
           else if (skipTurn) { // 交代後、相手の攻撃が終わるころ、コマンドボタンを表示
             setTimeout(() => {
-              setCmdArea(true);
+              setOtherAreaVisible(prev => ({ ...prev, actionCmd: true}));
               setSkipTurn(false);
             }, 1000); 
           }
         }
-        else if(myHp <= 0) {  //死亡したとき
-          setCmdArea(false);
+        else if(myPokeState.hp <= 0) {  //死亡したとき
+          setOtherAreaVisible(prev => ({ ...prev, actionCmd: false}));
+          setSkipTurn(false);
 
           //倒れたポケモンは交代コマンドに出ないためにHP０にする
-          if(myPokeName === myPoke1){
-            myHP1.current = 0;
+          if(myPokeState.name === myPokeState.poke1Name){
+            myPokeState.poke1Hp = 0;
           }
-          else if(myPokeName === myPoke2){
-            myHP2.current = 0;
+          else if(myPokeState.name === myPokeState.poke2Name){
+            myPokeState.poke2Hp = 0;
+          }
+          else if(myPokeState.name === myPokeState.poke3Name){
+            myPokeState.poke3Hp = 0;
           }
 
           //画像を取得して死亡演出のスタイルを付与する
           const myPokeIMGElm = document.querySelector(".my-poke-img");
           setTimeout(() => {
-            setMyDeadArea(true);
-            setMyPokeNameArea(false);
-            setMyPokeHPArea(false);
+            setMyAreaVisible(prev => ({ ...prev, dead: true, name: false, hp: false}));
             myPokeIMGElm.classList.add("pokemon-dead");
           }, 1000);
           setTimeout(() => {
-            setMyDeadArea(false);
-            setMyPokeIMGArea(false);
-            setMyLife(myLife - 1);
+            setMyAreaVisible(prev => ({ ...prev, dead: false, img: false}));
+            setMyPokeState(prev => ({...prev, life: myPokeState.life - 1}));
           }, 3001);
         }
       }, 2000);
     }
-  }, [myHp]);
+  }, [myPokeState.hp]);
 
 
   //相手のHPが変わったら、死亡判定
   useEffect(() => {
-    if(opHp != 100){
-      console.log("相手の残りHP" + opHp);
+    if(opPokeState.hp != 100){
+      console.log("相手の残りHP" + opPokeState.hp);
       setTimeout(() => {
-        setOpCompatiArea(false);
-        setMyWeaponArea(false);
+        setOpAreaVisible(prev => ({ ...prev, compati: false}));
+        setMyAreaVisible(prev => ({ ...prev, weapon: false}));
 
-        if(opHp > 0){   //生存している場合
+        if(opPokeState.hp > 0){   //生存している場合
           setTimeout(() => {    //自分の攻撃の１秒後に自分の技相性をセット
             if(myTurn.includes("after")){   //後攻で相手ＨＰが減ったら攻撃ターン終了
-              setCmdArea(true);
+              setOtherAreaVisible(prev => ({ ...prev, actionCmd: true}));
             }
-            else if (opPokeName === opPoke1) {
-              if (myPokeName === myPoke1) {
-                setMyCompati(imahitotsuTxt + Math.random());
-              }
-              if (myPokeName === myPoke2) {
-                setMyCompati(toubaiTxt + Math.random());
-              }
-            }
-            else if (opPokeName === opPoke2) {
-              if (myPokeName === myPoke1) {
-                setMyCompati(batsugunTxt + Math.random());
-              }
-              else if (myPokeName === myPoke2) {
-                setMyCompati(imahitotsuTxt + Math.random());
-              }
-            }
+            setMyPokeState(prev => ({...prev, compati: compati.my[myPokeState.name][opPokeState.name] + Math.random()}));
           }, 1000);
         }
-        else if(opHp <= 0) {  //死亡したとき
-          setCmdArea(false);
+        else if(opPokeState.hp <= 0) {  //死亡したとき
+          setOtherAreaVisible(prev => ({ ...prev, actionCmd: false}));
 
           //画像を取得して死亡演出のスタイルを付与する
           const opPokeIMGElm = document.querySelector(".op-poke-img");
           setTimeout(() => {
-            setOpDeadArea(true);
-            setOpPokeNameArea(false);
-            setOpPokeHPArea(false);
+            setOpAreaVisible(prev => ({ ...prev, dead: true, name: false, hp: false}));
             opPokeIMGElm.classList.add("pokemon-dead");
           }, 1000);
           setTimeout(() => {
-            setOpDeadArea(false);  
-            setOpPokeIMGArea(false); 
-            setOpLife(opLife - 1);
+            setOpAreaVisible(prev => ({ ...prev, dead: false, img: false}));  
+            setOpPokeState(prev => ({...prev, life: opPokeState.life - 1}));
           }, 3001);
         }
       }, 2000);
     }
-  }, [opHp]); 
+  }, [opPokeState.hp]); 
 
 
   //ライフ================================================================
 
   //自分のライフが減ったら勝敗判定
   useEffect(() => {
-    //生存ポケモンがいる場合、ポケモン名称とHPをセットする
-    if(myLife != 2 && myLife > 0){
-      if(myPokeName === myPoke1){
-        setMyPokeName(myPoke2);
-        setMyHp(myHP2.current);
-      }
-      else if(myPokeName === myPoke2){
-        setMyPokeName(myPoke1);
-        setMyHp(myHP1.current);
-      }
+    if(myPokeState.life != 3 && myPokeState.life > 0){
+      //次に出すポケモンを選ぶコマンドを表示する。
+      setOtherAreaVisible(prev => ({ ...prev, nextPokeCmd: true}));
     }
     //全員死亡の場合、負け
-    else if (myLife <= 0) {
+    else if (myPokeState.life <= 0) {
       result.current = "LOSE";
-      setBattleArea(false);
+      setOtherAreaVisible(prev => ({ ...prev, battle: false}));
     }
-  }, [myLife]); 
+  }, [myPokeState.life]); 
 
-  //自分のライフが減ったら勝敗判定
+  //相手のライフが減ったら勝敗判定
   useEffect(() => {
     //生存ポケモンがいる場合、ポケモン名称とHPをセットする
-    if(opLife != 2 && opLife > 0){
-      console.log("相手の残りライフ" + opLife);
-      if(opPokeName === opPoke1){
-        setOpPokeName(opPoke2);
-        setOpHp(100);
-      }
-      else if(opPokeName === opPoke2){
-        setOpPokeName(opPoke1);
-        setOpHp(100);
-      }
+    console.log("相手の残りライフ" + opPokeState.life);
+    if(opPokeState.life == 2){
+      setOpPokeState(prev => ({...prev, name: opPokeState.poke2Name}));
+      setOpPokeState(prev => ({...prev, hp: 100}));
+    }
+    else if(opPokeState.life == 1){
+      setOpPokeState(prev => ({...prev, name: opPokeState.poke3Name}));
+      setOpPokeState(prev => ({...prev, hp: 100}));
     }
     //全員死亡の場合、勝ち
-    else if (opLife <= 0) {
+    else if (opPokeState.life <= 0) {
       result.current = "WIN";
-      setBattleArea(false);
+      setOtherAreaVisible(prev => ({ ...prev, battle: false}));
     }
-  }, [opLife]); 
+  }, [opPokeState.life]); 
 
 
   //クリックイベント=====================================================================
 
   // スタートボタン
   const start = () => {    
-    setBattleStart(false);
+    setOtherAreaVisible(prev => ({ ...prev, start: false})); 
     setIsSelecting(true); // 選出画面へ
   };
 
   //選出確定ボタン
   const confirmSelection = () => {
     setIsSelecting(false);
-    setBattleArea(true);
+    setOtherAreaVisible(prev => ({ ...prev, battle: true}));
+
+    //自分の選出順番をセットし、1番目のポケの名前をセット
+    myPokeState.poke1Name = selectedOrder[0];
+    myPokeState.poke2Name = selectedOrder[1];
+    myPokeState.poke3Name = selectedOrder[2];
+    setMyPokeState(prev => ({...prev, name: selectedOrder[0]}));
+
+    // 相手のポケモンを3体からランダムに選ぶ処理を追加
+    const shuffled = [...opPoke].sort(() => 0.5 - Math.random());
+    const selectedOpPokemons = shuffled.slice(0, 3); // ランダムに3体選ぶ
+
+    //相手の選出順番をセットし、1番目のポケの名前をセット
+    opPokeState.poke1Name = selectedOpPokemons[0].name;
+    opPokeState.poke2Name = selectedOpPokemons[1].name;
+    opPokeState.poke3Name = selectedOpPokemons[2].name;
+    setOpPokeState(prev => ({...prev, name: opPokeState.poke1Name}));
   
-    setMyPokeName(selectedOrder[0]);
-    if (selectedOrder[0] === "ホウオウ") {
-      myHP1.current = 100;
-      myHP2.current = 100;
-    } else {
-      myHP2.current = 100;
-      myHP1.current = 100;
-    }
-  
-    setOpPokeName(Math.random() < 0.5 ? "ザシアン" : "ミライドン");
-  
-    setMyPokeIMGArea(true);
-    setOpPokeIMGArea(true);
-    setMyPokeNameArea(true);
-    setOpPokeNameArea(true);
-    setMyPokeHPArea(true);
-    setOpPokeHPArea(true);
-    setCmdArea(true);
+    //表示状態制御
+    setMyAreaVisible(prev => ({ ...prev, img: true, name: true, hp: true}));
+    setOpAreaVisible(prev => ({ ...prev, img: true, name: true, hp: true}));
+    setOtherAreaVisible(prev => ({ ...prev, actionCmd: true}));
   };
 
+  // 戻るボタン
+  const backCmd = () => {
+    setOtherAreaVisible(prev => ({ ...prev, actionCmd: true, backCmd: false, changeCmd: false}));
+  };
+  
   // たたかうボタン
-  const battle = () => {
-    setCmdArea(false);
-
-    // 自分の技名をセット
-    if (myPokeName === myPoke1) {
-      setMyWeaponName(myWeapon1 + Math.random());
-    }
-    else if (myPokeName === myPoke2) {
-      setMyWeaponName(myWeapon2 + Math.random());
-    }
+  const openBattleCmdArea = () => {
+    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, weaponCmd: true}));
+    //自分のバトル場のポケモンの技をセットする
+    setMyPokeState(prev => ({...prev, weapon: myPoke.find(poke => poke.name === myPokeState.name)?.weapon + Math.random()}));
   };
 
+  //技名ボタン
+  const battle = () => {
+    setOtherAreaVisible(prev => ({ ...prev, weaponCmd: false}));
+    //相手の技名をセットする
+    setOpPokeState(prev => ({...prev, weapon: opPoke.find(poke => poke.name === opPokeState.name)?.weapon + Math.random()}));
+  };
+
+  //交代ボタン
+  const openChangeCmdArea = () => {
+    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, changeCmd: true}));
+  };
+  
   //控えに交代ボタン
-  const changeMyPoke = () => {
-    setCmdArea(false);  
-    setMyPokeIMGArea(false);
-    setMyPokeNameArea(false);
-    setMyPokeHPArea(false);
+  const changeMyPoke = (changePoke) => { 
+    setMyAreaVisible(prev => ({ ...prev, img: false, name: false, hp: false}));
+    setOtherAreaVisible(prev => ({ ...prev, changeCmd: false}));
     
    //控えポケモンをセット
     setTimeout(() => {
-      if(myPokeName === myPoke1){
-        myHP1.current = myHp;             // 今のHPを保存
-        setMyPokeName(myPoke2);
-        setMyHp(myHP2.current);          // 保存したHPをセット
+
+      //残りHPを保存
+      if(myPokeState.name === myPokeState.poke1Name){
+        myPokeState.poke1Hp = myPokeState.hp;
       }
-      else if(myPokeName === myPoke2){
-        myHP2.current = myHp;
-        setMyPokeName(myPoke1);
-        setMyHp(myHP1.current);
+      else if(myPokeState.name === myPokeState.poke2Name){
+        myPokeState.poke2Hp = myPokeState.hp;
       }
-      setMyPokeIMGArea(true);
-      setMyPokeNameArea(true);
-      setMyPokeHPArea(true);
+      else if(myPokeState.name === myPokeState.poke3Name){
+        myPokeState.poke3Hp = myPokeState.hp;
+      }
+
+      setHp(changePoke);    //次に出すポケモンにカレントのHPをセット
+      setMyPokeState(prev => ({...prev, name: changePoke}));
+      setMyAreaVisible(prev => ({ ...prev, img: true, name: true, hp: true}));
       setSkipTurn(true); // 交代フラグを立てる
     }, 1000);
   }
 
+  //控えポケモンをセット
+  const nextMyPoke = (nextPoke) => {
+    setOtherAreaVisible(prev => ({ ...prev, nextPokeCmd: false}));
+    
+   //控えポケモンをセット
+    setTimeout(() => {
+      setMyPokeState(prev => ({...prev, name: nextPoke}));
+      setHp(nextPoke);    //次に出すポケモンにカレントのHPをセット
+      setMyAreaVisible(prev => ({ ...prev, img: true, name: true, hp: true}));
+      setOtherAreaVisible(prev => ({ ...prev, actionCmd: true}));
+    }, 1000);
+  }
+
+
   //その他関数===============================================================================================
+
+  //ダメージ計算
+  const calcDamage = (compatiTxt) => {
+    let damagePt = 1;
+    if(compatiTxt.includes(batsugunTxt)){
+      damagePt = 100;
+    }
+    else if(compatiTxt.includes(toubaiTxt)){
+      damagePt = 50;
+    }
+    else if(compatiTxt.includes(imahitotsuTxt)){
+      damagePt = 25;
+    }
+    else if(compatiTxt.includes(mukouTxt)){
+      damagePt = 0;
+    }
+    return damagePt;
+  }
 
   //ダメージエフェクト=================================================================
   const myDamage = () => {
-    setMyCompatiArea(true);
-    setMyHp((prevHp) => Math.max(0, prevHp - myDamagePt));  // HPが0未満にならないように修正
+    setMyAreaVisible(prev => ({ ...prev, compati: true}));
+    setMyPokeState(prev => ({...prev,hp: Math.max(0, prev.hp - myPokeState.damage)}));
     const myPokeIMGElem = document.querySelector(".my-poke-img");
 
     //技相性が無効の時はエフェクトをつけない
-    if (myPokeIMGElem && !myCompati.includes(mukouTxt)) {
+    if (myPokeIMGElem && !myPokeState.compati.includes(mukouTxt)) {
       opacityChanges.forEach(({ opacity, delay }) => {
         setTimeout(() => {
           myPokeIMGElem.style.opacity = opacity;
@@ -556,12 +498,12 @@ function App() {
   }
 
   const opDamage = () => {
-    setOpCompatiArea(true);
-    setOpHp((prevHp) => Math.max(0, prevHp - opDamagePt));  // HPが0未満にならないように修正
+    setOpAreaVisible(prev => ({ ...prev, compati: true}));
+    setOpPokeState(prev => ({...prev,hp: Math.max(0, prev.hp - opPokeState.damage)}));    // HPが0未満にならないように修正
     const opPokeIMGElm = document.querySelector(".op-poke-img");
 
     //技相性が無効の時はエフェクトをつけない
-    if (opPokeIMGElm && !opCompati.includes(mukouTxt)) {
+    if (opPokeIMGElm && !opPokeState.compati.includes(mukouTxt)) {
       opacityChanges.forEach(({ opacity, delay }) => {
         setTimeout(() => {
           opPokeIMGElm.style.opacity = opacity;
@@ -575,12 +517,28 @@ function App() {
       if (prev.includes(pokeName)) {
         return prev.filter((name) => name !== pokeName); // クリックで解除
       }
-      if (prev.length < 2) {
-        return [...prev, pokeName]; // 2体まで選択OK
+      if (prev.length < 3) {
+        return [...prev, pokeName]; // 3体まで選択OK
       }
-      return prev; // 2体以上は無視
+      return prev; // 3体以上は無視
     });
   };
+
+  //setTimeout()の簡略化
+  const delay = (fn, ms) => setTimeout(fn, ms);
+
+  //交代時にバトル場のポケモンにカレントのHPをセットする
+  const setHp = (poke) => {
+    if(poke === myPokeState.poke1Name){
+      setMyPokeState(prev => ({...prev, hp: myPokeState.poke1Hp}));
+    }
+    else if(poke === myPokeState.poke2Name){
+      setMyPokeState(prev => ({...prev, hp: myPokeState.poke2Hp}));
+    }
+    else if(poke === myPokeState.poke3Name){
+      setMyPokeState(prev => ({...prev, hp: myPokeState.poke3Hp}));
+    }
+  }
 
 
 //HTML===============================================================================================
@@ -588,7 +546,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        {battleStart && (
+        {otherAreaVisible.start && (
           <div>
             <h1>ポケモンバトル</h1>
             <button onClick={start}>スタート</button>
@@ -606,11 +564,15 @@ function App() {
                 <img src={miraidonIMG} alt="ミライドン" />
                 <p>ミライドン</p>
               </div>
+              <div className="poke-preview">
+                <img src={kurobadoIMG} alt="黒バドレックス" />
+                <p>黒バドレックス</p>
+              </div>
             </div>
 
             <h2>自分のポケモンを選出</h2>
             <div className="my-poke-select">
-              {[{ name: "ホウオウ", img: hououIMG }, { name: "ムゲンダイナ", img: mugendainaIMG }].map((poke) => (
+              {[{ name: "ホウオウ", img: hououIMG }, { name: "ムゲンダイナ", img: mugendainaIMG }, { name: "白バドレックス", img: shirobadoIMG }].map((poke) => (
                 <div
                   key={poke.name}
                   className={`poke-option ${selectedOrder.includes(poke.name) ? "selected" : ""}`}
@@ -624,47 +586,47 @@ function App() {
             </div>
 
             <div className="select-actions">
-              {selectedOrder.length === 2 && (
+              {selectedOrder.length === 3 && (
                 <button onClick={confirmSelection}>バトル開始！</button>
               )}
             </div>
           </div>
         )}
         <div className="battle-area-wrap">
-          {battleArea && (
+          {otherAreaVisible.battle && (
             <div className="battle-area" style={{ display: "flex" }}>
               <div className="op-poke-area-wrap">
                 <div className="txt-area">
-                  {opCompatiArea && (<h1>{opCompati.replace(/[0-9.]/g, '')}</h1>)}
-                  {opDeadArea && (<h1>{opPokeName}は倒れた</h1>)}
-                  {opWeaponArea && opPokeName && opWeaponName && (<h1>{opWeaponName.replace(/[0-9.]/g, '')}</h1>)}
+                  {opAreaVisible.compati && (<h1>{opPokeState.compati.replace(/[0-9.]/g, '')}</h1>)}
+                  {opAreaVisible.dead && (<h1>{opPokeState.name}は倒れた</h1>)}
+                  {opAreaVisible.weapon && opPokeState.name && opPokeState.weapon && (<h1>{opPokeState.weapon.replace(/[0-9.]/g, '')}</h1>)}
                 </div>
                 <div className="op-poke-area">
-                  {opPokeIMGArea && (<img src={opPokeIMG} alt="相手のポケモン" id="opPokeIMG" className="op-poke-img" />)}
-                  {opPokeNameArea && ( <h1 className="op-poke">{opPokeName.replace(/[0-9.]/g, '')}</h1>)}
+                  {opAreaVisible.img && (<img src={opPokeState.img} alt="相手のポケモン" id="opPokeIMG" className="op-poke-img" />)}
+                  {opAreaVisible.name && ( <h1 className="op-poke">{opPokeState.name.replace(/[0-9.]/g, '')}</h1>)}
                 </div>
                 <div className="op-hp-area">
-                  {opPokeHPArea && (
+                  {opAreaVisible.hp && (
                     <div className="op-hp-container">
-                      <div className={`op-hp-bar ${opHp <= 25 ? "low" : opHp <= 50 ? "mid" : ""}`} style={{ width: `${opHp}%` }}></div>
+                      <div className={`op-hp-bar ${opPokeState.hp <= 25 ? "low" : opPokeState.hp <= 50 ? "mid" : ""}`} style={{ width: `${opPokeState.hp}%` }}></div>
                     </div>
                   )}
                 </div>
               </div>
               <div className="my-poke-area-wrap">
                 <div className="txt-area">
-                  {myCompatiArea && (<h1>{myCompati.replace(/[0-9.]/g, '')}</h1>)}
-                  {myDeadArea && (<h1>{myPokeName}は倒れた</h1>)}
-                  {myWeaponArea && myPokeName && myWeaponName && (<h1>{myWeaponName.replace(/[0-9.]/g, '')}</h1>)}
+                  {myAreaVisible.compati && (<h1>{myPokeState.compati.replace(/[0-9.]/g, '')}</h1>)}
+                  {myAreaVisible.dead && (<h1>{myPokeState.name}は倒れた</h1>)}
+                  {myAreaVisible.weapon && myPokeState.name && myPokeState.weapon && (<h1>{myPokeState.weapon.replace(/[0-9.]/g, '')}</h1>)}
                 </div>
                 <div className="my-poke-area">
-                  {myPokeIMGArea && (<img src={myPokeIMG} alt="自分のポケモン" id="myPokeIMG" className="my-poke-img" />)}
-                  {myPokeNameArea && ( <h1 className="my-poke">{myPokeName}</h1>)}
+                  {myAreaVisible.img && (<img src={myPokeState.img} alt="自分のポケモン" id="myPokeIMG" className="my-poke-img" />)}
+                  {myAreaVisible.name && ( <h1 className="my-poke">{myPokeState.name}</h1>)}
                 </div>
                 <div className="my-hp-area">
-                  {myPokeHPArea && (
+                  {myAreaVisible.hp && (
                     <div className="my-hp-container">
-                      <div   className={`my-hp-bar ${myHp <= 25 ? "low" : myHp <= 50 ? "mid" : ""}`}style={{ width: `${myHp}%` }}></div>
+                      <div   className={`my-hp-bar ${myPokeState.hp <= 25 ? "low" : myPokeState.hp <= 50 ? "mid" : ""}`}style={{ width: `${myPokeState.hp}%` }}></div>
                     </div>
                   )}
                 </div>
@@ -672,16 +634,36 @@ function App() {
             </div>
           )}
           <div className="cmd-area">
-            {cmdArea && (
+            {otherAreaVisible.actionCmd && (
               <div className="cmd-buttons">
-                <button onClick={battle}>たたかう</button>
-                {myPokeName === myPoke1 && myHP2.current > 0 && <button onClick={changeMyPoke}>{myPoke2}</button>}
-                {myPokeName === myPoke2 && myHP1.current > 0 && <button onClick={changeMyPoke}>{myPoke1}</button>}
+                <button onClick={openBattleCmdArea}>たたかう</button>
+                {myPokeState.life != 1 && <button onClick={openChangeCmdArea}>交代</button>}
+              </div>
+            )}
+            {otherAreaVisible.weaponCmd && (
+              <div className="cmd-buttons">
+                <button onClick={battle}>{myPokeState.weapon.replace(/[0-9.]/g, '')}</button>
+                <button onClick={backCmd}>戻る</button>
+              </div>
+            )}
+            {otherAreaVisible.changeCmd && (
+              <div className="cmd-buttons">
+                {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && <button onClick={() => changeMyPoke(myPokeState.poke1Name)}>{myPokeState.poke1Name}</button>}
+                {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && <button onClick={() => changeMyPoke(myPokeState.poke2Name)}>{myPokeState.poke2Name}</button>}
+                {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && <button onClick={() => changeMyPoke(myPokeState.poke3Name)}>{myPokeState.poke3Name}</button>}
+                <button onClick={backCmd}>戻る</button>
+              </div>
+            )}            
+            {otherAreaVisible.nextPokeCmd && (
+              <div className="cmd-buttons">
+                {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && <button onClick={() => nextMyPoke(myPokeState.poke1Name)}>{myPokeState.poke1Name}</button>}
+                {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && <button onClick={() => nextMyPoke(myPokeState.poke2Name)}>{myPokeState.poke2Name}</button>}
+                {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && <button onClick={() => nextMyPoke(myPokeState.poke3Name)}>{myPokeState.poke3Name}</button>}
               </div>
             )}
           </div>
         </div>
-        {!battleStart && !battleArea && !cmdArea &&(
+        {!otherAreaVisible.start && !otherAreaVisible.battle && !otherAreaVisible.actionCmd &&(
           <h1>{result.current}</h1>
         )}
       </header>
