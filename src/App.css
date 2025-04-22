@@ -1,11 +1,11 @@
 #root {
-  width: 80%;
-  margin: 0 auto;
-  /* padding: 2rem; */
-  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .App {
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,11 +15,179 @@
 
 .App-header {
   width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
 }
+
+/* 共通=============================================================================== */
+
+
+
+/* 初期画面============================================================================ */
+
+.start-screen {
+  background-image: url('/img/other/top.png'); /* 画像パスはプロジェクトに合わせて */
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+  color: white;
+  font-family: 'Arial', sans-serif;
+}
+
+.start-screen h1 {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.start-screen button {
+  background-color: white;
+  color: black;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  font-size: 1.2rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transform: translateY(0);
+}
+
+.start-screen button:hover {
+  background-color: #f1c40f; 
+  color: white;
+  box-shadow: 0 8px 20px rgba(241, 196, 15, 0.7); 
+  transform: translateY(-4px); 
+}
+
+/* 選出画面============================================================================ */
+
+.select-area {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 下部ボタン配置のためOK */
+  padding: 40px 20px;
+  background-color: #e6f7ff;
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  box-sizing: border-box;
+}
+
+.select-area > .content {
+  height: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 10px; 
+  max-width: 100%;    
+}
+
+.op-poke-select, .my-poke-select {
+  height: 30%;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.poke-option, .poke-preview {
+  height: 100%;
+  cursor: pointer;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  transition: 0.2s;
+}
+
+.poke-option {
+  border: 2px solid lightgray; /* ← 選択前も枠を表示 */
+  background-color: transparent; /* デフォルトでは背景なし */
+}
+
+.poke-preview {
+  border: 2px solid transparent;
+}
+
+.poke-option img, .poke-preview img {
+  width: auto;
+  height: 50%;
+}
+
+.poke-option p,
+.poke-preview p {
+  margin-top: 10px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #333;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+.poke-option.selected {
+  border-color: #ffeb3b;
+  background-color: #fffde7;
+}
+
+.order-num{
+  display: block;
+  margin-top: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.select-actions {
+  width: 100%;
+  height: 100px; /* ボタン分のスペース */
+  display: flex;
+  justify-content: center; /* ← 横中央 */
+  align-items: center;     /* ← 縦中央（あまり関係ないけど整える） */
+  overflow: hidden; /* ← これを追加して内部の高さ変動を抑える */
+}
+
+.select-actions button {
+  height: 50px;
+  padding: 0 40px;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  box-sizing: border-box;
+  border: none;
+}
+
+.select-actions button.active {
+  background-color: #94f097;
+  transition: all 0.2s ease;
+  transform: scale(1); /* 初期状態 */
+}
+
+.select-actions button.active:hover {
+  transform: scale(1.1); /* 拡大する */
+  background-color: #17e71e; /* 明るめの赤に変化（任意） */
+  font-weight: bold;
+}
+
+.select-actions button.inactive {
+  background-color: gray;
+}
+
+/* 対戦画面============================================================================ */
 
 .battle-area-wrap{
   width: 100%;
@@ -126,6 +294,22 @@
   transition: width 0.5s ease, background-color 0.3s ease;
 }
 
+.my-hp-bar.mid,
+.op-hp-bar.mid {
+  background-color: #ffcc00; /* 黄色 */
+}
+
+.my-hp-bar.low,
+.op-hp-bar.low {
+  background-color: #ff0000; /* 赤 */
+}
+
+/* ポケモンが死亡した場合に適用されるクラス */
+.pokemon-dead {
+  animation: sinkAnimation 2s forwards;
+}
+
+/* コマンドボタン======================================================= */
 .cmd-area {
   height: 80px;
   display: flex;
@@ -155,6 +339,7 @@
 }
 
 
+/* アニメーション========================================================= */
 @keyframes sinkAnimation {
   0% {
     transform: translateY(0);
@@ -164,62 +349,4 @@
     transform: translateY(100px); /* 画像が下に100px沈む */
     opacity: 0;
   }
-}
-
-/* ポケモンが死亡した場合に適用されるクラス */
-.pokemon-dead {
-  animation: sinkAnimation 2s forwards;
-}
-
-.my-hp-bar.mid,
-.op-hp-bar.mid {
-  background-color: #ffcc00; /* 黄色 */
-}
-
-.my-hp-bar.low,
-.op-hp-bar.low {
-  background-color: #ff0000; /* 赤 */
-}
-
-.select-area {
-  text-align: center;
-  margin-top: 40px;
-}
-
-.op-poke-select, .my-poke-select {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin: 20px 0;
-}
-
-.poke-option, .poke-preview {
-  cursor: pointer;
-  text-align: center;
-  border: 2px solid transparent;
-  padding: 10px;
-  border-radius: 10px;
-  transition: 0.2s;
-}
-
-.poke-option img, .poke-preview img {
-  width: 100px;
-  height: auto;
-}
-
-.poke-option.selected {
-  border: 2px solid #00f;
-  background-color: #eef;
-}
-
-.poke-option span {
-  display: block;
-  margin-top: 5px;
-  font-weight: bold;
-  color: #333;
-}
-
-.select-actions button {
-  margin: 10px;
-  padding: 10px 20px;
 }
