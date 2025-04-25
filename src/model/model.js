@@ -46,6 +46,7 @@
       bomb1: new Audio('/sound/weapon/bomb1.mp3'),
       flash1: new Audio('/sound/weapon/flash1.mp3'),
       laser1: new Audio('/sound/weapon/laser1.mp3'),
+      esper1: new Audio('/sound/weapon/esper1.mp3'),
     },
     damage: {
       batsugun: new Audio('/sound/damage/batsugun.mp3'),
@@ -72,16 +73,16 @@
 
   //ポケモン情報　画像,鳴き声,タイプ,能力値,技
   export const pokeInfo = {
-    ディアルガ: { img: pokeImgs.diaruga, voice: sounds.pokeVoice.diaruga, type1: "ドラゴン", type2: "はがね", speed: 110, weapon1: "ときのほうこう" },
+    ディアルガ: { img: pokeImgs.diaruga, voice: sounds.pokeVoice.diaruga, type1: "ドラゴン", type2: "はがね", speed: 110, weapon1: "ときのほうこう", weapon2: "ラスターカノン" },
     パルキア: { img: pokeImgs.parukia, voice: sounds.pokeVoice.parukia, type1: "ドラゴン", type2: "みず", speed: 120, weapon1: "あくうせつだん", weapon2: "ハイドロポンプ" },
     ルカリオ: { img: pokeImgs.rukario, voice: sounds.pokeVoice.rukario, type1: "かくとう", type2: "はがね", speed: 110, weapon1: "はどうだん", weapon2: "ラスターカノン" },
     ピカチュウ: { img: pokeImgs.pikachu, voice: sounds.pokeVoice.pikachu, type1: "でんき", type2: "", speed: 110, weapon1: "１０万ボルト", weapon2: "アイアンテール" },
-    リザードン: { img: pokeImgs.rizadon, voice: sounds.pokeVoice.rizadon, type1: "ほのお", type2: "ひこう", speed: 120, weapon1: "かえんほうしゃ" },
-    ゲンガー: { img: pokeImgs.genga, voice: sounds.pokeVoice.genga, type1: "ゴースト", type2: "どく", speed: 130, weapon1: "シャドーボール" },
-    ラグラージ: { img: pokeImgs.raguraji, voice: sounds.pokeVoice.raguraji, type1: "みず", type2: "じめん", speed: 80, weapon1: "じしん" },
+    リザードン: { img: pokeImgs.rizadon, voice: sounds.pokeVoice.rizadon, type1: "ほのお", type2: "ひこう", speed: 120, weapon1: "かえんほうしゃ", weapon2: "エアスラッシュ" },
+    ゲンガー: { img: pokeImgs.genga, voice: sounds.pokeVoice.genga, type1: "ゴースト", type2: "どく", speed: 130, weapon1: "シャドーボール", weapon2: "ヘドロばくだん" },
+    ラグラージ: { img: pokeImgs.raguraji, voice: sounds.pokeVoice.raguraji, type1: "みず", type2: "じめん", speed: 80, weapon1: "アクアブレイク", weapon2: "じしん" },
     マニューラ: { img: pokeImgs.manyura, voice: sounds.pokeVoice.manyura, type1: "こおり", type2: "あく", speed: 145, weapon1: "つららおとし", weapon2: "じごくづき" },
-    カイリキー: { img: pokeImgs.kairiki, voice: sounds.pokeVoice.kairiki, type1: "かくとう", type2: "", speed: 75, weapon1: "ばくれつパンチ" },
-    サーナイト: { img: pokeImgs.sanaito, voice: sounds.pokeVoice.sanaito, type1: "エスパー", type2: "フェアリー", speed: 100, weapon1: "ムーンフォース" },
+    カイリキー: { img: pokeImgs.kairiki, voice: sounds.pokeVoice.kairiki, type1: "かくとう", type2: "", speed: 75, weapon1: "ばくれつパンチ", weapon2: "ほのおのパンチ" },
+    サーナイト: { img: pokeImgs.sanaito, voice: sounds.pokeVoice.sanaito, type1: "エスパー", type2: "フェアリー", speed: 100, weapon1: "ムーンフォース", weapon2: "サイコキネシス" },
     メガヤンマ: { img: pokeImgs.megayanma, voice: sounds.pokeVoice.megayanma, type1: "むし", type2: "ひこう", speed: 115, weapon1: "むしのさざめき", weapon2: "エアスラッシュ" },
     ドダイトス: { img: pokeImgs.dodaitosu, voice: sounds.pokeVoice.dodaitosu, type1: "くさ", type2: "じめん", speed: 76, weapon1: "タネばくだん", weapon2: "じしん" },
   };
@@ -89,17 +90,21 @@
   //技情報　タイプ,SE
   export const weaponInfo = {
     かえんほうしゃ: { type: "ほのお", sound: sounds.weapon.fire1 },
+    ほのおのパンチ: { type: "ほのお", sound: sounds.weapon.hit3 },
     ハイドロポンプ: { type: "みず", sound: sounds.weapon.water1 },
+    アクアブレイク: { type: "みず", sound: sounds.weapon.hit2 },
     "１０万ボルト": { type: "でんき", sound: sounds.weapon.electric1 },
     タネばくだん: { type: "くさ", sound: sounds.weapon.bomb1 },
     はどうだん: { type: "かくとう", sound: sounds.weapon.ball1 },
     ばくれつパンチ: { type: "かくとう", sound: sounds.weapon.hit3 },
+    サイコキネシス: { type: "エスパー", sound: sounds.weapon.esper1 },
     むしのさざめき: { type: "むし", sound: sounds.weapon.laser1 },
     シャドーボール: { type: "ゴースト", sound: sounds.weapon.ball1 },
     ときのほうこう: { type: "ドラゴン", sound: sounds.weapon.beam1 },
     あくうせつだん: { type: "ドラゴン", sound: sounds.weapon.slash1 },
     ラスターカノン: { type: "はがね", sound: sounds.weapon.beam2 },
     アイアンテール: { type: "はがね", sound: sounds.weapon.hit1 },
+    ヘドロばくだん: { type: "どく", sound: sounds.weapon.bomb1 },
     じしん: { type: "じめん", sound: sounds.weapon.ground1 },
     エアスラッシュ: { type: "ひこう", sound: sounds.weapon.slash2 },
     つららおとし: { type: "こおり", sound: sounds.weapon.ice1 },

@@ -16,7 +16,7 @@ export function useBattleHandlers(battleState) {
     setMyTurnTrigger,
     skipTurn, setSkipTurn,
     resultText, setResultText,
-    loopAudioRef, turnCnt, changePokeName,
+    loopAudioRef, turnCnt, changePokeName, beforePokeName,
     defaultAreaVisible,
     defaultPokeState,
     defaultPokeStateTrigger,
@@ -116,6 +116,7 @@ export function useBattleHandlers(battleState) {
     updateTurnCnt();
     console.log(`${changePoke}に交代を選択`);
     setOtherAreaVisible(prev => ({ ...prev, changeCmd: false }));
+    beforePokeName.current = myPokeState.name;
     changePokeName.current = changePoke;
     setSkipTurn(true);
   }
@@ -278,8 +279,9 @@ export function useBattleHandlers(battleState) {
       }
       //交代エフェクトが終わったら、相手の技をセット
       else if (skipTurn) {
-        const weaponName = pokeInfo[opPokeState.name].weapon1;
-        delay(() => handleStateChange("opWeapon", weaponName), 3000);
+        // const weaponName = pokeInfo[opPokeState.name].weapon1;
+        console.log(`skipTurn:${skipTurn}`);
+        delay(() => choiseOpWeapon(), 3000);
       }
     }
     //２体目以降の相手の画像がセットされたら表示制御
@@ -297,14 +299,14 @@ export function useBattleHandlers(battleState) {
   const toDoWhenSetWeapon = (who) => {
     //自分の技がセットされたら、相手の技をセット
     if (who === "my") {
-      handleStateChange("opWeapon", pokeInfo[opPokeState.name].weapon1);
+      choiseOpWeapon();
     }
     //相手の技がセットされたら、先攻後攻を決める
     else if (who === "op") {
       const mySpeed = pokeInfo[myPokeState.name].speed;
       const opSpeed = pokeInfo[opPokeState.name].speed;
 
-      if(skipTurn){
+      if (skipTurn) {
         handleStateChange("myTurn", "after");
       }
       // 同速の場合ランダムで先攻を決める
@@ -639,6 +641,25 @@ export function useBattleHandlers(battleState) {
     delay(() => setOtherAreaVisible(prev => ({ ...prev, text: false })), delayBase + 2000);
     delay(() => setTextVisible(prev => ({ ...prev, text: false })), delayBase + 2000);
   };
+
+  //相手が自分のバトル場のポケモンに対して、相性の良い技をセットする
+  const choiseOpWeapon = () => {
+    const myPoke = skipTurn ? beforePokeName.current : myPokeState.name;
+    //２つの技で相手への相性を比較する
+    const attackType1 = weaponInfo[pokeInfo[opPokeState.name].weapon1].type;
+    const attackType2 = weaponInfo[pokeInfo[opPokeState.name].weapon2].type;
+    const [defType1, defType2] = [pokeInfo[myPoke].type1, pokeInfo[myPoke].type2];
+    const multiplier1 = (typeChart[attackType1][defType1] ?? 1) * (typeChart[attackType1][defType2] ?? 1);
+    const multiplier2 = (typeChart[attackType2][defType1] ?? 1) * (typeChart[attackType2][defType2] ?? 1);
+
+    //相性が良い方をセットする　どちらも同じ場合は技１をセットする
+    if (multiplier1 >= multiplier2) {
+      handleStateChange("opWeapon", pokeInfo[opPokeState.name].weapon1);
+    }
+    else {
+      handleStateChange("opWeapon", pokeInfo[opPokeState.name].weapon2);
+    }
+  }
 
   //残りHPを保存
   const saveHp = (who) => {

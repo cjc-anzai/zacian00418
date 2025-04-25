@@ -32,6 +32,7 @@ export function useBattleState() {
   const [myTurnTrigger, setMyTurnTrigger] = useState(0);
   const [skipTurn, setSkipTurn] = useState(false);
   const changePokeName = useRef("");
+  const beforePokeName = useRef("");
   const [resultText, setResultText] = useState("");
 
   return {
@@ -47,7 +48,7 @@ export function useBattleState() {
     myTurnTrigger, setMyTurnTrigger,
     skipTurn, setSkipTurn,
     resultText, setResultText,
-    loopAudioRef, turnCnt, changePokeName,
+    loopAudioRef, turnCnt, changePokeName, beforePokeName,
 
     defaultAreaVisible, defaultPokeState, defaultPokeStateTrigger,
   };
