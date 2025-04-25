@@ -1,0 +1,54 @@
+import React from "react";
+
+const SelectScreen = ({ pokeImgs, selectedOrder, handleSelect, confirmSelection }) => {
+    return (
+      <div className="select-area">
+        <div className="content">
+          <h2>相手のポケモン</h2>
+          <div className="op-poke-select">
+            <div className="poke-preview">
+              <img src={pokeImgs.diaruga} alt="ディアルガ" />
+              <p>ディアルガ</p>
+            </div>
+            <div className="poke-preview">
+              <img src={pokeImgs.genga} alt="ゲンガー" />
+              <p>ゲンガー</p>
+            </div>
+            <div className="poke-preview">
+              <img src={pokeImgs.rizadon} alt="リザードン" />
+              <p>リザードン</p>
+            </div>
+          </div>
+  
+          <h2>自分のポケモンを選出</h2>
+          <div className="my-poke-select">
+            {[{ name: "パルキア", img: pokeImgs.parukia }, { name: "ルカリオ", img: pokeImgs.rukario }, { name: "ピカチュウ", img: pokeImgs.pikachu }].map((poke) => (
+              <div
+                key={poke.name}
+                className={`poke-option ${selectedOrder.includes(poke.name) ? "selected" : ""}`}
+                onClick={() => handleSelect(poke.name)}
+              >
+                <img src={poke.img} alt={poke.name} />
+                <p>{poke.name}</p>
+                <p className="order-num">
+                  {selectedOrder.includes(poke.name) && <span>{selectedOrder.indexOf(poke.name) + 1}番目</span>}
+                </p>
+              </div>
+            ))}
+          </div>
+  
+          <div className="select-actions">
+            <button
+              className={selectedOrder.length === 3 ? "active" : "inactive"}
+              onClick={confirmSelection}
+              disabled={selectedOrder.length !== 3}
+            >
+              バトル開始！
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  export default SelectScreen;
