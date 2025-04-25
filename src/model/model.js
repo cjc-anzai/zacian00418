@@ -22,13 +22,30 @@
       pikachu: new Audio('/sound/pokeVoice/pikachu.wav'),
       genga: new Audio('/sound/pokeVoice/genga.wav'),
       rizadon: new Audio('/sound/pokeVoice/rizadon.wav'),
+      raguraji: new Audio('/sound/pokeVoice/raguraji.wav'),
+      manyura: new Audio('/sound/pokeVoice/manyura.mp3'),
+      dodaitosu: new Audio('/sound/pokeVoice/dodaitosu.mp3'),
+      megayanma: new Audio('/sound/pokeVoice/megayanma.mp3'),
+      sanaito: new Audio('/sound/pokeVoice/sanaito.wav'),
+      kairiki: new Audio('/sound/pokeVoice/kairiki.wav'),
     },
     weapon: {
       beam1: new Audio('/sound/weapon/beam1.mp3'),
+      beam2: new Audio('/sound/weapon/beam2.mp3'),
       slash1: new Audio('/sound/weapon/slash1.mp3'),
+      slash2: new Audio('/sound/weapon/slash2.mp3'),
       electric1: new Audio('/sound/weapon/electric1.mp3'),
       fire1: new Audio('/sound/weapon/fire1.mp3'),
-      ball1: new Audio('/sound/weapon/ball1.mp3')
+      ball1: new Audio('/sound/weapon/ball1.mp3'),
+      water1: new Audio('/sound/weapon/water1.mp3'),
+      hit1: new Audio('/sound/weapon/hit1.mp3'),
+      hit2: new Audio('/sound/weapon/hit2.mp3'),
+      hit3: new Audio('/sound/weapon/hit3.mp3'),
+      ice1: new Audio('/sound/weapon/ice1.mp3'),
+      ground1: new Audio('/sound/weapon/ground1.mp3'),
+      bomb1: new Audio('/sound/weapon/bomb1.mp3'),
+      flash1: new Audio('/sound/weapon/flash1.mp3'),
+      laser1: new Audio('/sound/weapon/laser1.mp3'),
     },
     damage: {
       batsugun: new Audio('/sound/damage/batsugun.mp3'),
@@ -45,26 +62,49 @@
     pikachu: '/img/poke/pikachu.png',
     genga: '/img/poke/genga.png',
     rizadon: '/img/poke/rizadon.png',
+    raguraji: '/img/poke/raguraji.png',
+    manyura: '/img/poke/manyura.png',
+    dodaitosu: '/img/poke/dodaitosu.png',
+    megayanma: '/img/poke/megayanma.png',
+    sanaito: '/img/poke/sanaito.png',
+    kairiki: '/img/poke/kairiki.png',
   };
 
   //ポケモン情報　画像,鳴き声,タイプ,能力値,技
   export const pokeInfo = {
-    ディアルガ: { img: pokeImgs.diaruga, voice: sounds.pokeVoice.diaruga, type1: "ドラゴン", type2: "はがね", speed: 110, weapon: "ときのほうこう" },
-    パルキア: { img: pokeImgs.parukia, voice: sounds.pokeVoice.parukia, type1: "ドラゴン", type2: "みず", speed: 120, weapon: "あくうせつだん" },
-    ルカリオ: { img: pokeImgs.rukario, voice: sounds.pokeVoice.rukario, type1: "かくとう", type2: "はがね", speed: 110, weapon: "はどうだん" },
-    ピカチュウ: { img: pokeImgs.pikachu, voice: sounds.pokeVoice.pikachu, type1: "でんき", type2: "", speed: 110, weapon: "１０万ボルト" },
-    リザードン: { img: pokeImgs.rizadon, voice: sounds.pokeVoice.rizadon, type1: "ほのお", type2: "ひこう", speed: 120, weapon: "かえんほうしゃ" },
-    ゲンガー: { img: pokeImgs.genga, voice: sounds.pokeVoice.genga, type1: "ゴースト", type2: "どく", speed: 130, weapon: "シャドーボール" }
+    ディアルガ: { img: pokeImgs.diaruga, voice: sounds.pokeVoice.diaruga, type1: "ドラゴン", type2: "はがね", speed: 110, weapon1: "ときのほうこう" },
+    パルキア: { img: pokeImgs.parukia, voice: sounds.pokeVoice.parukia, type1: "ドラゴン", type2: "みず", speed: 120, weapon1: "あくうせつだん", weapon2: "ハイドロポンプ" },
+    ルカリオ: { img: pokeImgs.rukario, voice: sounds.pokeVoice.rukario, type1: "かくとう", type2: "はがね", speed: 110, weapon1: "はどうだん", weapon2: "ラスターカノン" },
+    ピカチュウ: { img: pokeImgs.pikachu, voice: sounds.pokeVoice.pikachu, type1: "でんき", type2: "", speed: 110, weapon1: "１０万ボルト", weapon2: "アイアンテール" },
+    リザードン: { img: pokeImgs.rizadon, voice: sounds.pokeVoice.rizadon, type1: "ほのお", type2: "ひこう", speed: 120, weapon1: "かえんほうしゃ" },
+    ゲンガー: { img: pokeImgs.genga, voice: sounds.pokeVoice.genga, type1: "ゴースト", type2: "どく", speed: 130, weapon1: "シャドーボール" },
+    ラグラージ: { img: pokeImgs.raguraji, voice: sounds.pokeVoice.raguraji, type1: "みず", type2: "じめん", speed: 80, weapon1: "じしん" },
+    マニューラ: { img: pokeImgs.manyura, voice: sounds.pokeVoice.manyura, type1: "こおり", type2: "あく", speed: 145, weapon1: "つららおとし", weapon2: "じごくづき" },
+    カイリキー: { img: pokeImgs.kairiki, voice: sounds.pokeVoice.kairiki, type1: "かくとう", type2: "", speed: 75, weapon1: "ばくれつパンチ" },
+    サーナイト: { img: pokeImgs.sanaito, voice: sounds.pokeVoice.sanaito, type1: "エスパー", type2: "フェアリー", speed: 100, weapon1: "ムーンフォース" },
+    メガヤンマ: { img: pokeImgs.megayanma, voice: sounds.pokeVoice.megayanma, type1: "むし", type2: "ひこう", speed: 115, weapon1: "むしのさざめき", weapon2: "エアスラッシュ" },
+    ドダイトス: { img: pokeImgs.dodaitosu, voice: sounds.pokeVoice.dodaitosu, type1: "くさ", type2: "じめん", speed: 76, weapon1: "タネばくだん", weapon2: "じしん" },
   };
 
   //技情報　タイプ,SE
   export const weaponInfo = {
+    かえんほうしゃ: { type: "ほのお", sound: sounds.weapon.fire1 },
+    ハイドロポンプ: { type: "みず", sound: sounds.weapon.water1 },
+    "１０万ボルト": { type: "でんき", sound: sounds.weapon.electric1 },
+    タネばくだん: { type: "くさ", sound: sounds.weapon.bomb1 },
+    はどうだん: { type: "かくとう", sound: sounds.weapon.ball1 },
+    ばくれつパンチ: { type: "かくとう", sound: sounds.weapon.hit3 },
+    むしのさざめき: { type: "むし", sound: sounds.weapon.laser1 },
+    シャドーボール: { type: "ゴースト", sound: sounds.weapon.ball1 },
     ときのほうこう: { type: "ドラゴン", sound: sounds.weapon.beam1 },
     あくうせつだん: { type: "ドラゴン", sound: sounds.weapon.slash1 },
-    はどうだん: { type: "かくとう", sound: sounds.weapon.ball1 },
-    "１０万ボルト": { type: "でんき", sound: sounds.weapon.electric1 },
-    かえんほうしゃ: { type: "ほのお", sound: sounds.weapon.fire1 },
-    シャドーボール: { type: "ゴースト", sound: sounds.weapon.ball1 }
+    ラスターカノン: { type: "はがね", sound: sounds.weapon.beam2 },
+    アイアンテール: { type: "はがね", sound: sounds.weapon.hit1 },
+    じしん: { type: "じめん", sound: sounds.weapon.ground1 },
+    エアスラッシュ: { type: "ひこう", sound: sounds.weapon.slash2 },
+    つららおとし: { type: "こおり", sound: sounds.weapon.ice1 },
+    じごくづき: { type: "あく", sound: sounds.weapon.hit2 },
+    ムーンフォース: { type: "フェアリー", sound: sounds.weapon.flash1 },
   }
 
   //技相性テキスト

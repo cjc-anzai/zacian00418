@@ -54,7 +54,7 @@ export function useBattleHandlers(battleState) {
     playSe("decide");
     stopBgm();
     setBgm(sounds.bgm.battle);
-    sounds.bgm.battle.play();
+    delay(() => sounds.bgm.battle.play(), 50);
 
     setOtherAreaVisible(prev => ({ ...prev, isSelecting: false, battle: true }));
 
@@ -70,17 +70,19 @@ export function useBattleHandlers(battleState) {
         [array[i], array[j]] = [array[j], array[i]]; // Swap elements
       }
     };
-    
-    const opCandidates = ["ディアルガ", "ゲンガー", "リザードン"]
+
+    const opCandidates = ["ディアルガ", "ゲンガー", "リザードン", "ラグラージ", "カイリキー", "サーナイト"]
       .map(name => ({ name, ...pokeInfo[name] }));
-    
+
     shuffleArray(opCandidates); // Fisher-Yatesアルゴリズムでシャッフル
-    
-    const [o1, o2, o3] = opCandidates.map(p => p.name);
+
+    // シャッフル後、最初の3体を選ぶ
+    const [o1, o2, o3] = opCandidates.slice(0, 3).map(p => p.name);
     Object.assign(opPokeState, { poke1Name: o1, poke2Name: o2, poke3Name: o3 });
+    console.log(`相手1体目：${opPokeState.poke1Name}/2体目：${opPokeState.poke2Name}/3体目：${opPokeState.poke3Name}`);
     setOpPokeState(prev => ({ ...prev, name: o1 }));
-    
   };
+
 
   //たたかうボタン押下時、コマンド表示を切り替える
   const openBattleCmdArea = () => {
@@ -276,7 +278,7 @@ export function useBattleHandlers(battleState) {
       }
       //交代エフェクトが終わったら、相手の技をセット
       else if (skipTurn) {
-        const weaponName = pokeInfo[opPokeState.name].weapon;
+        const weaponName = pokeInfo[opPokeState.name].weapon1;
         delay(() => handleStateChange("opWeapon", weaponName), 3000);
       }
     }
@@ -291,27 +293,30 @@ export function useBattleHandlers(battleState) {
     }
   }
 
-//stateにweaponがセットされたときの処理
-const toDoWhenSetWeapon = (who) => {
-  //自分の技がセットされたら、相手の技をセット
-  if (who === "my") {
-    handleStateChange("opWeapon", pokeInfo[opPokeState.name].weapon);
-  } 
-  //相手の技がセットされたら、先攻後攻を決める
-  else if (who === "op") {
-    const mySpeed = pokeInfo[myPokeState.name].speed;
-    const opSpeed = pokeInfo[opPokeState.name].speed;
-    
-    // 同速の場合ランダムで先攻を決める
-    if (mySpeed === opSpeed) {
-      const isMyTurnFirst = Math.random() < 0.5;
-      console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
-      handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
-    } else {
-      handleStateChange("myTurn", mySpeed > opSpeed && !skipTurn ? "first" : "after");
+  //stateにweaponがセットされたときの処理
+  const toDoWhenSetWeapon = (who) => {
+    //自分の技がセットされたら、相手の技をセット
+    if (who === "my") {
+      handleStateChange("opWeapon", pokeInfo[opPokeState.name].weapon1);
     }
-  }
-};
+    //相手の技がセットされたら、先攻後攻を決める
+    else if (who === "op") {
+      const mySpeed = pokeInfo[myPokeState.name].speed;
+      const opSpeed = pokeInfo[opPokeState.name].speed;
+
+      if(skipTurn){
+        handleStateChange("myTurn", "after");
+      }
+      // 同速の場合ランダムで先攻を決める
+      else if (mySpeed === opSpeed) {
+        const isMyTurnFirst = Math.random() < 0.5;
+        console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
+        handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
+      } else {
+        handleStateChange("myTurn", mySpeed > opSpeed ? "first" : "after");
+      }
+    }
+  };
 
 
   //先攻後攻がセットされたら、先攻の技をセットする
@@ -343,11 +348,11 @@ const toDoWhenSetWeapon = (who) => {
     );
 
     const setCompatiText = () => {
-      const attacker = isMy ? myPokeState.name : opPokeState.name;
+      const state = isMy ? myPokeState : opPokeState;
       const defender = isMy ? opPokeState.name : myPokeState.name;
       const textKey = isMy ? "opText" : "myText";
 
-      const attackType = weaponInfo[pokeInfo[attacker].weapon].type;
+      const attackType = weaponInfo[state.weapon].type;
       const [defType1, defType2] = [pokeInfo[defender].type1, pokeInfo[defender].type2];
       const multiplier = (typeChart[attackType][defType1] ?? 1) * (typeChart[attackType][defType2] ?? 1);
       const text = makeCompatiText(multiplier) + "compatiText" + multiplier;

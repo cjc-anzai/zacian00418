@@ -37,9 +37,15 @@ const CommandArea = ({
         <div className="cmd-area">
           <button
             className="weapon-cmd-btn"
-            onClick={() => battle(pokeInfo[myPokeState.name].weapon)}
+            onClick={() => battle(pokeInfo[myPokeState.name].weapon1)}
           >
-            {pokeInfo[myPokeState.name].weapon}
+            {pokeInfo[myPokeState.name].weapon1}
+          </button>
+          <button
+            className="weapon-cmd-btn"
+            onClick={() => battle(pokeInfo[myPokeState.name].weapon2)}
+          >
+            {pokeInfo[myPokeState.name].weapon2}
           </button>
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>

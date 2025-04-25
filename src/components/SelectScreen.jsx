@@ -18,11 +18,25 @@ const SelectScreen = ({ pokeImgs, selectedOrder, handleSelect, confirmSelection 
               <img src={pokeImgs.rizadon} alt="リザードン" />
               <p>リザードン</p>
             </div>
+            <div className="poke-preview">
+              <img src={pokeImgs.raguraji} alt="ラグラージ" />
+              <p>ラグラージ</p>
+            </div>
+            <div className="poke-preview">
+              <img src={pokeImgs.kairiki} alt="カイリキー" />
+              <p>カイリキー</p>
+            </div>
+            <div className="poke-preview">
+              <img src={pokeImgs.sanaito} alt="サーナイト" />
+              <p>サーナイト</p>
+            </div>
           </div>
   
           <h2>自分のポケモンを選出</h2>
           <div className="my-poke-select">
-            {[{ name: "パルキア", img: pokeImgs.parukia }, { name: "ルカリオ", img: pokeImgs.rukario }, { name: "ピカチュウ", img: pokeImgs.pikachu }].map((poke) => (
+            {[{ name: "パルキア", img: pokeImgs.parukia }, { name: "ルカリオ", img: pokeImgs.rukario },
+              { name: "ピカチュウ", img: pokeImgs.pikachu }, { name: "マニューラ", img: pokeImgs.manyura },
+              { name: "ドダイトス", img: pokeImgs.dodaitosu }, { name: "メガヤンマ", img: pokeImgs.megayanma },].map((poke) => (
               <div
                 key={poke.name}
                 className={`poke-option ${selectedOrder.includes(poke.name) ? "selected" : ""}`}
