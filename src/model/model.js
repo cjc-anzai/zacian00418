@@ -50,9 +50,9 @@
   //ポケモン情報　画像,鳴き声,タイプ,能力値,技
   export const pokeInfo = {
     ディアルガ: { img: pokeImgs.diaruga, voice: sounds.pokeVoice.diaruga, type1: "ドラゴン", type2: "はがね", speed: 110, weapon: "ときのほうこう" },
-    パルキア: { img: pokeImgs.parukia, voice: sounds.pokeVoice.parukia, type1: "ドラゴン", type2: "みず", speed: 200, weapon: "あくうせつだん" },
-    ルカリオ: { img: pokeImgs.rukario, voice: sounds.pokeVoice.rukario, type1: "かくとう", type2: "はがね", speed: 109, weapon: "はどうだん" },
-    ピカチュウ: { img: pokeImgs.pikachu, voice: sounds.pokeVoice.pikachu, type1: "でんき", type2: "", speed: 111, weapon: "１０万ボルト" },
+    パルキア: { img: pokeImgs.parukia, voice: sounds.pokeVoice.parukia, type1: "ドラゴン", type2: "みず", speed: 120, weapon: "あくうせつだん" },
+    ルカリオ: { img: pokeImgs.rukario, voice: sounds.pokeVoice.rukario, type1: "かくとう", type2: "はがね", speed: 110, weapon: "はどうだん" },
+    ピカチュウ: { img: pokeImgs.pikachu, voice: sounds.pokeVoice.pikachu, type1: "でんき", type2: "", speed: 110, weapon: "１０万ボルト" },
     リザードン: { img: pokeImgs.rizadon, voice: sounds.pokeVoice.rizadon, type1: "ほのお", type2: "ひこう", speed: 120, weapon: "かえんほうしゃ" },
     ゲンガー: { img: pokeImgs.genga, voice: sounds.pokeVoice.genga, type1: "ゴースト", type2: "どく", speed: 130, weapon: "シャドーボール" }
   };
@@ -97,14 +97,3 @@
     フェアリー: { ほのお: 0.5, かくとう: 2, どく: 0.5, ドラゴン: 2, あく: 2, はがね: 0.5 }
   };
 
-  // ダメージエフェクトのための配列
-  export const opacityChanges = [
-    { opacity: "0", delay: 50 },
-    { opacity: "1", delay: 100 },
-    { opacity: "0", delay: 150 },
-    { opacity: "1", delay: 200 },
-    { opacity: "0", delay: 250 },
-    { opacity: "1", delay: 300 },
-    { opacity: "0", delay: 350 },
-    { opacity: "1", delay: 400 }
-  ];

@@ -1,4 +1,4 @@
-import { sounds, pokeInfo, weaponInfo, compatiTexts, typeChart, opacityChanges } from "../model/model";
+import { sounds, pokeInfo, weaponInfo, compatiTexts, typeChart } from "../model/model";
 
 export function useBattleHandlers(battleState) {
 
@@ -14,8 +14,6 @@ export function useBattleHandlers(battleState) {
     selectedOrder, setSelectedOrder,
     myTurn, setMyTurn,
     setMyTurnTrigger,
-    setIsMyAttacking,
-    setIsOpAttacking,
     skipTurn, setSkipTurn,
     resultText, setResultText,
     loopAudioRef, turnCnt, changePokeName,
@@ -66,13 +64,22 @@ export function useBattleHandlers(battleState) {
     setMyPokeState(prev => ({ ...prev, name: p1 }));
 
     // 相手の選出順番をランダムに選び、1番目のポケの名前をセット
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+      }
+    };
+    
     const opCandidates = ["ディアルガ", "ゲンガー", "リザードン"]
-      .map(name => ({ name, ...pokeInfo[name] }))
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 3);
+      .map(name => ({ name, ...pokeInfo[name] }));
+    
+    shuffleArray(opCandidates); // Fisher-Yatesアルゴリズムでシャッフル
+    
     const [o1, o2, o3] = opCandidates.map(p => p.name);
     Object.assign(opPokeState, { poke1Name: o1, poke2Name: o2, poke3Name: o3 });
     setOpPokeState(prev => ({ ...prev, name: o1 }));
+    
   };
 
   //たたかうボタン押下時、コマンド表示を切り替える
@@ -151,8 +158,6 @@ export function useBattleHandlers(battleState) {
     turnCnt.current = 1;
     setMyTurn("");
     setMyTurnTrigger(0);
-    setIsMyAttacking(false);
-    setIsOpAttacking(false);
     setSkipTurn(false);
     changePokeName.current = "";
     setResultText("");
@@ -170,13 +175,13 @@ export function useBattleHandlers(battleState) {
       back: sounds.general.back,
       gameResult:
         resultText === "WIN" ? sounds.general.win
-        : resultText === "LOSE" ? sounds.general.lose
-        : null,
+          : resultText === "LOSE" ? sounds.general.lose
+            : null,
     };
-  
+
     const se = seMap[kind];
     if (!se) return;
-  
+
     if (kind === "start") {
       // onended 仕込みたい音は元のインスタンスで
       se.play().catch(e => console.error('効果音の再生に失敗:', e));
@@ -185,7 +190,7 @@ export function useBattleHandlers(battleState) {
       se.cloneNode().play().catch(e => console.error('効果音の再生に失敗:', e));
     }
   };
-  
+
 
   //ポケモンの鳴き声再生
   const playPokeVoice = (pokeName, onEnded) => {
@@ -286,18 +291,28 @@ export function useBattleHandlers(battleState) {
     }
   }
 
-  //stateにweaponがセットされたときの処理
-  const toDoWhenSetWeapon = (who) => {
-    //自分の技がセットされたら、相手の技をセット
-    if (who === "my") {
-      handleStateChange("opWeapon", pokeInfo[opPokeState.name].weapon);
-      //相手の技がセットされたら、先攻後攻を決める
-    } else if (who === "op") {
-      const mySpeed = pokeInfo[myPokeState.name].speed;
-      const opSpeed = pokeInfo[opPokeState.name].speed;
+//stateにweaponがセットされたときの処理
+const toDoWhenSetWeapon = (who) => {
+  //自分の技がセットされたら、相手の技をセット
+  if (who === "my") {
+    handleStateChange("opWeapon", pokeInfo[opPokeState.name].weapon);
+  } 
+  //相手の技がセットされたら、先攻後攻を決める
+  else if (who === "op") {
+    const mySpeed = pokeInfo[myPokeState.name].speed;
+    const opSpeed = pokeInfo[opPokeState.name].speed;
+    
+    // 同速の場合ランダムで先攻を決める
+    if (mySpeed === opSpeed) {
+      const isMyTurnFirst = Math.random() < 0.5;
+      console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
+      handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
+    } else {
       handleStateChange("myTurn", mySpeed > opSpeed && !skipTurn ? "first" : "after");
     }
-  };
+  }
+};
+
 
   //先攻後攻がセットされたら、先攻の技をセットする
   const toDoWhenSetMyturn = () => {
@@ -392,7 +407,7 @@ export function useBattleHandlers(battleState) {
       // 相性テキストのあとにダメージ計算
       const match = state.text.match(/(\d+(\.\d+)?)/);
       const multiplier = match ? Number(match[0]) : 1;
-      const damage = 400 * multiplier;   //ダメージ計算  攻撃力は50で固定
+      const damage = 50 * multiplier;   //ダメージ計算  攻撃力は50で固定
 
       console.log(`${isMy ? "自分" : "相手"}に${damage}ダメージ（50*${multiplier}）`);
       toDoWhenSetDamage(who, damage);
@@ -407,10 +422,19 @@ export function useBattleHandlers(battleState) {
   const toDoWhenSetDamage = (who, damagePt) => {
 
     //攻撃エフェクト
-    const attackEffect = (who) => {
-      const setAttack = who === "my" ? setIsMyAttacking : setIsOpAttacking;
-      setAttack(true);
-      delay(() => setAttack(false), 500);
+    const attackEffect = (selector) => {
+      const elem = document.querySelector(selector);
+      if (!elem) return;
+
+      const attackClass = selector === ".my-poke-img" ? "my-attack" : "op-attack";
+
+      elem.classList.remove(attackClass);
+      void elem.offsetWidth; // 再描画を強制
+      elem.classList.add(attackClass);
+
+      setTimeout(() => {
+        elem.classList.remove(attackClass); // アニメーション終了後にクラスを削除
+      }, 500); // アニメーション時間
     };
 
     //ダメージエフェクトとダメージの反映
@@ -436,17 +460,32 @@ export function useBattleHandlers(battleState) {
 
       //ダメージエフェクトを入れる（技相性が無効の場合を除く）
       if (pokeIMGElem && !compatiText.includes(compatiTexts.mukou)) {
-        opacityChanges.forEach(({ opacity, delay }) =>
-          setTimeout(() => {
-            pokeIMGElem.style.opacity = opacity;
-          }, delay)
-        );
+        pokeIMGElem.classList.add("pokemon-damage-effect");
+        setTimeout(() => {
+          pokeIMGElem.classList.remove("pokemon-damage-effect");
+        }, 1000);
       }
     };
 
-    const playAndHandleDamage = (attacker, attackTarget, damageTarget, damage) => {
+    //ジャンプ
+    const junpEffect = (selector) => {
+      const elem = document.querySelector(selector);
+      if (!elem) return;
+
+      elem.classList.remove("jump"); // ← 一回消しておくと連続ジャンプにも対応
+      void elem.offsetWidth;         // ← 再描画を強制するテク（重要）
+      elem.classList.add("jump");
+
+      setTimeout(() => {
+        elem.classList.remove("jump");
+      }, 400); // アニメーション時間と合わせる
+    };
+
+    const playAndHandleDamage = (attacker, damageTarget, damage) => {
+      const imgClassName = attacker === myPokeState ? ".my-poke-img" : ".op-poke-img";
+      junpEffect(imgClassName);
       playPokeVoice(attacker.name, () => {
-        attackEffect(attackTarget);
+        attackEffect(imgClassName);
         playWeaponSound(attacker.weapon, () => {
           damageEffect(damageTarget, damage);
           if (!attacker.text.includes(compatiTexts.mukou)) {
@@ -459,11 +498,11 @@ export function useBattleHandlers(battleState) {
     if (who === "my") {
       setOtherAreaVisible(prev => ({ ...prev, text: true }));
       setOpAreaVisible(prev => ({ ...prev, text: true }));
-      playAndHandleDamage(opPokeState, "op", "my", damagePt);
+      playAndHandleDamage(opPokeState, "my", damagePt);
     } else if (who === "op") {
       setOtherAreaVisible(prev => ({ ...prev, text: true }));
       setMyAreaVisible(prev => ({ ...prev, text: true }));
-      playAndHandleDamage(myPokeState, "my", "op", damagePt);
+      playAndHandleDamage(myPokeState, "op", damagePt);
     }
   };
 

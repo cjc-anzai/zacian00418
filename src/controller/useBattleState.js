@@ -30,8 +30,6 @@ export function useBattleState() {
   const [selectedOrder, setSelectedOrder] = useState([]);
   const [myTurn, setMyTurn] = useState("");
   const [myTurnTrigger, setMyTurnTrigger] = useState(0);
-  const [isMyAttacking, setIsMyAttacking] = useState(false);
-  const [isOpAttacking, setIsOpAttacking] = useState(false);
   const [skipTurn, setSkipTurn] = useState(false);
   const changePokeName = useRef("");
   const [resultText, setResultText] = useState("");
@@ -47,8 +45,6 @@ export function useBattleState() {
     selectedOrder, setSelectedOrder,
     myTurn, setMyTurn,
     myTurnTrigger, setMyTurnTrigger,
-    isMyAttacking, setIsMyAttacking,
-    isOpAttacking, setIsOpAttacking,
     skipTurn, setSkipTurn,
     resultText, setResultText,
     loopAudioRef, turnCnt, changePokeName,

@@ -35,8 +35,6 @@ function App() {
               myPokeState={battleState.myPokeState}
               opAreaVisible={battleState.opAreaVisible}
               myAreaVisible={battleState.myAreaVisible}
-              isOpAttacking={battleState.isOpAttacking}
-              isMyAttacking={battleState.isMyAttacking}
             />
             <CommandArea
               otherAreaVisible={battleState.otherAreaVisible}

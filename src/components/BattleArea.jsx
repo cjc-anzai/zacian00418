@@ -6,8 +6,6 @@ const BattleArea = ({
   myPokeState,
   opAreaVisible,
   myAreaVisible,
-  isOpAttacking,
-  isMyAttacking,
 }) => {
   return (
     <div className="battle-area" style={{ display: "flex" }}>
@@ -23,13 +21,7 @@ const BattleArea = ({
                 alt="相手のポケモン"
                 className="op-poke-img"
                 initial={{ clipPath: "circle(0% at 50% 50%)" }}
-                animate={{
-                  clipPath: "circle(75% at 50% 50%)",
-                  ...(isOpAttacking && {
-                    x: [0, 50, 0],
-                    rotate: [0, 30, 0],
-                  }),
-                }}
+                animate={{clipPath: "circle(75% at 50% 50%)",}}
                 exit={{ clipPath: "circle(0% at 50% 50%)" }}
                 transition={{ duration: 0.5 }}
               />
@@ -69,15 +61,9 @@ const BattleArea = ({
                 key="myPokeImg"
                 src={myPokeState.img}
                 alt="自分のポケモン"
-                className="my-poke-img"
+                className={`my-poke-img`}
                 initial={{ clipPath: "circle(0% at 50% 50%)" }}
-                animate={{
-                  clipPath: "circle(75% at 50% 50%)",
-                  ...(isMyAttacking && {
-                    x: [0, -50, 0],
-                    rotate: [0, -30, 0],
-                  }),
-                }}
+                animate={{ clipPath: "circle(75% at 50% 50%)",}}
                 exit={{ clipPath: "circle(0% at 50% 50%)" }}
                 transition={{ duration: 0.5 }}
               />
