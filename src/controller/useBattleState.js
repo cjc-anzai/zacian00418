@@ -5,11 +5,12 @@ export function useBattleState() {
   const defaultPokeState = {
     name: "",
     poke1Name: "", poke2Name: "", poke3Name: "",
-    img: null, weapon: "", hp: 100,
-    poke1Hp: 100, poke2Hp: 100, poke3Hp: 100,
+    img: null, weapon: "", h: 1000,
+    poke1FullH: 1000, poke2FullH: 1000, poke3FullH: 1000,
+    poke1H: 1000, poke2H: 1000, poke3H: 1000,
     life: 3, text: ""
   };
-  const defaultPokeStateTrigger = { weapon: "", hp: 0, text: 0 };
+  const defaultPokeStateTrigger = { weapon: "", h: 0, text: 0 };
 
   const [myAreaVisible, setMyAreaVisible] = useState({ ...defaultAreaVisible });
   const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });

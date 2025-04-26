@@ -43,7 +43,7 @@ export function useBattleEffects(battleState) {
     toDoWhenSetPokeName("op");
   }, [opPokeState.name]);
 
-  // 自分の画像がセットされたら、表示制御
+  // 自分の画像がセットされたら、HPをセット
   useEffect(() => {
     if (!myPokeState.img) return;
     toDoWhenSetImg("my");
@@ -51,6 +51,7 @@ export function useBattleEffects(battleState) {
 
   // 相手の画像がセットされたら、表示制御
   useEffect(() => {
+    if (!opPokeState.img) return;
     toDoWhenSetImg("op");
   }, [opPokeState.img]);
 
@@ -125,25 +126,25 @@ export function useBattleEffects(battleState) {
   useEffect(() => {
     if (myPokeState.name === "") return;
     toDoWhenSetHp("my");
-  }, [myPokeState.hp]);
+  }, [myPokeState.h]);
 
   //相手のHPがセットされたら、残HPやターン状況で処理を分岐する
   useEffect(() => {
-    if (opPokeState.hp == 100) return;
+    if (opPokeState.h == 1000) return;
     toDoWhenSetHp("op");
-  }, [opPokeState.hp]);
+  }, [opPokeState.h]);
 
   //myHpのuseEffect強制発火用のトリガー
   useEffect(() => {
-    if (myPokeStateTrigger.hp == 0) return;
+    if (myPokeStateTrigger.h == 0) return;
     toDoWhenSetHp("my");
-  }, [myPokeStateTrigger.hp]);
+  }, [myPokeStateTrigger.h]);
 
   //opHpのuseEffect強制発火用のトリガー
   useEffect(() => {
-    if (opPokeStateTrigger.hp == 0) return;
+    if (opPokeStateTrigger.h == 0) return;
     toDoWhenSetHp("op");
-  }, [opPokeStateTrigger.hp]);
+  }, [opPokeStateTrigger.h]);
 
   //自分のライフがセットされたら、残りライフによって処理分岐
   useEffect(() => {

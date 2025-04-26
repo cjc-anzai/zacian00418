@@ -53,17 +53,17 @@ const CommandArea = ({
 
       {otherAreaVisible.changeCmd && (
         <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
+          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1H > 0 && (
             <button className="change-cmd-btn" onClick={() => changeMyPoke(myPokeState.poke1Name)}>
               {myPokeState.poke1Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
+          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2H > 0 && (
             <button className="change-cmd-btn" onClick={() => changeMyPoke(myPokeState.poke2Name)}>
               {myPokeState.poke2Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
+          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3H > 0 && (
             <button className="change-cmd-btn" onClick={() => changeMyPoke(myPokeState.poke3Name)}>
               {myPokeState.poke3Name}
             </button>
@@ -74,17 +74,17 @@ const CommandArea = ({
 
       {otherAreaVisible.nextPokeCmd && (
         <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
+          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1H > 0 && (
             <button className="change-cmd-btn" onClick={() => nextMyPoke(myPokeState.poke1Name)}>
               {myPokeState.poke1Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
+          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2H > 0 && (
             <button className="change-cmd-btn" onClick={() => nextMyPoke(myPokeState.poke2Name)}>
               {myPokeState.poke2Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
+          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3H > 0 && (
             <button className="change-cmd-btn" onClick={() => nextMyPoke(myPokeState.poke3Name)}>
               {myPokeState.poke3Name}
             </button>

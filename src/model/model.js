@@ -73,18 +73,18 @@
 
   //ポケモン情報　画像,鳴き声,タイプ,能力値,技
   export const pokeInfo = {
-    ディアルガ: { img: pokeImgs.diaruga, voice: sounds.pokeVoice.diaruga, type1: "ドラゴン", type2: "はがね", speed: 110, weapon1: "ときのほうこう", weapon2: "ラスターカノン" },
-    パルキア: { img: pokeImgs.parukia, voice: sounds.pokeVoice.parukia, type1: "ドラゴン", type2: "みず", speed: 120, weapon1: "あくうせつだん", weapon2: "ハイドロポンプ" },
-    ルカリオ: { img: pokeImgs.rukario, voice: sounds.pokeVoice.rukario, type1: "かくとう", type2: "はがね", speed: 110, weapon1: "はどうだん", weapon2: "ラスターカノン" },
-    ピカチュウ: { img: pokeImgs.pikachu, voice: sounds.pokeVoice.pikachu, type1: "でんき", type2: "", speed: 110, weapon1: "１０万ボルト", weapon2: "アイアンテール" },
-    リザードン: { img: pokeImgs.rizadon, voice: sounds.pokeVoice.rizadon, type1: "ほのお", type2: "ひこう", speed: 120, weapon1: "かえんほうしゃ", weapon2: "エアスラッシュ" },
-    ゲンガー: { img: pokeImgs.genga, voice: sounds.pokeVoice.genga, type1: "ゴースト", type2: "どく", speed: 130, weapon1: "シャドーボール", weapon2: "ヘドロばくだん" },
-    ラグラージ: { img: pokeImgs.raguraji, voice: sounds.pokeVoice.raguraji, type1: "みず", type2: "じめん", speed: 80, weapon1: "アクアブレイク", weapon2: "じしん" },
-    マニューラ: { img: pokeImgs.manyura, voice: sounds.pokeVoice.manyura, type1: "こおり", type2: "あく", speed: 145, weapon1: "つららおとし", weapon2: "じごくづき" },
-    カイリキー: { img: pokeImgs.kairiki, voice: sounds.pokeVoice.kairiki, type1: "かくとう", type2: "", speed: 75, weapon1: "ばくれつパンチ", weapon2: "ほのおのパンチ" },
-    サーナイト: { img: pokeImgs.sanaito, voice: sounds.pokeVoice.sanaito, type1: "エスパー", type2: "フェアリー", speed: 100, weapon1: "ムーンフォース", weapon2: "サイコキネシス" },
-    メガヤンマ: { img: pokeImgs.megayanma, voice: sounds.pokeVoice.megayanma, type1: "むし", type2: "ひこう", speed: 115, weapon1: "むしのさざめき", weapon2: "エアスラッシュ" },
-    ドダイトス: { img: pokeImgs.dodaitosu, voice: sounds.pokeVoice.dodaitosu, type1: "くさ", type2: "じめん", speed: 76, weapon1: "タネばくだん", weapon2: "じしん" },
+    ディアルガ: { img: pokeImgs.diaruga, voice: sounds.pokeVoice.diaruga, type1: "ドラゴン", type2: "はがね", h: 175, s: 110, weapon1: "ときのほうこう", weapon2: "ラスターカノン" },
+    パルキア: { img: pokeImgs.parukia, voice: sounds.pokeVoice.parukia, type1: "ドラゴン", type2: "みず", h: 165, s: 120, weapon1: "あくうせつだん", weapon2: "ハイドロポンプ" },
+    ルカリオ: { img: pokeImgs.rukario, voice: sounds.pokeVoice.rukario, type1: "かくとう", type2: "はがね", h: 145, s: 110, weapon1: "はどうだん", weapon2: "ラスターカノン" },
+    ピカチュウ: { img: pokeImgs.pikachu, voice: sounds.pokeVoice.pikachu, type1: "でんき", type2: "なし", h: 110, s: 110, weapon1: "１０万ボルト", weapon2: "アイアンテール" },
+    リザードン: { img: pokeImgs.rizadon, voice: sounds.pokeVoice.rizadon, type1: "ほのお", type2: "ひこう", h: 153, s: 120, weapon1: "かえんほうしゃ", weapon2: "エアスラッシュ" },
+    ゲンガー: { img: pokeImgs.genga, voice: sounds.pokeVoice.genga, type1: "ゴースト", type2: "どく", h: 135, s: 130, weapon1: "シャドーボール", weapon2: "ヘドロばくだん" },
+    ラグラージ: { img: pokeImgs.raguraji, voice: sounds.pokeVoice.raguraji, type1: "みず", type2: "じめん", h: 175, s: 80, weapon1: "アクアブレイク", weapon2: "じしん" },
+    マニューラ: { img: pokeImgs.manyura, voice: sounds.pokeVoice.manyura, type1: "こおり", type2: "あく", h: 145, s: 145, weapon1: "つららおとし", weapon2: "じごくづき" },
+    カイリキー: { img: pokeImgs.kairiki, voice: sounds.pokeVoice.kairiki, type1: "かくとう", type2: "なし", h: 165, s: 75, weapon1: "ばくれつパンチ", weapon2: "ほのおのパンチ" },
+    サーナイト: { img: pokeImgs.sanaito, voice: sounds.pokeVoice.sanaito, type1: "エスパー", type2: "フェアリー", h: 143, s: 100, weapon1: "ムーンフォース", weapon2: "サイコキネシス" },
+    メガヤンマ: { img: pokeImgs.megayanma, voice: sounds.pokeVoice.megayanma, type1: "むし", type2: "ひこう", h: 161, s: 115, weapon1: "むしのさざめき", weapon2: "エアスラッシュ" },
+    ドダイトス: { img: pokeImgs.dodaitosu, voice: sounds.pokeVoice.dodaitosu, type1: "くさ", type2: "じめん", h: 170, s: 76, weapon1: "タネばくだん", weapon2: "じしん" },
   };
 
   //技情報　タイプ,SE
@@ -139,6 +139,7 @@
     ドラゴン: { ドラゴン: 2, はがね: 0.5, フェアリー: 0 },
     あく: { かくとう: 0.5, エスパー: 2, ゴースト: 2, あく: 0.5, フェアリー: 0.5 },
     はがね: { ほのお: 0.5, みず: 0.5, でんき: 0.5, こおり: 2, いわ: 2, はがね: 0.5, フェアリー: 2 },
-    フェアリー: { ほのお: 0.5, かくとう: 2, どく: 0.5, ドラゴン: 2, あく: 2, はがね: 0.5 }
+    フェアリー: { ほのお: 0.5, かくとう: 2, どく: 0.5, ドラゴン: 2, あく: 2, はがね: 0.5 },
+    なし: {}
   };
 
