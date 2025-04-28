@@ -1,28 +1,28 @@
 import { useState, useRef } from "react";
 
 export function useBattleState() {
+
   const defaultAreaVisible = { name: false, text: false };
+  const [myAreaVisible, setMyAreaVisible] = useState({ ...defaultAreaVisible });
+  const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });
+
+  const [otherAreaVisible, setOtherAreaVisible] = useState({
+    top: true, isSelecting: false, battle: false, text: false, critical: false,
+    actionCmd: false, weaponCmd: false, changeCmd: false, nextPokeCmd: false
+  });
+
   const defaultPokeState = {
-    name: "",
-    poke1Name: "", poke2Name: "", poke3Name: "",
+    name: "", poke1Name: "", poke2Name: "", poke3Name: "",
     img: null, weapon: "", h: 1000,
     poke1FullH: 1000, poke2FullH: 1000, poke3FullH: 1000,
     poke1H: 1000, poke2H: 1000, poke3H: 1000,
     life: 3, text: ""
   };
-  const defaultPokeStateTrigger = { weapon: "", h: 0, text: 0 };
-
-  const [myAreaVisible, setMyAreaVisible] = useState({ ...defaultAreaVisible });
-  const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });
-
-  const [otherAreaVisible, setOtherAreaVisible] = useState({
-    top: true, isSelecting: false, battle: false, text: false,
-    actionCmd: false, weaponCmd: false, changeCmd: false, nextPokeCmd: false
-  });
 
   const [myPokeState, setMyPokeState] = useState({ ...defaultPokeState });
   const [opPokeState, setOpPokeState] = useState({ ...defaultPokeState });
 
+  const defaultPokeStateTrigger = { weapon: 0, h: 0, text: 0 };
   const [myPokeStateTrigger, setMyPokeStateTrigger] = useState({ ...defaultPokeStateTrigger });
   const [opPokeStateTrigger, setOpPokeStateTrigger] = useState({ ...defaultPokeStateTrigger });
 
@@ -36,6 +36,7 @@ export function useBattleState() {
   const beforePokeName = useRef("");
   const [resultText, setResultText] = useState("");
 
+  // "状態"だけ返す
   return {
     myAreaVisible, setMyAreaVisible,
     opAreaVisible, setOpAreaVisible,
@@ -50,7 +51,6 @@ export function useBattleState() {
     skipTurn, setSkipTurn,
     resultText, setResultText,
     loopAudioRef, turnCnt, changePokeName, beforePokeName,
-
-    defaultAreaVisible, defaultPokeState, defaultPokeStateTrigger,
+    defaultPokeState,defaultPokeStateTrigger,
   };
 }

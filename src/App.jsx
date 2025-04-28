@@ -7,25 +7,27 @@ import ResultScreen from "./components/ResultScreen";
 import { useBattleState } from "./controller/useBattleState";
 import { useBattleHandlers } from "./controller/useBattleHandlers";
 import { useBattleEffects } from "./controller/useBattleEffects";
+import { useClickFnc } from "./controller/useClickFnc";
 import { pokeImgs, pokeInfo } from "./model/model";
 
 function App() {
 
   const battleState = useBattleState();
   const battleHandlers = useBattleHandlers(battleState);
-  useBattleEffects(battleState); 
+  useBattleEffects(battleState);
+  const clickFnc = useClickFnc(battleState);
 
   //HTML==========================================================================================================================
   return (
     <div className="App">
       <header className="App-header">
-        {battleState.otherAreaVisible.top && <TopScreen onStart={battleHandlers.start} />}
+        {battleState.otherAreaVisible.top && <TopScreen onStart={clickFnc.start} />}
         {battleState.otherAreaVisible.isSelecting && (
           <SelectScreen
             pokeImgs={pokeImgs}
             selectedOrder={battleState.selectedOrder}
-            handleSelect={battleHandlers.handleSelect}
-            confirmSelection={battleHandlers.confirmSelection}
+            handleSelect={clickFnc.handleSelect}
+            confirmSelection={clickFnc.confirmSelection}
           />
         )}
         {battleState.otherAreaVisible.battle && (
@@ -44,17 +46,17 @@ function App() {
               myPokeState={battleState.myPokeState}
               getTrueText={battleHandlers.getTrueText}
               pokeInfo={pokeInfo}
-              openBattleCmdArea={battleHandlers.openBattleCmdArea}
-              openChangeCmdArea={battleHandlers.openChangeCmdArea}
-              backCmd={battleHandlers.backCmd}
-              battle={battleHandlers.battle}
-              changeMyPoke={battleHandlers.changeMyPoke}
-              nextMyPoke={battleHandlers.nextMyPoke}
+              openBattleCmdArea={clickFnc.openBattleCmdArea}
+              openChangeCmdArea={clickFnc.openChangeCmdArea}
+              backCmd={clickFnc.backCmd}
+              battle={clickFnc.battle}
+              changeMyPoke={clickFnc.changeMyPoke}
+              nextMyPoke={clickFnc.nextMyPoke}
             />
           </div>
         )}
         {!battleState.otherAreaVisible.top && !battleState.otherAreaVisible.isSelecting && !battleState.otherAreaVisible.battle && (
-          <ResultScreen resultText={battleState.resultText} goTop={battleHandlers.goTop} />
+          <ResultScreen resultText={battleState.resultText} goTop={clickFnc.goTop} />
         )}
       </header>
     </div>

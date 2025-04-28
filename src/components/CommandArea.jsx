@@ -21,6 +21,7 @@ const CommandArea = ({
         <div className="text-area">
           {opAreaVisible.text && <p>{getTrueText(opPokeState.text)}</p>}
           {myAreaVisible.text && <p>{getTrueText(myPokeState.text)}</p>}
+          {otherAreaVisible.critical && <p>急所に当たった</p>}
         </div>
       )}
 

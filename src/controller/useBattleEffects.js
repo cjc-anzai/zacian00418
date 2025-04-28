@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { useBattleHandlers } from "./useBattleHandlers";
+import { useToDoWhenFnc } from "./useToDoWhenFnc";
 
 export function useBattleEffects(battleState) {
 
   const {
-    setOtherAreaVisible,
     myPokeState,
     opPokeState,
     myPokeStateTrigger,
@@ -15,19 +14,17 @@ export function useBattleEffects(battleState) {
     resultText,
   } = battleState;
 
-  const battleHandlers = useBattleHandlers(battleState);
-
   const {
-    playSe,
-    handleStateChange,
     toDoWhenSetPokeName,
     toDoWhenSetImg,
+    toDoWhenSetSkipturn,
     toDoWhenSetWeapon,
     toDoWhenSetMyturn,
     toDoWhenSetText,
     toDoWhenSetHp,
     toDoWhenSetLife,
-  } = battleHandlers;
+    toDoWhenSetResultText
+  } = useToDoWhenFnc(battleState);
 
   //useEffect==============================================================================================================================
 
@@ -94,8 +91,7 @@ export function useBattleEffects(battleState) {
   //交代を選択したら、交代用のテキストをセット
   useEffect(() => {
     if (!skipTurn) return;
-    const backText = `戻れ！${myPokeState.name}backText`;
-    handleStateChange("myText", backText);
+    toDoWhenSetSkipturn();
   }, [skipTurn]);
 
   //自分のテキストがセットされたら、テキストの種別によって処理を分岐する
@@ -158,9 +154,8 @@ export function useBattleEffects(battleState) {
 
   //勝敗がセットされたらスタイルを付与
   useEffect(() => {
-    if (resultText === "") return;
-    setOtherAreaVisible(prev => ({ ...prev, battle: false }));
-    playSe("gameResult");
+    if(resultText === "") return;
+    toDoWhenSetResultText();
   }, [resultText]);
 
   return {};
