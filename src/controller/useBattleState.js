@@ -7,7 +7,7 @@ export function useBattleState() {
   const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });
 
   const [otherAreaVisible, setOtherAreaVisible] = useState({
-    top: true, isSelecting: false, battle: false, text: false, critical: false,
+    top: true, isSelecting: false, battle: false, text: false, notHit: false, critical: false,
     actionCmd: false, weaponCmd: false, changeCmd: false, nextPokeCmd: false
   });
 

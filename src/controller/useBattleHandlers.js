@@ -153,30 +153,43 @@ export function useBattleHandlers(battleState) {
 
   //ダメージ計算
   const calcDamage = (attacker, defender, weaponName) => {
-    const { power: weaponPower, kind: weaponKind } = weaponInfo[weaponName];    //技威力と物理or特殊
-    const attackPower = pokeInfo[attacker][weaponKind === "physical" ? "a" : "c"];    //攻撃数値or特攻数値 
-    const defensePower = pokeInfo[defender][weaponKind === "physical" ? "b" : "d"];   //防御数値or特防数値 
-    const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
-    const weaponType = weaponInfo[weaponName].type;
-    const [atcType1, atcType2] = [pokeInfo[attacker].type1, pokeInfo[attacker].type2];
-    const [defType1, defType2] = [pokeInfo[defender].type1, pokeInfo[defender].type2];
-    const isSameType = (weaponType === atcType1) || (weaponType === atcType2);    //タイプ一致フラグ
-    const multiplier = (typeChart[weaponType][defType1] ?? 1) * (typeChart[weaponType][defType2] ?? 1);   //相性
-    const isCriticalHit = Math.random() < 0.0417;   //急所フラグ
-    // const isCriticalHit = Math.random() < 1 && multiplier !== 0;   //急所フラグ
 
-    //ダメージ計算　22 * 技威力 * (AorC / BorD) / 50 + 2 * ダメージ補正(* 乱数　* タイプ一致 * 相性 * 急所)
-    const damage1 = Math.floor(22 * weaponPower * (attackPower / defensePower));
-    const damage2 = Math.floor(damage1 / 50 + 2);   //基礎ダメージ
-    const damage3 = Math.floor(damage2 * randomMultiplier);    // 乱数
-    const damage4 = Math.floor(damage3 * (isSameType ? 1.5 : 1));    // タイプ一致補正
-    const damage5 = Math.floor(damage4 * multiplier);   //相性補正
-    const damage6 = Math.floor(damage5 * (isCriticalHit ? 1.5 : 1));   //急所
-    
-    console.log(`${attacker}\n${weaponName}\n威力：${weaponPower}\n攻撃力：${attackPower}\n防御力：${defensePower}`);
-    console.log(`${defender}に${damage6}ダメージ\n基礎ダメージ：${damage2}\n乱数：${randomMultiplier}\nタイプ一致：${isSameType ? 1.5 : 1}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
+    let damage = 0;
+    let isCriticalHit = false;   //急所フラグ
+    const hitRate = weaponInfo[weaponName].hitRate;   //技の命中率を取得
+    const isHit = Math.random() * 100 < hitRate;    //命中判定
 
-    return {damage: damage6, isCriticalHit};
+    //命中時のみダメージ計算する
+    if (isHit) {
+      const { power: weaponPower, kind: weaponKind } = weaponInfo[weaponName];    //技威力と物理or特殊
+      const attackPower = pokeInfo[attacker][weaponKind === "physical" ? "a" : "c"];    //攻撃数値or特攻数値
+      const defensePower = pokeInfo[defender][weaponKind === "physical" ? "b" : "d"];   //防御数値or特防数値
+      const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
+      const weaponType = weaponInfo[weaponName].type;
+      const [atcType1, atcType2] = [pokeInfo[attacker].type1, pokeInfo[attacker].type2];
+      const [defType1, defType2] = [pokeInfo[defender].type1, pokeInfo[defender].type2];
+      const isSameType = (weaponType === atcType1) || (weaponType === atcType2);    //タイプ一致フラグ
+      const multiplier = (typeChart[weaponType][defType1] ?? 1) * (typeChart[weaponType][defType2] ?? 1);   //相性
+      isCriticalHit = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ
+
+
+      //ダメージ計算　22 * 技威力 * (AorC / BorD) / 50 + 2 * ダメージ補正(* 乱数　* タイプ一致 * 相性 * 急所)
+      damage = Math.floor(22 * weaponPower * (attackPower / defensePower));
+      damage = Math.floor(damage / 50 + 2);   //基礎ダメージ
+      const basicDamage = damage;   //デバッグ用
+      damage = Math.floor(damage * randomMultiplier);    // 乱数
+      damage = Math.floor(damage * (isSameType ? 1.5 : 1));    // タイプ一致補正
+      damage = Math.floor(damage * multiplier);   //相性補正
+      damage = Math.floor(damage * (isCriticalHit ? 1.5 : 1));   //急所
+
+      console.log(`${attacker}\n${weaponName}\n威力：${weaponPower}\n攻撃力：${attackPower}\n防御力：${defensePower}`);
+      console.log(`${defender}に${damage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameType ? 1.5 : 1}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
+    }
+    else{
+      console.log(`${attacker}の攻撃は当たらなかった`);
+    }
+
+    return { damage, isCriticalHit, isHit };
   }
 
 
@@ -193,13 +206,13 @@ export function useBattleHandlers(battleState) {
       const [defType1, defType2] = [pokeInfo[defender].type1, pokeInfo[defender].type2];
       const isSameType = (weaponType === atcType1) || (weaponType === atcType2);    //タイプ一致フラグ
       const multiplier = (typeChart[weaponType][defType1] ?? 1) * (typeChart[weaponType][defType2] ?? 1);   //相性
-  
+
       //ダメージ計算　22 * 技威力 * (AorC / BorD) / 50 + 2 * ダメージ補正(* 乱数　* タイプ一致 * 相性 * 急所)
       const damage1 = Math.floor(22 * weaponPower * (attackPower / defensePower));
       const damage2 = Math.floor(damage1 / 50 + 2);   //基礎ダメージ
       const damage3 = Math.floor(damage2 * (isSameType ? 1.5 : 1));    // タイプ一致補正
       const damage4 = Math.floor(damage3 * multiplier);   //相性補正
-      
+
       return damage4;
     }
 

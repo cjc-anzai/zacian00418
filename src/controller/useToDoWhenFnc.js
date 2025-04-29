@@ -64,7 +64,7 @@ export function useToDoWhenFnc(battleState) {
   const toDoWhenSetHp = (who) => {
     setTimeout(() => {
       //テキストエリア非表示
-      setOtherAreaVisible(prev => ({ ...prev, text: false, critical: false }));
+      setOtherAreaVisible(prev => ({ ...prev, text: false, notHit: false, critical: false }));
       const isMy = who === "my";
       const state = isMy ? myPokeState : opPokeState;
       const setText = (text) => battleHandlers.handleStateChange(isMy ? "myText" : "opText", text);
@@ -132,6 +132,7 @@ export function useToDoWhenFnc(battleState) {
       const opSpeed = pokeInfo[opPokeState.name].s;
 
       if (skipTurn) {
+        console.log("交代ターンのため後攻");
         battleHandlers.handleStateChange("myTurn", "after");
       }
       // 同速の場合ランダムで先攻を決める
@@ -140,6 +141,7 @@ export function useToDoWhenFnc(battleState) {
         console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
         battleHandlers.handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
       } else {
+        console.log(`${myPokeState.name}の素早さ：${mySpeed}\n${opPokeState.name}の素早さ：${opSpeed}\n`);
         battleHandlers.handleStateChange("myTurn", mySpeed > opSpeed ? "first" : "after");
       }
     }
@@ -266,8 +268,8 @@ export function useToDoWhenFnc(battleState) {
       // 相性テキストのあとにダメージ計算
       const [attackerState, defenderState] = isMy ? [opPokeState, myPokeState] : [myPokeState, opPokeState];
       const weaponName = isMy ? opPokeState.weapon : myPokeState.weapon;
-      const { damage, isCriticalHit } = battleHandlers.calcDamage(attackerState.name, defenderState.name, weaponName);
-      toDoWhenSetDamage(who, damage, isCriticalHit);
+      const { damage, isCriticalHit, isHit } = battleHandlers.calcDamage(attackerState.name, defenderState.name, weaponName);
+      toDoWhenSetDamage(who, damage, isCriticalHit, isHit);
 
     } else if (includes("deadText")) {
       // 倒されたときの処理
@@ -276,7 +278,7 @@ export function useToDoWhenFnc(battleState) {
   };
 
   // ダメージ数がセットされたとき、技名表示＆鳴き声→攻撃エフェクト＆SE→ダメージエフェクト
-  const toDoWhenSetDamage = (who, damagePt, isCriticalHit) => {
+  const toDoWhenSetDamage = (who, damagePt, isCriticalHit, isHit) => {
 
     const isMy = who === "my";
     const state = isMy ? myPokeState : opPokeState;
@@ -312,17 +314,23 @@ export function useToDoWhenFnc(battleState) {
     };
 
     //ダメージエフェクトとダメージの反映
-    const damageEffect = (who, damagePt) => {
+    const damageEffect = () => {
       const setAreaVisible = isMy ? setMyAreaVisible : setOpAreaVisible;
       const setOtherTextInvisible = isMy ? setOpAreaVisible : setMyAreaVisible;
       const hpKey = isMy ? "myHp" : "opHp";
       const imgClass = isMy ? ".my-poke-img" : ".op-poke-img";
 
       setOtherTextInvisible(prev => ({ ...prev, text: false }));    //技テキストを非表示
+      //当たらなかったテキストを表示
+      if(!isHit){
+        setOtherAreaVisible(prev => ({ ...prev, notHit: true }));
+      }
+      //急所テキストの表示
       if(isCriticalHit){
         setOtherAreaVisible(prev => ({ ...prev, critical: true }));
       }
-      if (state.text.includes(compatiTexts.toubai) && !isCriticalHit) {
+      //相性が等倍で、急所ではない場合はテキストエリアは表示しない
+      if (state.text.includes(compatiTexts.toubai) && !isCriticalHit && isHit) {
         setOtherAreaVisible(prev => ({ ...prev, text: false }));
       }
       setAreaVisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
@@ -335,7 +343,7 @@ export function useToDoWhenFnc(battleState) {
       const newHp = Math.max(0, state.h - damagePt);
       const hpPercent = Math.round((newHp / fullHp) * 100);
 
-      console.log(`最大HP：${fullHp}\n残HP：${newHp}\n残量${hpPercent}%`);
+      console.log(`${state.name}\n最大HP：${fullHp}\n残HP：${newHp}\n残量${hpPercent}%`);
 
       // ★HPバーのエフェクトだけ先に独立させる
       hpBarElem.style.width = `${hpPercent}%`;
@@ -354,7 +362,7 @@ export function useToDoWhenFnc(battleState) {
       }, 600); // transition時間と合わせる
 
       // ダメージエフェクト（無効でなければ）
-      if (pokeIMGElem && !state.text.includes(compatiTexts.mukou)) {
+      if (pokeIMGElem && !state.text.includes(compatiTexts.mukou) && isHit) {
         pokeIMGElem.classList.add("pokemon-damage-effect");
         setTimeout(() => {
           pokeIMGElem.classList.remove("pokemon-damage-effect");
@@ -364,21 +372,22 @@ export function useToDoWhenFnc(battleState) {
 
 
     //攻撃の始まりから終わりまでのエフェクトまとめ
-    const playAndHandleDamage = (attacker, damageTarget, damage) => {
+    const playAndHandleDamage = (attacker, defender) => {
       const imgClassName = attacker === myPokeState ? ".my-poke-img" : ".op-poke-img";
       junpEffect(imgClassName);
       battleHandlers.playPokeVoice(attacker.name, () => {
-        if (!state.text.includes(compatiTexts.mukou)) {
+        //技が命中してて、相性が無効ではない場合に攻撃エフェクトを入れる
+        if (isHit && !state.text.includes(compatiTexts.mukou)) {
           attackEffect(imgClassName);
           battleHandlers.playWeaponSound(attacker.weapon, () => {
-            damageEffect(damageTarget, damage);
+            damageEffect();
             if (!attacker.text.includes(compatiTexts.mukou)) {
-              battleHandlers.playDamageSound(damageTarget);
+              battleHandlers.playDamageSound(defender);
             }
           });
         }
         else {
-          damageEffect(damageTarget, damage);
+          damageEffect();
         }
       });
     };
@@ -386,11 +395,11 @@ export function useToDoWhenFnc(battleState) {
     if (who === "my") {
       setOtherAreaVisible(prev => ({ ...prev, text: true }));
       setOpAreaVisible(prev => ({ ...prev, text: true }));
-      playAndHandleDamage(opPokeState, "my", damagePt);
+      playAndHandleDamage(opPokeState, "my");
     } else if (who === "op") {
       setOtherAreaVisible(prev => ({ ...prev, text: true }));
       setMyAreaVisible(prev => ({ ...prev, text: true }));
-      playAndHandleDamage(myPokeState, "op", damagePt);
+      playAndHandleDamage(myPokeState, "op");
     }
   };
 

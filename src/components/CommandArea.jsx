@@ -30,6 +30,7 @@ const CommandArea = ({
       type: weaponType,
       kind: weaponInfo[weapon].kind === "physical" ? "物理" : "特殊",
       power: weaponInfo[weapon].power,
+      hitRate: weaponInfo[weapon].hitRate,
       effectiveness: typeEffectiveness,
     });
   };
@@ -57,8 +58,9 @@ const CommandArea = ({
     <div className="cmd-text-area">
       {otherAreaVisible.text && (
         <div className="text-area">
-          {opAreaVisible.text && <p>{getTrueText(opPokeState.text)}</p>}
-          {myAreaVisible.text && <p>{getTrueText(myPokeState.text)}</p>}
+          {opAreaVisible.text && !otherAreaVisible.notHit && <p>{getTrueText(opPokeState.text)}</p>}
+          {myAreaVisible.text && !otherAreaVisible.notHit && <p>{getTrueText(myPokeState.text)}</p>}
+          {otherAreaVisible.notHit && <p>{myPokeState.text.includes(myPokeState.name) ? opPokeState.name : myPokeState.name }には当たらなかった</p>}
           {otherAreaVisible.critical && <p>急所に当たった</p>}
         </div>
       )}
@@ -97,6 +99,7 @@ const CommandArea = ({
               <p>タイプ: {weaponInfoTooltip.type}</p>
               <p>種類: {weaponInfoTooltip.kind}</p>
               <p>威力: {weaponInfoTooltip.power}</p>
+              <p>命中率: {weaponInfoTooltip.hitRate}</p>
               <p>技相性: {weaponInfoTooltip.effectiveness}</p> {/* 相性表示 */}
             </div>
           )}
