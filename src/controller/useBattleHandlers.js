@@ -163,7 +163,7 @@ export function useBattleHandlers(battleState) {
     const isSameType = (weaponType === atcType1) || (weaponType === atcType2);    //タイプ一致フラグ
     const multiplier = (typeChart[weaponType][defType1] ?? 1) * (typeChart[weaponType][defType2] ?? 1);   //相性
     const isCriticalHit = Math.random() < 0.0417;   //急所フラグ
-    // const isCriticalHit = Math.random() < 0.417;   //急所フラグ
+    // const isCriticalHit = Math.random() < 1 && multiplier !== 0;   //急所フラグ
 
     //ダメージ計算　22 * 技威力 * (AorC / BorD) / 50 + 2 * ダメージ補正(* 乱数　* タイプ一致 * 相性 * 急所)
     const damage1 = Math.floor(22 * weaponPower * (attackPower / defensePower));

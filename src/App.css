@@ -225,6 +225,25 @@
   text-align: left;
   margin: 10px 0;
   font-size: 1.5rem;
+  display: flex; /* 横並びにする！ */
+  align-items: center; /* 中央揃えにする！ */
+}
+
+.type-wrapper {
+  display: flex; /* タイプ同士も横並びにする！ */
+  gap: 4px; /* タイプ1とタイプ2の間にちょっとすき間 */
+  margin-left: 8px; /* 名前とタイプの間を空ける */
+}
+
+.type-box {
+  padding: 2px 6px;
+  border: 2px solid;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  min-width: 48px;
+  text-align: center;
+  font-size: 0.6em; /* 名前の70%の大きさに設定 */
 }
 
 .poke-indicators {
@@ -363,9 +382,36 @@
   font-weight: bold;
 }
 
-.weapon-cmd-btn{
+.weapon-cmd-btn {
   background-color: #4CAF50;
   color: white;
+  margin-right: 8px;
+}
+
+.weapon-cmd-btn:hover {
+  background-color: #45a049;
+}
+
+.cancel-cmd-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.cancel-cmd-btn:hover {
+  background-color: #d32f2f;
+}
+
+.tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  top: 50px; /* 調整可能 */
+  left: 50%; /* 調整可能 */
+  transform: translateX(-50%);
+  font-size: 14px;
+  width: 150px;
 }
 
 .change-cmd-btn{

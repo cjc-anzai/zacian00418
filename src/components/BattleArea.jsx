@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import MyHpBar from './MyHpBar';
 import { motion, AnimatePresence } from "framer-motion";
-import { pokeInfo } from "../model/model";
+import { pokeInfo, typeColors } from "../model/model";
 
 const BattleArea = ({
   opPokeState,
@@ -41,7 +41,27 @@ const BattleArea = ({
         </div>
         <div className="status-box" style={{ display: opAreaVisible.name ? "block" : "none" }}>
           <div className="status-header">
-            <h1 className="op-poke">{opPokeState.name}</h1>
+            <h1 className="op-poke">
+              <span>{opPokeState.name}</span>
+              {pokeInfo[opPokeState.name] && (
+                <span className="type-wrapper">
+                  <span
+                    className="type-box"
+                    style={{ backgroundColor: typeColors[pokeInfo[opPokeState.name].type1], borderColor: typeColors[pokeInfo[opPokeState.name].type1] }}
+                  >
+                    {pokeInfo[opPokeState.name].type1}
+                  </span>
+                  {pokeInfo[opPokeState.name].type2 !== "なし" && (
+                    <span
+                      className="type-box"
+                      style={{ backgroundColor: typeColors[pokeInfo[opPokeState.name].type2], borderColor: typeColors[pokeInfo[opPokeState.name].type2] }}
+                    >
+                      {pokeInfo[opPokeState.name].type2}
+                    </span>
+                  )}
+                </span>
+              )}
+            </h1>
             <div className="poke-indicators">
               {[0, 1, 2].map((index) => {
                 const hp = opPokeState[`poke${index + 1}H`];
@@ -83,7 +103,27 @@ const BattleArea = ({
         </div>
         <div className="status-box" style={{ display: myAreaVisible.name ? "block" : "none" }}>
           <div className="status-header">
-            <h1 className="my-poke">{myPokeState.name}</h1>
+            <h1 className="my-poke">
+              <span>{myPokeState.name}</span>
+              {pokeInfo[myPokeState.name] && (
+                <span className="type-wrapper">
+                  <span
+                    className="type-box"
+                    style={{ backgroundColor: typeColors[pokeInfo[myPokeState.name].type1], borderColor: typeColors[pokeInfo[myPokeState.name].type1] }}
+                  >
+                    {pokeInfo[myPokeState.name].type1}
+                  </span>
+                  {pokeInfo[myPokeState.name].type2 !== "なし" && (
+                    <span
+                      className="type-box"
+                      style={{ backgroundColor: typeColors[pokeInfo[myPokeState.name].type2], borderColor: typeColors[pokeInfo[myPokeState.name].type2] }}
+                    >
+                      {pokeInfo[myPokeState.name].type2}
+                    </span>
+                  )}
+                </span>
+              )}
+            </h1>
             <div className="poke-indicators">
               {[0, 1, 2].map((index) => {
                 const hp = myPokeState[`poke${index + 1}H`];

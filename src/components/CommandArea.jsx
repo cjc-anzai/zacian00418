@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { pokeInfo, weaponInfo, typeChart } from "../model/model";
 
 const CommandArea = ({
   otherAreaVisible,
@@ -7,7 +8,6 @@ const CommandArea = ({
   opPokeState,
   myPokeState,
   getTrueText,
-  pokeInfo,
   openBattleCmdArea,
   openChangeCmdArea,
   backCmd,
@@ -15,6 +15,44 @@ const CommandArea = ({
   changeMyPoke,
   nextMyPoke,
 }) => {
+
+  const [weaponInfoTooltip, setWeaponInfoTooltip] = useState(null);
+
+  const handleMouseEnter = (weapon) => {
+    const weaponType = weaponInfo[weapon].type;
+    const opPokeType1 = pokeInfo[opPokeState.name].type1;
+    const opPokeType2 = pokeInfo[opPokeState.name].type2;
+
+    // 技相性を計算
+    const typeEffectiveness = calculateEffectiveness(weaponType, opPokeType1, opPokeType2);
+
+    setWeaponInfoTooltip({
+      type: weaponType,
+      kind: weaponInfo[weapon].kind === "physical" ? "物理" : "特殊",
+      power: weaponInfo[weapon].power,
+      effectiveness: typeEffectiveness,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setWeaponInfoTooltip(null);
+  };
+
+  // 相性計算
+  const calculateEffectiveness = (weaponType, opPokeType1, opPokeType2) => {
+    const effectiveness = (typeChart[weaponType][opPokeType1] ?? 1) * (typeChart[weaponType][opPokeType2] ?? 1); // 技タイプと相手タイプから相性を取得
+
+    if (effectiveness >= 2) {
+      return "効果ばつぐん";
+    } else if (effectiveness === 1) {
+      return "効果あり";
+    } else if (effectiveness < 1 && effectiveness > 0) {
+      return "いまひとつ";
+    } else {
+      return "効果なし";
+    }
+  };
+
   return (
     <div className="cmd-text-area">
       {otherAreaVisible.text && (
@@ -39,15 +77,29 @@ const CommandArea = ({
           <button
             className="weapon-cmd-btn"
             onClick={() => battle(pokeInfo[myPokeState.name].weapon1)}
+            onMouseEnter={() => handleMouseEnter(pokeInfo[myPokeState.name].weapon1)}
+            onMouseLeave={handleMouseLeave}
           >
             {pokeInfo[myPokeState.name].weapon1}
           </button>
+
           <button
             className="weapon-cmd-btn"
             onClick={() => battle(pokeInfo[myPokeState.name].weapon2)}
+            onMouseEnter={() => handleMouseEnter(pokeInfo[myPokeState.name].weapon2)}
+            onMouseLeave={handleMouseLeave}
           >
             {pokeInfo[myPokeState.name].weapon2}
           </button>
+
+          {weaponInfoTooltip && (
+            <div className="tooltip">
+              <p>タイプ: {weaponInfoTooltip.type}</p>
+              <p>種類: {weaponInfoTooltip.kind}</p>
+              <p>威力: {weaponInfoTooltip.power}</p>
+              <p>技相性: {weaponInfoTooltip.effectiveness}</p> {/* 相性表示 */}
+            </div>
+          )}
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>
       )}
