@@ -128,21 +128,40 @@ export function useToDoWhenFnc(battleState) {
     }
     //相手の技がセットされたら、先攻後攻を決める
     else if (who === "op") {
-      const mySpeed = pokeInfo[myPokeState.name].s;
-      const opSpeed = pokeInfo[opPokeState.name].s;
+
+      //優先度を取得する
+      const myWeaponPriority = weaponInfo[myPokeState.weapon]?.priority ?? 0;
+      const opWeaponPriority = weaponInfo[opPokeState.weapon].priority ?? 0;
+
+      //素早さを取得する
+      const myPokeSpeed = pokeInfo[myPokeState.name].s;
+      const oPokeSpeed = pokeInfo[opPokeState.name].s;
 
       if (skipTurn) {
         console.log("交代ターンのため後攻");
         battleHandlers.handleStateChange("myTurn", "after");
       }
-      // 同速の場合ランダムで先攻を決める
-      else if (mySpeed === opSpeed) {
-        const isMyTurnFirst = Math.random() < 0.5;
-        console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
-        battleHandlers.handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
-      } else {
-        console.log(`${myPokeState.name}の素早さ：${mySpeed}\n${opPokeState.name}の素早さ：${opSpeed}\n`);
-        battleHandlers.handleStateChange("myTurn", mySpeed > opSpeed ? "first" : "after");
+      //優先度が同じ場合、素早さが速い方が先攻
+      else if(myWeaponPriority === opWeaponPriority){
+        if(myPokeSpeed !== oPokeSpeed){
+          console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${oPokeSpeed}\n`);
+          battleHandlers.handleStateChange("myTurn", myPokeSpeed > oPokeSpeed ? "first" : "after");
+        }
+        // 同速の場合ランダムで先攻を決める
+        else if (myPokeSpeed === oPokeSpeed) {
+          const isMyTurnFirst = Math.random() < 0.5;
+          console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
+          battleHandlers.handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
+        }
+      }
+      //優先度が異なる場合、優先度が高い方が先攻
+      else if(myWeaponPriority !== opWeaponPriority){
+        const iAmPriority = myWeaponPriority > opWeaponPriority;
+        const highPriorityWeapon = iAmPriority ? myPokeState.weapon : opPokeState.weapon;
+        const highPriorityPoke = iAmPriority ? myPokeState.name : opPokeState.name;
+
+        console.log(`${highPriorityWeapon}の優先度が高いため${highPriorityPoke}が先攻`);
+        battleHandlers.handleStateChange("myTurn", iAmPriority ? "first" : "after");
       }
     }
   };
@@ -322,11 +341,11 @@ export function useToDoWhenFnc(battleState) {
 
       setOtherTextInvisible(prev => ({ ...prev, text: false }));    //技テキストを非表示
       //当たらなかったテキストを表示
-      if(!isHit){
+      if (!isHit) {
         setOtherAreaVisible(prev => ({ ...prev, notHit: true }));
       }
       //急所テキストの表示
-      if(isCriticalHit){
+      if (isCriticalHit) {
         setOtherAreaVisible(prev => ({ ...prev, critical: true }));
       }
       //相性が等倍で、急所ではない場合はテキストエリアは表示しない
@@ -334,7 +353,7 @@ export function useToDoWhenFnc(battleState) {
         setOtherAreaVisible(prev => ({ ...prev, text: false }));
       }
       setAreaVisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
-      
+
 
       const pokeIMGElem = document.querySelector(imgClass);
       const hpBarElem = document.querySelector(isMy ? ".my-hp-bar" : ".op-hp-bar");
