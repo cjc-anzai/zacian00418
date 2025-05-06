@@ -1,4 +1,4 @@
-import { pokeInfo, weaponInfo, compatiTexts, typeChart } from "../model/model";
+import { compatiTexts, typeChart } from "../model/model";
 import { useBattleHandlers } from "./useBattleHandlers";
 
 export function useToDoWhenFnc(battleState) {
@@ -22,16 +22,22 @@ export function useToDoWhenFnc(battleState) {
   //toDoWhen()==========================================================================================
 
   //ポケモンの名前がセットされたimgをセット
-  const toDoWhenSetPokeName = (who) => {
+  const toDoWhenSetPokeName = async (who) => {
     const isMy = who === "my";
     const state = isMy ? myPokeState : opPokeState;
     const setState = isMy ? setMyPokeState : setOpPokeState;
-    const getImg = () => pokeInfo[state.name].img;
-    setState(prev => ({ ...prev, img: getImg() }));
+    const img = await battleHandlers.getPokeInfo(state.name, "Img");
+    const type1 = await battleHandlers.getPokeInfo(state.name, "Type1");
+    const type2 = await battleHandlers.getPokeInfo(state.name, "Type2");
+    const weapon1 = await battleHandlers.getPokeInfo(state.name, "Weapon1");
+    const weapon2 = await battleHandlers.getPokeInfo(state.name, "Weapon2");
+    const weapon3 = await battleHandlers.getPokeInfo(state.name, "Weapon3");
+    const weapon4 = await battleHandlers.getPokeInfo(state.name, "Weapon4");
+    setState(prev => ({ ...prev, img: img, type1: type1, type2: type2, weapon1: weapon1, weapon2: weapon2, weapon3: weapon3, weapon4: weapon4, }));
   };
 
   //imgがセットされたらHPをセット
-  const toDoWhenSetImg = (who) => {
+  const toDoWhenSetImg = async (who) => {
     const isMy = who === "my";
     const state = isMy ? myPokeState : opPokeState;
 
@@ -45,7 +51,7 @@ export function useToDoWhenFnc(battleState) {
 
 
     const hpBarElem = document.querySelector(isMy ? ".my-hp-bar" : ".op-hp-bar");
-    const fullHp = pokeInfo[name].h;
+    const fullHp = await battleHandlers.getPokeInfo(name, "H");;
     const hpPercent = Math.round((newHp / fullHp) * 100);
     hpBarElem.style.width = `${hpPercent}%`;
 
@@ -121,47 +127,48 @@ export function useToDoWhenFnc(battleState) {
   }
 
   //stateにweaponがセットされたときの処理
-  const toDoWhenSetWeapon = (who) => {
+  const toDoWhenSetWeapon = async (who) => {
     //自分の技がセットされたら、相手の技をセット
     if (who === "my") {
       battleHandlers.choiseOpWeapon();
     }
     //相手の技がセットされたら、先攻後攻を決める
     else if (who === "op") {
-
-      //優先度を取得する
-      const myWeaponPriority = weaponInfo[myPokeState.weapon]?.priority ?? 0;
-      const opWeaponPriority = weaponInfo[opPokeState.weapon].priority ?? 0;
-
-      //素早さを取得する
-      const myPokeSpeed = pokeInfo[myPokeState.name].s;
-      const oPokeSpeed = pokeInfo[opPokeState.name].s;
-
       if (skipTurn) {
         console.log("交代ターンのため後攻");
         battleHandlers.handleStateChange("myTurn", "after");
       }
-      //優先度が同じ場合、素早さが速い方が先攻
-      else if(myWeaponPriority === opWeaponPriority){
-        if(myPokeSpeed !== oPokeSpeed){
-          console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${oPokeSpeed}\n`);
-          battleHandlers.handleStateChange("myTurn", myPokeSpeed > oPokeSpeed ? "first" : "after");
-        }
-        // 同速の場合ランダムで先攻を決める
-        else if (myPokeSpeed === oPokeSpeed) {
-          const isMyTurnFirst = Math.random() < 0.5;
-          console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
-          battleHandlers.handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
-        }
-      }
-      //優先度が異なる場合、優先度が高い方が先攻
-      else if(myWeaponPriority !== opWeaponPriority){
-        const iAmPriority = myWeaponPriority > opWeaponPriority;
-        const highPriorityWeapon = iAmPriority ? myPokeState.weapon : opPokeState.weapon;
-        const highPriorityPoke = iAmPriority ? myPokeState.name : opPokeState.name;
+      else {
+        //優先度と素早さを取得する
+        const [myWeaponPriority, opWeaponPriority, myPokeSpeed, oPokeSpeed] = await Promise.all([
+          battleHandlers.getWeaponInfo(myPokeState.weapon, "Priority"),
+          battleHandlers.getWeaponInfo(opPokeState.weapon, "Priority"),
+          battleHandlers.getPokeInfo(myPokeState.name, "S"),
+          battleHandlers.getPokeInfo(opPokeState.name, "S"),
+        ]);
 
-        console.log(`${highPriorityWeapon}の優先度が高いため${highPriorityPoke}が先攻`);
-        battleHandlers.handleStateChange("myTurn", iAmPriority ? "first" : "after");
+        //優先度が同じ場合、素早さが速い方が先攻
+        if (myWeaponPriority === opWeaponPriority) {
+          if (myPokeSpeed !== oPokeSpeed) {
+            console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${oPokeSpeed}\n`);
+            battleHandlers.handleStateChange("myTurn", myPokeSpeed > oPokeSpeed ? "first" : "after");
+          }
+          // 同速の場合ランダムで先攻を決める
+          else if (myPokeSpeed === oPokeSpeed) {
+            const isMyTurnFirst = Math.random() < 0.5;
+            console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
+            battleHandlers.handleStateChange("myTurn", isMyTurnFirst ? "first" : "after");
+          }
+        }
+        //優先度が異なる場合、優先度が高い方が先攻
+        else if (myWeaponPriority !== opWeaponPriority) {
+          const iAmPriority = myWeaponPriority > opWeaponPriority;
+          const highPriorityWeapon = iAmPriority ? myPokeState.weapon : opPokeState.weapon;
+          const highPriorityPoke = iAmPriority ? myPokeState.name : opPokeState.name;
+
+          console.log(`${highPriorityWeapon}の優先度が高いため${highPriorityPoke}が先攻`);
+          battleHandlers.handleStateChange("myTurn", iAmPriority ? "first" : "after");
+        }
       }
     }
   };
@@ -178,7 +185,7 @@ export function useToDoWhenFnc(battleState) {
   };
 
   // テキストがセットされたときの処理
-  const toDoWhenSetText = (who) => {
+  const toDoWhenSetText = async (who) => {
     const isMy = who === "my";
     const state = isMy ? myPokeState : opPokeState;
     const setState = isMy ? setMyPokeState : setOpPokeState;
@@ -194,12 +201,13 @@ export function useToDoWhenFnc(battleState) {
             compatiTexts.mukou
     );
 
-    const setCompatiText = () => {
-      const defender = isMy ? opPokeState.name : myPokeState.name;
+    const setCompatiText = async () => {
+      const defenderState = isMy ? opPokeState : myPokeState;
       const textKey = isMy ? "opText" : "myText";
 
-      const attackType = weaponInfo[state.weapon].type;
-      const [defType1, defType2] = [pokeInfo[defender].type1, pokeInfo[defender].type2];
+      const attackType = await battleHandlers.getWeaponInfo(state.weapon, "Type");
+
+      const [defType1, defType2] = [defenderState.type1, defenderState.type2];
       const multiplier = (typeChart[attackType][defType1] ?? 1) * (typeChart[attackType][defType2] ?? 1);
       const text = makeCompatiText(multiplier) + "compatiText" + multiplier;
       battleHandlers.handleStateChange(textKey, text);
@@ -287,7 +295,7 @@ export function useToDoWhenFnc(battleState) {
       // 相性テキストのあとにダメージ計算
       const [attackerState, defenderState] = isMy ? [opPokeState, myPokeState] : [myPokeState, opPokeState];
       const weaponName = isMy ? opPokeState.weapon : myPokeState.weapon;
-      const { damage, isCriticalHit, isHit } = battleHandlers.calcDamage(attackerState.name, defenderState.name, weaponName);
+      const { damage, isCriticalHit, isHit } = await battleHandlers.calcDamage(attackerState.name, defenderState.name, weaponName);
       toDoWhenSetDamage(who, damage, isCriticalHit, isHit);
 
     } else if (includes("deadText")) {
@@ -333,7 +341,7 @@ export function useToDoWhenFnc(battleState) {
     };
 
     //ダメージエフェクトとダメージの反映
-    const damageEffect = () => {
+    const damageEffect = async () => {
       const setAreaVisible = isMy ? setMyAreaVisible : setOpAreaVisible;
       const setOtherTextInvisible = isMy ? setOpAreaVisible : setMyAreaVisible;
       const hpKey = isMy ? "myHp" : "opHp";
@@ -358,7 +366,7 @@ export function useToDoWhenFnc(battleState) {
       const pokeIMGElem = document.querySelector(imgClass);
       const hpBarElem = document.querySelector(isMy ? ".my-hp-bar" : ".op-hp-bar");
       const name = state.name;
-      const fullHp = pokeInfo[name].h;
+      const fullHp = await battleHandlers.getPokeInfo(name, "H");
       const newHp = Math.max(0, state.h - damagePt);
       const hpPercent = Math.round((newHp / fullHp) * 100);
 
@@ -429,13 +437,20 @@ export function useToDoWhenFnc(battleState) {
       setResultText(winner === "my" ? "WIN" : "LOSE");
     };
 
-    const selectNextOpPoke = () => {
-      const myTypes = [pokeInfo[myPokeState.name].type1, pokeInfo[myPokeState.name].type2];
-      const opPokemons = [opPokeState.poke2Name, opPokeState.poke3Name].map(name => ({
-        name,
-        types: [pokeInfo[name].type1, pokeInfo[name].type2],
-        speed: pokeInfo[name].s,
-      }));
+    const selectNextOpPoke = async () => {
+      const myTypes = [myPokeState.type1, myPokeState.type2];
+      const opPokemonNames = [opPokeState.poke2Name, opPokeState.poke3Name];
+
+      const opPokemons = await Promise.all(
+        opPokemonNames.map(async name => ({
+          name,
+          types: [
+            await battleHandlers.getPokeInfo(name, "Type1"),
+            await battleHandlers.getPokeInfo(name, "Type2"),
+          ],
+          speed: await battleHandlers.getPokeInfo(name, "S"),
+        }))
+      );
 
       const calcMultiplier = (atkTypes, defTypes) =>
         Math.max(...atkTypes.flatMap(atk => defTypes.map(def => typeChart[atk]?.[def] ?? 1)));
@@ -451,7 +466,7 @@ export function useToDoWhenFnc(battleState) {
       } else {
         const worse = myToOp[0] > myToOp[1] ? 0 : 1;
         const better = 1 - worse;
-        const mySpeed = pokeInfo[myPokeState.name].s;
+        const mySpeed = await battleHandlers.getPokeInfo(myPokeState.name, "S");
         const prefer = (opPokemons[worse].speed > mySpeed && opToMy[worse] >= 2)
           ? (opPokemons[better].speed > mySpeed && opToMy[better] >= 2 ? opPokemons[better] : opPokemons[worse])
           : opPokemons[better];

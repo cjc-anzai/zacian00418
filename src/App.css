@@ -29,7 +29,7 @@
   height: 100vh;
   color: white;
   font-family: 'Arial', sans-serif;
-  background-image: url('/img/other/top.png');
+  background-image: url('/img/otherImg/top.png');
   background-size: cover;
   background-position: center;
   display: flex;

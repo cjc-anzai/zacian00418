@@ -1,4 +1,4 @@
-import { sounds, pokeInfo, weaponInfo, compatiTexts, typeChart } from "../model/model";
+import { compatiTexts, typeChart } from "../model/model";
 
 export function useBattleHandlers(battleState) {
 
@@ -25,20 +25,14 @@ export function useBattleHandlers(battleState) {
 
   //指定したSEを再生
   const playSe = (kind) => {
-    const seMap = {
-      start: sounds.general.start,
-      select: sounds.general.select,
-      decide: sounds.general.decide,
-      cancel: sounds.general.cancel,
-      back: sounds.general.back,
-      gameResult:
-        resultText === "WIN" ? sounds.general.win
-          : resultText === "LOSE" ? sounds.general.lose
-            : null,
-    };
 
-    const se = seMap[kind];
-    if (!se) return;
+    if (kind === "gameResult") {
+      kind = resultText === "WIN" ? "win"
+        : resultText === "LOSE" ? "lose"
+          : null;
+    }
+
+    const se = new Audio(`https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/${kind}Se.mp3`);
 
     if (kind === "start") {
       // onended 仕込みたい音は元のインスタンスで
@@ -47,12 +41,13 @@ export function useBattleHandlers(battleState) {
       // その他は clone で連続再生対応
       se.cloneNode().play().catch(e => console.error('効果音の再生に失敗:', e));
     }
+    return se;
   };
 
 
   //ポケモンの鳴き声再生
-  const playPokeVoice = (pokeName, onEnded) => {
-    const voice = pokeInfo[pokeName].voice;
+  const playPokeVoice = async (pokeName, onEnded) => {
+    const voice = new Audio(await getPokeInfo(pokeName, "Voice"));
     voice.currentTime = 0;
     voice.onended = onEnded || null;
     voice.play().catch(e => {
@@ -62,8 +57,8 @@ export function useBattleHandlers(battleState) {
   };
 
   //各技のSEを再生
-  const playWeaponSound = (weaponName, onEnded) => {
-    const sound = weaponInfo[weaponName].sound;
+  const playWeaponSound = async (weaponName, onEnded) => {
+    const sound = new Audio(await getWeaponInfo(weaponName, "Sound"));
     sound.currentTime = 0;
     sound.onended = onEnded || null;
     sound.play().catch(e => {
@@ -76,9 +71,9 @@ export function useBattleHandlers(battleState) {
   const playDamageSound = (who) => {
     const text = who === "my" ? myPokeState.text : opPokeState.text;
     const sound =
-      text.includes(compatiTexts.batsugun) ? sounds.damage.batsugun :
-        text.includes(compatiTexts.toubai) ? sounds.damage.toubai :
-          text.includes(compatiTexts.imahitotsu) ? sounds.damage.imahitotsu :
+      text.includes(compatiTexts.batsugun) ? new Audio(`https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/damage/batsugun.mp3`) :
+        text.includes(compatiTexts.toubai) ? new Audio(`https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/damage/toubai.mp3`) :
+          text.includes(compatiTexts.imahitotsu) ? new Audio(`https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/damage/imahitotsu.mp3`) :
             null;
 
     sound?.play().catch(e => console.error('効果音の再生に失敗:', e));
@@ -86,9 +81,11 @@ export function useBattleHandlers(battleState) {
 
   //BGM情報をセット
   const setBgm = (kind) => {
-    kind.volume = 0.25;
-    kind.loop = true;
-    loopAudioRef.current = kind;
+    const bgm = new Audio(`https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/bgm/${kind}Bgm.wav`);
+    bgm.volume = 0.25;
+    bgm.loop = true;
+    loopAudioRef.current = bgm;
+    return bgm;
   }
 
   // BGMを止める
@@ -152,22 +149,30 @@ export function useBattleHandlers(battleState) {
   };
 
   //ダメージ計算
-  const calcDamage = (attacker, defender, weaponName) => {
+  const calcDamage = async (attacker, defender, weaponName) => {
 
     let damage = 0;
     let isCriticalHit = false;   //急所フラグ
-    const hitRate = weaponInfo[weaponName].hitRate;   //技の命中率を取得
+    const hitRate = await getWeaponInfo(weaponName, "HitRate");   //技の命中率を取得
     const isHit = Math.random() * 100 < hitRate;    //命中判定
 
     //命中時のみダメージ計算する
     if (isHit) {
-      const { power: weaponPower, kind: weaponKind } = weaponInfo[weaponName];    //技威力と物理or特殊
-      const attackPower = pokeInfo[attacker][weaponKind === "physical" ? "a" : "c"];    //攻撃数値or特攻数値
-      const defensePower = pokeInfo[defender][weaponKind === "physical" ? "b" : "d"];   //防御数値or特防数値
+      const [weaponPower, weaponKind, weaponType] = await Promise.all([
+        getWeaponInfo(weaponName, "Power"),   //技威力
+        getWeaponInfo(weaponName, "Kind"),    //物理or特殊
+        getWeaponInfo(weaponName, "Type"),    //技タイプ
+      ]);
+
+      const isMy = attacker === myPokeState.name;
+      const [atcState, defState] = isMy ? [myPokeState, opPokeState] : [opPokeState, myPokeState];
+      const [atcType1, atcType2] = [atcState.type1, atcState.type2];
+      const [defType1, defType2] = [defState.type1, defState.type2];
+
+
+      const attackPower = await getPokeInfo(attacker, weaponKind === "物理" ? "A" : "C");    //攻撃数値or特攻数値
+      const defensePower = await getPokeInfo(defender, weaponKind === "物理" ? "B" : "D");   //防御数値or特防数値
       const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
-      const weaponType = weaponInfo[weaponName].type;
-      const [atcType1, atcType2] = [pokeInfo[attacker].type1, pokeInfo[attacker].type2];
-      const [defType1, defType2] = [pokeInfo[defender].type1, pokeInfo[defender].type2];
       const isSameType = (weaponType === atcType1) || (weaponType === atcType2);    //タイプ一致フラグ
       const multiplier = (typeChart[weaponType][defType1] ?? 1) * (typeChart[weaponType][defType2] ?? 1);   //相性
       isCriticalHit = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ
@@ -194,16 +199,26 @@ export function useBattleHandlers(battleState) {
 
 
   //相手が自分のバトル場のポケモンに対して、相性の良い技をセットする
-  const choiseOpWeapon = () => {
+  const choiseOpWeapon = async () => {
+
     const myPokeName = skipTurn ? beforePokeName.current : myPokeState.name;
 
-    const compareDamage = (attacker, defender, weaponName) => {
-      const { power: weaponPower, kind: weaponKind } = weaponInfo[weaponName];    //技威力と物理or特殊
-      const attackPower = pokeInfo[attacker][weaponKind === "physical" ? "a" : "c"];    //攻撃数値or特攻数値 
-      const defensePower = pokeInfo[defender][weaponKind === "physical" ? "b" : "d"];   //防御数値or特防数値 
-      const weaponType = weaponInfo[weaponName].type;
-      const [atcType1, atcType2] = [pokeInfo[attacker].type1, pokeInfo[attacker].type2];
-      const [defType1, defType2] = [pokeInfo[defender].type1, pokeInfo[defender].type2];
+    const compareDamage = async (attacker, defender, weaponName,) => {
+      const [weaponPower, weaponKind, weaponType] = await Promise.all([
+        getWeaponInfo(weaponName, "Power"),   //技威力
+        getWeaponInfo(weaponName, "Kind"),    //物理or特殊
+        getWeaponInfo(weaponName, "Type"),    //技タイプ
+      ]);
+
+      const [atcType1, atcType2] = [opPokeState.type1, opPokeState.type2];
+      const [defType1, defType2] = await Promise.all([
+        getPokeInfo(myPokeName, "Type1"),
+        getPokeInfo(myPokeName, "Type2"),
+      ]);
+
+      const attackPower = await getPokeInfo(attacker, weaponKind === "物理" ? "A" : "C");    //攻撃数値or特攻数値
+      const defensePower = await getPokeInfo(defender, weaponKind === "物理" ? "B" : "D");   //防御数値or特防数値
+
       const isSameType = (weaponType === atcType1) || (weaponType === atcType2);    //タイプ一致フラグ
       const multiplier = (typeChart[weaponType][defType1] ?? 1) * (typeChart[weaponType][defType2] ?? 1);   //相性
 
@@ -217,15 +232,24 @@ export function useBattleHandlers(battleState) {
       return damage;
     }
 
-    const opWeapon1 = pokeInfo[opPokeState.name].weapon1;
-    const opWeapon2 = pokeInfo[opPokeState.name].weapon2;
-    const opWeapon3 = pokeInfo[opPokeState.name].weapon3;
+    // 非同期でダメージを全部まとめて取得
+    const [w1Damage, w2Damage, w3Damage] = await Promise.all([
+      compareDamage(opPokeState.name, myPokeName, opPokeState.weapon1),
+      compareDamage(opPokeState.name, myPokeName, opPokeState.weapon2),
+      compareDamage(opPokeState.name, myPokeName, opPokeState.weapon3),
+    ]);
+
+    const [w1Priority, w2Priority, w3Priority] = await Promise.all([
+      getWeaponInfo(opPokeState.weapon1, "Priority"),   //技威力
+      getWeaponInfo(opPokeState.weapon2, "Priority"),    //物理or特殊
+      getWeaponInfo(opPokeState.weapon3, "Priority"),    //技タイプ
+    ]);
 
     // 技とダメージ・優先度をまとめる
     const opWeapons = [
-      { name: opWeapon1, damage: compareDamage(opPokeState.name, myPokeName, opWeapon1), priority: weaponInfo[opWeapon1].priority },
-      { name: opWeapon2, damage: compareDamage(opPokeState.name, myPokeName, opWeapon2), priority: weaponInfo[opWeapon2].priority },
-      { name: opWeapon3, damage: compareDamage(opPokeState.name, myPokeName, opWeapon3), priority: weaponInfo[opWeapon3].priority },
+      { name: opPokeState.weapon1, damage: w1Damage, priority: w1Priority },
+      { name: opPokeState.weapon2, damage: w2Damage, priority: w2Priority },
+      { name: opPokeState.weapon3, damage: w3Damage, priority: w3Priority },
     ];
 
     console.log(`${opWeapons[0].name}の最大火力：${opWeapons[0].damage}\n${opWeapons[1].name}の最大火力：${opWeapons[1].damage}\n${opWeapons[2].name}の最大火力：${opWeapons[2].damage}`);
@@ -250,12 +274,20 @@ export function useBattleHandlers(battleState) {
     const strongestWeapon = opWeapons[opWtrongestWeaponIndex].name;   //最も与えるダメージが大きい技
     const strongestHighPriorityWeapon = opWeapons[strongestHighPriorityWeaponIndex].name;   //最も与えるダメージが大きい先制技
     const strongestHighPriorityWeaponDamage = opWeapons[strongestHighPriorityWeaponIndex].damage * 0.85;   //最も与えるダメージが大きい先制技(最低乱数)
-    const myPokeSpeed = pokeInfo[myPokeState.name].s;
-    const opPokeSpeed = pokeInfo[opPokeState.name].s;
+
+    const [myPokeSpeed, opPokeSpeed, myWeapon1, myWeapon2, weapon3Raw] = await Promise.all([
+      getPokeInfo(myPokeState.name, "S"),
+      getPokeInfo(opPokeState.name, "S"),
+      getPokeInfo(myPokeState.name, "Weapon1"),
+      getPokeInfo(myPokeState.name, "Weapon2"),
+      getPokeInfo(myPokeState.name, "Weapon3"),
+    ]);
+
+    const myWeapon3 = weapon3Raw === "なし"
+      ? myWeapon1
+      : weapon3Raw;
+
     //相手(自分)が出すであろう技とそのダメージを求める
-    const myWeapon1 = pokeInfo[myPokeState.name].weapon1;
-    const myWeapon2 = pokeInfo[myPokeState.name].weapon2;
-    const myWeapon3 = pokeInfo[myPokeState.name].weapon3 === "なし" ? pokeInfo[myPokeState.name].weapon1 : pokeInfo[myPokeState.name].weapon3;
     const myWeapon1Damage = compareDamage(myPokeState.name, opPokeState.name, myWeapon1);
     const myWeapon2Damage = compareDamage(myPokeState.name, opPokeState.name, myWeapon2);
     const myWeapon3Damage = compareDamage(myPokeState.name, opPokeState.name, myWeapon3);
@@ -268,7 +300,7 @@ export function useBattleHandlers(battleState) {
         handleStateChange("opWeapon", strongestHighPriorityWeapon);
       }
       //先制技(最低乱数)で相手(自分)を倒せる場合は先制技を選択する
-      else{
+      else {
         const selectedWeapon = strongestHighPriorityWeaponDamage > myPokeState.h ? strongestHighPriorityWeapon : strongestWeapon;
         handleStateChange("opWeapon", selectedWeapon);
       }
@@ -305,6 +337,35 @@ export function useBattleHandlers(battleState) {
     return trueText === compatiTexts.toubai ? "" : trueText;
   };
 
+  //DB操作=============================================================================
+  const getPokeInfo = async (pokeName, column) => {
+    try {
+      const res = await fetch(
+        `https://1aazl41gyk.execute-api.ap-northeast-1.amazonaws.com/prod/getPokeInfo?id=${encodeURIComponent(pokeName)}`
+      );
+      if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+      const result = await res.json();
+      return result.data?.[column] ?? null;
+    } catch (err) {
+      console.error("エラー発生:", err.message);
+      return null;
+    }
+  };
+
+  const getWeaponInfo = async (weaponName, column) => {
+    try {
+      const res = await fetch(
+        `https://1aazl41gyk.execute-api.ap-northeast-1.amazonaws.com/prod/getWeaponInfo?id=${encodeURIComponent(weaponName)}`
+      );
+      if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+      const result = await res.json();
+      return result.data?.[column] ?? null;
+    } catch (err) {
+      console.error("エラー発生:", err.message);
+      return null;
+    }
+  };
+
   return {
     playSe,
     playPokeVoice,
@@ -320,5 +381,6 @@ export function useBattleHandlers(battleState) {
     showGoSequence,
     calcDamage,
     delay,
+    getPokeInfo, getWeaponInfo
   };
 }

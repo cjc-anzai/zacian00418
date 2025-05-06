@@ -8,7 +8,6 @@ import { useBattleState } from "./controller/useBattleState";
 import { useBattleHandlers } from "./controller/useBattleHandlers";
 import { useBattleEffects } from "./controller/useBattleEffects";
 import { useClickFnc } from "./controller/useClickFnc";
-import { pokeImgs, pokeInfo } from "./model/model";
 
 function App() {
 
@@ -24,7 +23,6 @@ function App() {
         {battleState.otherAreaVisible.top && <TopScreen onStart={clickFnc.start} />}
         {battleState.otherAreaVisible.isSelecting && (
           <SelectScreen
-            pokeImgs={pokeImgs}
             selectedOrder={battleState.selectedOrder}
             handleSelect={clickFnc.handleSelect}
             confirmSelection={clickFnc.confirmSelection}
@@ -33,19 +31,21 @@ function App() {
         {battleState.otherAreaVisible.battle && (
           <div className="battle-area-wrap">
             <BattleArea
+              battleState={battleState}
+              battleHandlers={battleHandlers}
               opPokeState={battleState.opPokeState}
               myPokeState={battleState.myPokeState}
               opAreaVisible={battleState.opAreaVisible}
               myAreaVisible={battleState.myAreaVisible}
             />
             <CommandArea
+              battleHandlers={battleHandlers}
               otherAreaVisible={battleState.otherAreaVisible}
               opAreaVisible={battleState.opAreaVisible}
               myAreaVisible={battleState.myAreaVisible}
               opPokeState={battleState.opPokeState}
               myPokeState={battleState.myPokeState}
               getTrueText={battleHandlers.getTrueText}
-              pokeInfo={pokeInfo}
               openBattleCmdArea={clickFnc.openBattleCmdArea}
               openChangeCmdArea={clickFnc.openChangeCmdArea}
               backCmd={clickFnc.backCmd}

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import MyHpBar from './MyHpBar';
 import { motion, AnimatePresence } from "framer-motion";
-import { pokeInfo, typeColors } from "../model/model";
+import { typeColors } from "../model/model";
+// import { useBattleHandlers } from "../controller/useBattleHandlers";
 
 const BattleArea = ({
+  battleHandlers,
   opPokeState,
   myPokeState,
   opAreaVisible,
@@ -43,24 +45,24 @@ const BattleArea = ({
           <div className="status-header">
             <h1 className="op-poke">
               <span>{opPokeState.name}</span>
-              {pokeInfo[opPokeState.name] && (
-                <span className="type-wrapper">
+              {/* {pokeInfo[opPokeState.name] && ( */}
+              <span className="type-wrapper">
+                <span
+                  className="type-box"
+                  style={{ backgroundColor: typeColors[opPokeState.type1], borderColor: typeColors[opPokeState.type1] }}
+                >
+                  {opPokeState.type1}
+                </span>
+                {opPokeState.type2 !== "なし" && (
                   <span
                     className="type-box"
-                    style={{ backgroundColor: typeColors[pokeInfo[opPokeState.name].type1], borderColor: typeColors[pokeInfo[opPokeState.name].type1] }}
+                    style={{ backgroundColor: typeColors[opPokeState.type2], borderColor: typeColors[opPokeState.type2] }}
                   >
-                    {pokeInfo[opPokeState.name].type1}
+                    {opPokeState.type2}
                   </span>
-                  {pokeInfo[opPokeState.name].type2 !== "なし" && (
-                    <span
-                      className="type-box"
-                      style={{ backgroundColor: typeColors[pokeInfo[opPokeState.name].type2], borderColor: typeColors[pokeInfo[opPokeState.name].type2] }}
-                    >
-                      {pokeInfo[opPokeState.name].type2}
-                    </span>
-                  )}
-                </span>
-              )}
+                )}
+              </span>
+              {/* )} */}
             </h1>
             <div className="poke-indicators">
               {[0, 1, 2].map((index) => {
@@ -105,24 +107,24 @@ const BattleArea = ({
           <div className="status-header">
             <h1 className="my-poke">
               <span>{myPokeState.name}</span>
-              {pokeInfo[myPokeState.name] && (
-                <span className="type-wrapper">
+              {/* {pokeInfo[myPokeState.name] && ( */}
+              <span className="type-wrapper">
+                <span
+                  className="type-box"
+                  style={{ backgroundColor: typeColors[myPokeState.type1], borderColor: typeColors[myPokeState.type1] }}
+                >
+                  {myPokeState.type1}
+                </span>
+                {myPokeState.type2 !== "なし" && (
                   <span
                     className="type-box"
-                    style={{ backgroundColor: typeColors[pokeInfo[myPokeState.name].type1], borderColor: typeColors[pokeInfo[myPokeState.name].type1] }}
+                    style={{ backgroundColor: typeColors[myPokeState.type2], borderColor: typeColors[myPokeState.type2] }}
                   >
-                    {pokeInfo[myPokeState.name].type1}
+                    {myPokeState.type2}
                   </span>
-                  {pokeInfo[myPokeState.name].type2 !== "なし" && (
-                    <span
-                      className="type-box"
-                      style={{ backgroundColor: typeColors[pokeInfo[myPokeState.name].type2], borderColor: typeColors[pokeInfo[myPokeState.name].type2] }}
-                    >
-                      {pokeInfo[myPokeState.name].type2}
-                    </span>
-                  )}
-                </span>
-              )}
+                )}
+              </span>
+              {/* )} */}
             </h1>
             <div className="poke-indicators">
               {[0, 1, 2].map((index) => {
@@ -139,8 +141,9 @@ const BattleArea = ({
             </div>
           </div>
           <MyHpBar
+            battleHandlers={battleHandlers}
             myPokeState={myPokeState} // 必要な状態を渡す
-            pokeInfo={pokeInfo}       // ポケモンの情報を渡す
+            // pokeInfo={pokeInfo}       // ポケモンの情報を渡す
             updateHp={(newHp) => handleStateChange('myHp', newHp)} // HP更新関数を渡す
           />
         </div>

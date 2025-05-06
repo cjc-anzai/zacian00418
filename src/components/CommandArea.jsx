@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { pokeInfo, weaponInfo, typeChart } from "../model/model";
+import { typeChart } from "../model/model";
 
 const CommandArea = ({
+  battleHandlers,
   otherAreaVisible,
   opAreaVisible,
   myAreaVisible,
@@ -18,20 +19,28 @@ const CommandArea = ({
 
   const [weaponInfoTooltip, setWeaponInfoTooltip] = useState(null);
 
-  const handleMouseEnter = (weapon) => {
-    const weaponType = weaponInfo[weapon].type;
-    const opPokeType1 = pokeInfo[opPokeState.name].type1;
-    const opPokeType2 = pokeInfo[opPokeState.name].type2;
+  const handleMouseEnter = async (weapon) => {
+    const opPokeType1 = opPokeState.type1;
+    const opPokeType2 = opPokeState.type2;
+
+    //技の情報を取得
+    const [weaponType, weaponKind, weaponPower, hitRate, priority] = await Promise.all([
+      battleHandlers.getWeaponInfo(weapon, "Type"),    //技タイプ
+      battleHandlers.getWeaponInfo(weapon, "Kind"),    //物理or特殊
+      battleHandlers.getWeaponInfo(weapon, "Power"),   //技威力
+      battleHandlers.getWeaponInfo(weapon, "HitRate"),
+      battleHandlers.getWeaponInfo(weapon, "Priority"),      
+    ]);
 
     // 技相性を計算
     const typeEffectiveness = calculateEffectiveness(weaponType, opPokeType1, opPokeType2);
 
     setWeaponInfoTooltip({
       type: weaponType,
-      kind: weaponInfo[weapon].kind === "physical" ? "物理" : "特殊",
-      power: weaponInfo[weapon].power,
-      hitRate: weaponInfo[weapon].hitRate,
-      priority: weaponInfo[weapon].priority,
+      kind: weaponKind,
+      power: weaponPower,
+      hitRate: hitRate,
+      priority: priority,
       effectiveness: typeEffectiveness,
     });
   };
@@ -79,41 +88,41 @@ const CommandArea = ({
         <div className="cmd-area">
           <button
             className="weapon-cmd-btn"
-            onClick={() => battle(pokeInfo[myPokeState.name].weapon1)}
-            onMouseEnter={() => handleMouseEnter(pokeInfo[myPokeState.name].weapon1)}
+            onClick={() => battle(myPokeState.weapon1)}
+            onMouseEnter={() => handleMouseEnter(myPokeState.weapon1)}
             onMouseLeave={handleMouseLeave}
           >
-            {pokeInfo[myPokeState.name].weapon1}
+            {myPokeState.weapon1}
           </button>
 
           <button
             className="weapon-cmd-btn"
-            onClick={() => battle(pokeInfo[myPokeState.name].weapon2)}
-            onMouseEnter={() => handleMouseEnter(pokeInfo[myPokeState.name].weapon2)}
+            onClick={() => battle(myPokeState.weapon2)}
+            onMouseEnter={() => handleMouseEnter(myPokeState.weapon2)}
             onMouseLeave={handleMouseLeave}
           >
-            {pokeInfo[myPokeState.name].weapon2}
+            {myPokeState.weapon2}
           </button>
 
-          {pokeInfo[myPokeState.name].weapon3 !== "なし" && (
+          {myPokeState.weapon3 !== "なし" && (
             <button
               className="weapon-cmd-btn"
-              onClick={() => battle(pokeInfo[myPokeState.name].weapon3)}
-              onMouseEnter={() => handleMouseEnter(pokeInfo[myPokeState.name].weapon3)}
+              onClick={() => battle(myPokeState.weapon3)}
+              onMouseEnter={() => handleMouseEnter(myPokeState.weapon3)}
               onMouseLeave={handleMouseLeave}
             >
-              {pokeInfo[myPokeState.name].weapon3}
+              {myPokeState.weapon3}
             </button>
           )}
 
-          {pokeInfo[myPokeState.name].weapon4 !== "なし" && (
+          {myPokeState.weapon4 !== "なし" && (
             <button
               className="weapon-cmd-btn"
-              onClick={() => battle(pokeInfo[myPokeState.name].weapon4)}
-              onMouseEnter={() => handleMouseEnter(pokeInfo[myPokeState.name].weapon4)}
+              onClick={() => battle(myPokeState.weapon4)}
+              onMouseEnter={() => handleMouseEnter(myPokeState.weapon4)}
               onMouseLeave={handleMouseLeave}
             >
-              {pokeInfo[myPokeState.name].weapon4}
+              {myPokeState.weapon4}
             </button>
           )}
 

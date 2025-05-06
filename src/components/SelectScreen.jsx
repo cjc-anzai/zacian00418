@@ -1,42 +1,48 @@
 import React from "react";
 
-const SelectScreen = ({ pokeImgs, selectedOrder, handleSelect, confirmSelection }) => {
+const SelectScreen = ({ selectedOrder, handleSelect, confirmSelection }) => {
+
+    const getPokeImg = (pokeName) => {
+      const url = `https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/pokeImg/${pokeName}.png`
+      return url;
+    }
+
     return (
       <div className="select-area">
         <div className="content">
           <h2>相手のポケモン</h2>
           <div className="op-poke-select">
             <div className="poke-preview">
-              <img src={pokeImgs.diaruga} alt="ディアルガ" />
+              <img src={getPokeImg("diaruga")} alt="ディアルガ" />
               <p>ディアルガ</p>
             </div>
             <div className="poke-preview">
-              <img src={pokeImgs.genga} alt="ゲンガー" />
+              <img src={getPokeImg("genga")} alt="ゲンガー" />
               <p>ゲンガー</p>
             </div>
             <div className="poke-preview">
-              <img src={pokeImgs.rizadon} alt="リザードン" />
+              <img src={getPokeImg("rizadon")} alt="リザードン" />
               <p>リザードン</p>
             </div>
             <div className="poke-preview">
-              <img src={pokeImgs.raguraji} alt="ラグラージ" />
+              <img src={getPokeImg("raguraji")} alt="ラグラージ" />
               <p>ラグラージ</p>
             </div>
             <div className="poke-preview">
-              <img src={pokeImgs.kairiki} alt="カイリキー" />
+              <img src={getPokeImg("kairiki")} alt="カイリキー" />
               <p>カイリキー</p>
             </div>
             <div className="poke-preview">
-              <img src={pokeImgs.sanaito} alt="サーナイト" />
+              <img src={getPokeImg("sanaito")} alt="サーナイト" />
               <p>サーナイト</p>
             </div>
           </div>
   
           <h2>自分のポケモンを選出</h2>
           <div className="my-poke-select">
-            {[{ name: "パルキア", img: pokeImgs.parukia }, { name: "ルカリオ", img: pokeImgs.rukario },
-              { name: "ピカチュウ", img: pokeImgs.pikachu }, { name: "マニューラ", img: pokeImgs.manyura },
-              { name: "ドダイトス", img: pokeImgs.dodaitosu }, { name: "メガヤンマ", img: pokeImgs.megayanma },].map((poke) => (
+            {[{ name: "パルキア", img: getPokeImg("parukia") }, { name: "ルカリオ", img: getPokeImg("rukario") },
+              { name: "ピカチュウ", img: getPokeImg("pikachu") }, { name: "マニューラ", img: getPokeImg("manyura") },
+              { name: "ドダイトス", img: getPokeImg("dodaitosu") }, { name: "メガヤンマ", img: getPokeImg("megayanma") },].map((poke) => (
               <div
                 key={poke.name}
                 className={`poke-option ${selectedOrder.includes(poke.name) ? "selected" : ""}`}

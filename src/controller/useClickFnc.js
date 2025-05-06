@@ -1,4 +1,3 @@
-import { sounds, pokeInfo } from "../model/model";
 import { useBattleHandlers } from "./useBattleHandlers";
 
 export function useClickFnc(battleState) {
@@ -30,14 +29,28 @@ export function useClickFnc(battleState) {
 
   const start = () => {
     battleHandlers.playSe("decide");
-    battleHandlers.playSe("start");
-    battleHandlers.setBgm(sounds.bgm.selection);
+    const startSe = battleHandlers.playSe("start");
+    const bgm = battleHandlers.setBgm("selection");
 
-    sounds.general.start.onended = () => {
-      setOtherAreaVisible(prev => ({...prev, top: false, isSelecting: true }));
-      sounds.bgm.selection.play();
+    startSe.onended = () => {
+      setOtherAreaVisible(prev => ({ ...prev, top: false, isSelecting: true }));
+      bgm.play();
     };
-  };
+
+
+    // (async () => {
+    //   const weaponName = await battleHandlers.getPokeInfo("ディアルガ", "Weapon1");
+    //   console.log("C列の値:", weaponName);
+    // })();
+    // (async () => { await battleHandlers.getPokeInfo("ディアルガ", "Weapon1") })();
+    // (async () => {
+    //   const value = await battleHandlers.getWeaponInfo(weaponName, "type");
+    //   console.log("C列の値:", value);
+    // })();
+
+  }
+
+
 
 
   //選出画面のポケモン押下時
@@ -55,22 +68,30 @@ export function useClickFnc(battleState) {
   };
 
   //選出確定ボタン
-  const confirmSelection = () => {
+  const confirmSelection = async () => {
     battleHandlers.playSe("decide");
     battleHandlers.stopBgm();
-    battleHandlers.setBgm(sounds.bgm.battle);
-    battleHandlers.delay(() => sounds.bgm.battle.play(), 50);
+    const bgm = battleHandlers.setBgm("battle");
+    battleHandlers.delay(() => bgm.play(), 50);
 
     setOtherAreaVisible(prev => ({ ...prev, isSelecting: false, battle: true }));
 
     //自分の選出順番をセットし、1番目のポケの名前をセット
     const [p1, p2, p3] = selectedOrder;
-    Object.assign(myPokeState, {
-      poke1Name: p1, poke2Name: p2, poke3Name: p3,
-      poke1FullH: pokeInfo[p1].h, poke2FullH: pokeInfo[p2].h, poke3FullH: pokeInfo[p3].h,
-      poke1H: pokeInfo[p1].h, poke2H: pokeInfo[p2].h, poke3H: pokeInfo[p3].h,
-    });
-    setMyPokeState(prev => ({ ...prev, name: p1 }));
+
+    // HPを非同期で取得
+    const [myP1FullH, myP2FullH, myP3FullH] = await Promise.all([
+      battleHandlers.getPokeInfo(p1, "H"),
+      battleHandlers.getPokeInfo(p2, "H"),
+      battleHandlers.getPokeInfo(p3, "H"),
+    ]);
+  
+    setMyPokeState(prev => ({
+      ...prev,
+      name: p1, poke1Name: p1, poke2Name: p2, poke3Name: p3,
+      poke1FullH: myP1FullH, poke2FullH: myP2FullH, poke3FullH: myP3FullH,
+      poke1H: myP1FullH, poke2H: myP2FullH, poke3H: myP3FullH,
+    }));
 
     // 相手の選出順番をランダムに選び、1番目のポケの名前をセット
     const shuffleArray = (array) => {
@@ -80,20 +101,28 @@ export function useClickFnc(battleState) {
       }
     };
 
-    const opCandidates = ["ディアルガ", "ゲンガー", "リザードン", "ラグラージ", "カイリキー", "サーナイト"]
-      .map(name => ({ name, ...pokeInfo[name] }));
+    const opCandidates = ["ディアルガ", "ゲンガー", "リザードン", "ラグラージ", "カイリキー", "サーナイト"];
+    // .map(name => ({ name, ...pokeInfo[name] }));
 
     shuffleArray(opCandidates); // Fisher-Yatesアルゴリズムでシャッフル
 
     // シャッフル後、最初の3体を選ぶ
-    const [o1, o2, o3] = opCandidates.slice(0, 3).map(p => p.name);
-    Object.assign(opPokeState, {
-      poke1Name: o1, poke2Name: o2, poke3Name: o3,
-      poke1FullH: pokeInfo[o1].h, poke2FullH: pokeInfo[o2].h, poke3FullH: pokeInfo[o3].h,
-      poke1H: pokeInfo[o1].h, poke2H: pokeInfo[o2].h, poke3H: pokeInfo[o3].h,
-    });
-    setOpPokeState(prev => ({ ...prev, name: o1 }));
-    console.log(`相手1体目：${opPokeState.poke1Name}\n2体目：${opPokeState.poke2Name}\n3体目：${opPokeState.poke3Name}`);
+    const [o1, o2, o3] = opCandidates.slice(0, 3);
+
+    // 非同期でHPを取得
+    const [opP1FullH, opP2FullH, opP3FullH] = await Promise.all([
+      battleHandlers.getPokeInfo(o1, "H"),
+      battleHandlers.getPokeInfo(o2, "H"),
+      battleHandlers.getPokeInfo(o3, "H"),
+    ]);
+    
+    setOpPokeState(prev => ({
+      ...prev,
+      name: o1, poke1Name: o1, poke2Name: o2, poke3Name: o3,
+      poke1FullH: opP1FullH, poke2FullH: opP2FullH, poke3FullH: opP3FullH,
+      poke1H: opP1FullH, poke2H: opP2FullH, poke3H: opP3FullH,
+    }));
+    console.log(`相手1体目：${o1}\n2体目：${o2}\n3体目：${o3}`);
   };
 
 
