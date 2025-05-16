@@ -1,31 +1,31 @@
 import "./App.css";
 import TopScreen from './components/TopScreen';
 import SelectScreen from "./components/SelectScreen";
-import BattleArea from "./components/BattleArea";
-import CommandArea from "./components/CommandArea";
+import BattleArea from "./components/battleArea/BattleArea";
 import ResultScreen from "./components/ResultScreen";
 import { useBattleState } from "./controller/useBattleState";
-import { useBattleHandlers } from "./controller/useBattleHandlers";
 import { useBattleEffects } from "./controller/useBattleEffects";
-import { useClickFnc } from "./controller/useClickFnc";
+import { useBattleHandlers } from "./controller/useBattleHandlers";
 
 function App() {
 
   const battleState = useBattleState();
-  const battleHandlers = useBattleHandlers(battleState);
   useBattleEffects(battleState);
-  const clickFnc = useClickFnc(battleState);
+  const battleHandlers = useBattleHandlers(battleState);
 
-  //HTML==========================================================================================================================
   return (
     <div className="App">
       <header className="App-header">
-        {battleState.otherAreaVisible.top && <TopScreen onStart={clickFnc.start} />}
-        {battleState.otherAreaVisible.isSelecting && (
+        {battleState.otherAreaVisible.top && (
+          <TopScreen
+            battleHandlers={battleHandlers}
+            setOtherAreaVisible={battleState.setOtherAreaVisible}
+          />
+        )}
+        {battleState.otherAreaVisible.select && (
           <SelectScreen
-            selectedOrder={battleState.selectedOrder}
-            handleSelect={clickFnc.handleSelect}
-            confirmSelection={clickFnc.confirmSelection}
+            battleState={battleState}
+            battleHandlers={battleHandlers}
           />
         )}
         {battleState.otherAreaVisible.battle && (
@@ -33,30 +33,14 @@ function App() {
             <BattleArea
               battleState={battleState}
               battleHandlers={battleHandlers}
-              opPokeState={battleState.opPokeState}
-              myPokeState={battleState.myPokeState}
-              opAreaVisible={battleState.opAreaVisible}
-              myAreaVisible={battleState.myAreaVisible}
-            />
-            <CommandArea
-              battleHandlers={battleHandlers}
-              otherAreaVisible={battleState.otherAreaVisible}
-              opAreaVisible={battleState.opAreaVisible}
-              myAreaVisible={battleState.myAreaVisible}
-              opPokeState={battleState.opPokeState}
-              myPokeState={battleState.myPokeState}
-              getTrueText={battleHandlers.getTrueText}
-              openBattleCmdArea={clickFnc.openBattleCmdArea}
-              openChangeCmdArea={clickFnc.openChangeCmdArea}
-              backCmd={clickFnc.backCmd}
-              battle={clickFnc.battle}
-              changeMyPoke={clickFnc.changeMyPoke}
-              nextMyPoke={clickFnc.nextMyPoke}
             />
           </div>
         )}
-        {!battleState.otherAreaVisible.top && !battleState.otherAreaVisible.isSelecting && !battleState.otherAreaVisible.battle && (
-          <ResultScreen resultText={battleState.resultText} goTop={clickFnc.goTop} />
+        {!battleState.otherAreaVisible.top && !battleState.otherAreaVisible.select && !battleState.otherAreaVisible.battle && (
+          <ResultScreen
+            resultText={battleState.resultText}
+            initializeState={battleHandlers.initializeState}
+          />
         )}
       </header>
     </div>

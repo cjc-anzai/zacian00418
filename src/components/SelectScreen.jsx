@@ -1,74 +1,121 @@
 import React from "react";
+import { delay } from "../model/model";
 
-const SelectScreen = ({ selectedOrder, handleSelect, confirmSelection }) => {
+const SelectScreen = ({ battleState, battleHandlers, }) => {
 
-    const getPokeImg = (pokeName) => {
-      const url = `https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/pokeImg/${pokeName}.png`
-      return url;
-    }
+  //インポートする変数や関数の取得
+  const { setOtherAreaVisible, selectedOrder, setSelectedOrder } = battleState;
+  const { playSe, setBgm, playBgm, getPokeInfo, selectBetterOpPokes, setBattleInfo } = battleHandlers;
 
-    return (
-      <div className="select-area">
-        <div className="content">
-          <h2>相手のポケモン</h2>
-          <div className="op-poke-select">
-            <div className="poke-preview">
-              <img src={getPokeImg("diaruga")} alt="ディアルガ" />
-              <p>ディアルガ</p>
-            </div>
-            <div className="poke-preview">
-              <img src={getPokeImg("genga")} alt="ゲンガー" />
-              <p>ゲンガー</p>
-            </div>
-            <div className="poke-preview">
-              <img src={getPokeImg("rizadon")} alt="リザードン" />
-              <p>リザードン</p>
-            </div>
-            <div className="poke-preview">
-              <img src={getPokeImg("raguraji")} alt="ラグラージ" />
-              <p>ラグラージ</p>
-            </div>
-            <div className="poke-preview">
-              <img src={getPokeImg("kairiki")} alt="カイリキー" />
-              <p>カイリキー</p>
-            </div>
-            <div className="poke-preview">
-              <img src={getPokeImg("sanaito")} alt="サーナイト" />
-              <p>サーナイト</p>
-            </div>
+  const getPokeImg = (pokeName) => {
+    const url = `https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/pokeImg/${pokeName}.png`
+    return url;
+  }
+
+  const opPokesRomaName = ["diaruga", "dodaitosu", "rizadon", "raguraji", "kairiki", "sanaito"];
+  const opPokesKanaName = ["ディアルガ", "ドダイトス", "リザードン", "ラグラージ", "カイリキー", "サーナイト"];
+  const myPokesRomaName = ["rukario", "parukia", "manyura", "genga", "megayanma", "pikachu"];
+  const myPokesKanaName = ["ルカリオ", "パルキア", "マニューラ", "ゲンガー", "メガヤンマ", "ピカチュウ"];
+
+  //選出画面のポケモン押下時
+  const handleSelect = (pokeName) => {
+    playSe("select");
+    setSelectedOrder((prev) => {
+      if (prev.includes(pokeName)) {
+        return prev.filter((name) => name !== pokeName); // クリックで解除
+      }
+      if (prev.length < 3) {
+        return [...prev, pokeName]; // 3体まで選択OK
+      }
+      return prev; // 3体以上は無視
+    });
+  };
+
+  //選出確定ボタン
+  const confirmSelection = async () => {
+    playSe("decide");
+    setOtherAreaVisible(prev => ({ ...prev, select: false, battle: true }));
+    setBgm("battle");
+    delay(() => playBgm(), 50);
+
+    //お互いの選出する３体をまとめる
+    const mySelectedOrder = selectedOrder;
+    //通常選出(相手は自分の６体に対して相性の良い３体を選ぶ)
+    // const opSelectedOrder = await selectBetterOpPokes(myPokesKanaName, opPokesKanaName);
+    //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
+    const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
+
+    //DBから6体のポケモンの最大HPを取得
+    const [myPokeInfos, opPokeInfos] = await Promise.all([
+      Promise.all(mySelectedOrder.map(getPokeInfo)),
+      Promise.all(opSelectedOrder.map(getPokeInfo))
+    ]);
+
+    setBattleInfo(myPokeInfos, opPokeInfos);
+  };
+
+  return (
+    <div className="select-area">
+      <div className="content">
+        <h2>相手のポケモン</h2>
+        <div className="op-poke-select">
+          <div className="poke-preview">
+            <img src={getPokeImg(opPokesRomaName[0])} alt={opPokesKanaName[0]} />
+            <p>{opPokesKanaName[0]}</p>
           </div>
-  
-          <h2>自分のポケモンを選出</h2>
-          <div className="my-poke-select">
-            {[{ name: "パルキア", img: getPokeImg("parukia") }, { name: "ルカリオ", img: getPokeImg("rukario") },
-              { name: "ピカチュウ", img: getPokeImg("pikachu") }, { name: "マニューラ", img: getPokeImg("manyura") },
-              { name: "ドダイトス", img: getPokeImg("dodaitosu") }, { name: "メガヤンマ", img: getPokeImg("megayanma") },].map((poke) => (
-              <div
-                key={poke.name}
-                className={`poke-option ${selectedOrder.includes(poke.name) ? "selected" : ""}`}
-                onClick={() => handleSelect(poke.name)}
-              >
-                <img src={poke.img} alt={poke.name} />
-                <p>{poke.name}</p>
-                <p className="order-num">
-                  {selectedOrder.includes(poke.name) && <span>{selectedOrder.indexOf(poke.name) + 1}番目</span>}
-                </p>
-              </div>
-            ))}
+          <div className="poke-preview">
+            <img src={getPokeImg(opPokesRomaName[1])} alt={opPokesKanaName[1]} />
+            <p>{opPokesKanaName[1]}</p>
           </div>
-  
-          <div className="select-actions">
-            <button
-              className={selectedOrder.length === 3 ? "active" : "inactive"}
-              onClick={confirmSelection}
-              disabled={selectedOrder.length !== 3}
-            >
-              バトル開始！
-            </button>
+          <div className="poke-preview">
+            <img src={getPokeImg(opPokesRomaName[2])} alt={opPokesKanaName[2]} />
+            <p>{opPokesKanaName[2]}</p>
+          </div>
+          <div className="poke-preview">
+            <img src={getPokeImg(opPokesRomaName[3])} alt={opPokesKanaName[3]} />
+            <p>{opPokesKanaName[3]}</p>
+          </div>
+          <div className="poke-preview">
+            <img src={getPokeImg(opPokesRomaName[4])} alt={opPokesKanaName[4]} />
+            <p>{opPokesKanaName[4]}</p>
+          </div>
+          <div className="poke-preview">
+            <img src={getPokeImg(opPokesRomaName[5])} alt={opPokesKanaName[5]} />
+            <p>{opPokesKanaName[5]}</p>
           </div>
         </div>
+
+        <h2>自分のポケモンを選出</h2>
+        <div className="my-poke-select">
+          {[{ name: myPokesKanaName[0], img: getPokeImg(myPokesRomaName[0]) }, { name: myPokesKanaName[1], img: getPokeImg(myPokesRomaName[1]) },
+          { name: myPokesKanaName[2], img: getPokeImg(myPokesRomaName[2]) }, { name: myPokesKanaName[3], img: getPokeImg(myPokesRomaName[3]) },
+          { name: myPokesKanaName[4], img: getPokeImg(myPokesRomaName[4]) }, { name: myPokesKanaName[5], img: getPokeImg(myPokesRomaName[5]) },].map((poke) => (
+            <div
+              key={poke.name}
+              className={`poke-option ${selectedOrder.includes(poke.name) ? "selected" : ""}`}
+              onClick={() => handleSelect(poke.name)}
+            >
+              <img src={poke.img} alt={poke.name} />
+              <p>{poke.name}</p>
+              <p className="order-num">
+                {selectedOrder.includes(poke.name) && <span>{selectedOrder.indexOf(poke.name) + 1}番目</span>}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="select-actions">
+          <button
+            className={selectedOrder.length === 3 ? "active" : "inactive"}
+            onClick={confirmSelection}
+            disabled={selectedOrder.length !== 3}
+          >
+            バトル開始！
+          </button>
+        </div>
       </div>
-    );
-  };
-  
-  export default SelectScreen;
+    </div>
+  );
+};
+
+export default SelectScreen;
