@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getCompatiTextForWeaponInfoList, delay, compatiTexts, } from "../../../model/model";
+import { getCompatiTextForWeaponInfoList, delay, compatiTexts, calcMultiplier, } from "../../../model/model";
 
 const CommandArea = ({
   battleState,
@@ -14,10 +14,10 @@ const CommandArea = ({
     otherAreaVisible, setOtherAreaVisible,
     mySelectedWeapon, opSelectedWeapon,
     myTurn,
-    changePokeName,
-    turnCnt, changeTurn,
+    myChangePokeName,
+    turnCnt, myChangeTurn, opChangeTurn,
   } = battleState;
-  const { playSe, updateTurnCnt, setMyTurn, setWeaponText, setOpWeapon, setBackText, getWeaponInfo, } = battleHandlers;
+  const { playSe, resetChangeTurn, updateTurnCnt, setMyTurn, setWeaponText, setOpChangePoke, setOpWeapon, setBackText, getWeaponInfo, } = battleHandlers;
 
   const [weaponInfoList, setWeaponInfoList] = useState(null);
 
@@ -55,28 +55,41 @@ const CommandArea = ({
     setWeaponInfoList(null);
   };
 
-  //技名ボタン押下時、選択した技をセット
+  //技名ボタン押下時
   const setWeapons = async (weaponName) => {
     playSe("decide");
     setOtherAreaVisible(prev => ({ ...prev, weaponCmd: false }));
+    resetChangeTurn();
     updateTurnCnt();
     mySelectedWeapon.current = weaponName;
-    await setOpWeapon();
+    await setOpChangePoke();    //交換すべき時はrefに交換ポケモンをセット
+    if (!opChangeTurn.current) await setOpWeapon();    //相手が交換しないときは技を選択する
     await setMyTurn();
-    const iAmFirst = myTurn.current === "first";
-    setWeaponText(iAmFirst, iAmFirst ? myPokeState : opPokeState);
+
+    //相手が交代するなら、相手のbackテキストをセット
+    if (opChangeTurn.current) {
+      setBackText();
+    }
+    //相手が居座るなら先攻の技テキストをセット
+    else {
+      const iAmFirst = myTurn.current === "first";
+      setWeaponText(iAmFirst, iAmFirst ? myPokeState : opPokeState);
+    }
   };
 
   //〇〇に交代ボタン押下時、交代するポケモン名を保存し、交代フラグを立てる
   const changeMyPoke = async (changePoke) => {
     playSe("decide");
     setOtherAreaVisible(prev => ({ ...prev, changeCmd: false }));
+    resetChangeTurn();
     updateTurnCnt();
 
-    changePokeName.current = changePoke;    //交代するポケモンをrefに保存
-    changeTurn.current = true;    //交代フラグ
-    await setOpWeapon();    //相手が出す技をrefに保存
-    setBackText(myPokeState.name);    //backテキストをセット
+    myChangeTurn.current = true;    //交代フラグ
+    myChangePokeName.current = changePoke;    //交代するポケモンをrefに保存
+    await setOpChangePoke();    //交換すべき時はrefに交換ポケモンをセット
+    if (!opChangeTurn.current) await setOpWeapon();    //相手が交換しないときは技を選択する
+    await setMyTurn();
+    setBackText();    //先攻のbackテキストをセット
     console.log(`${changePoke}に交代を選択`);
   }
 
@@ -84,7 +97,7 @@ const CommandArea = ({
   const setNextMyPoke = (nextMyPoke) => {
     playSe("decide");
     setOtherAreaVisible(prev => ({ ...prev, nextPokeCmd: false }));
-    changePokeName.current = nextMyPoke;
+    myChangePokeName.current = nextMyPoke;
     delay(() => setMyPokeState(p => ({ ...p, name: nextMyPoke })), 1000);
   }
 
@@ -131,27 +144,25 @@ const CommandArea = ({
             {myPokeState.weapon2}
           </button>
 
-          {myPokeState.weapon3 !== "なし" && (
-            <button
-              className="weapon-cmd-btn"
-              onClick={async () => await setWeapons(myPokeState.weapon3)}
-              onMouseEnter={() => handleMouseEnter(myPokeState.weapon3)}
-              onMouseLeave={handleMouseLeave}
-            >
-              {myPokeState.weapon3}
-            </button>
-          )}
+          <button
+            className="weapon-cmd-btn"
+            onClick={async () => await setWeapons(myPokeState.weapon3)}
+            onMouseEnter={() => handleMouseEnter(myPokeState.weapon3)}
+            onMouseLeave={handleMouseLeave}
+          >
+            {myPokeState.weapon3}
+          </button>
 
-          {myPokeState.weapon4 !== "なし" && (
-            <button
-              className="weapon-cmd-btn"
-              onClick={async () => await setWeapons(myPokeState.weapon4)}
-              onMouseEnter={() => handleMouseEnter(myPokeState.weapon4)}
-              onMouseLeave={handleMouseLeave}
-            >
-              {myPokeState.weapon4}
-            </button>
-          )}
+          <button
+            className="weapon-cmd-btn"
+            onClick={async () => await setWeapons(myPokeState.weapon4)}
+            onMouseEnter={() => handleMouseEnter(myPokeState.weapon4)}
+            onMouseLeave={handleMouseLeave}
+          >
+            {myPokeState.weapon4}
+          </button>
+
+          <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
 
           {weaponInfoList && (
             <div className="tooltip">
@@ -163,7 +174,6 @@ const CommandArea = ({
               <p>技相性: {weaponInfoList.compatiText}</p>
             </div>
           )}
-          <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>
       )}
 

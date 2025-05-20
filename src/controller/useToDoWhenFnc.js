@@ -6,9 +6,10 @@ export function useToDoWhenFnc(battleState) {
   //インポートの取得===========================================================
   const {
     setOtherAreaVisible,
+    myPokeState, opPokeState,
     myLife, opLife,
-    changePokeName,
-    myTurn, changeTurn,
+    myChangePokeName, opChangePokeName,
+    myTurn, myChangeTurn, opChangeTurn,
   } = battleState;
 
   const {
@@ -17,6 +18,7 @@ export function useToDoWhenFnc(battleState) {
     setHpOnEntry,
     setPokeNumH,
     setGoText,
+    setBackText,
     setWeaponText,
     setDeadText,
     setMyTurn,
@@ -56,29 +58,24 @@ export function useToDoWhenFnc(battleState) {
     //state.hpの値をstate.poke1H等にセットする
     setPokeNumH(isMe, pokeState);
 
-    setTimeout(() => {
-      //バトル開始時OR交代時にgoTextをセット
-      if (pokeState.text.content === "" || pokeState.text.kind === "back" || pokeState.text.kind === "dead") {
-        setGoText(isMe, pokeState);
-        return;
-      }
+    //バトル開始時OR交代時にgoTextをセット
+    if (pokeState.text.content === "" || pokeState.text.kind === "back" || pokeState.text.kind === "dead") {
+      setGoText(isMe, pokeState);
+      return;
+    }
 
-      setTimeout(() => {
-        setOtherAreaVisible(prev => ({ ...prev, text: false, notHit: false, critical: false }));
-        if (pokeState.hp > 0) {
-          //先攻か交代後に攻撃を受けた時 || 後攻で自分の攻撃が終了したらターン終了
-          if ((isMe && (myTurn.current === "first" || changeTurn.current)) || (!isMe && myTurn.current === "after")) {
-            setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-            changeTurn.current = false;   //非交代時は無意味だが害はなし
-          } else {
-            //先攻の攻撃が終わったら、後攻の技テキストをセット
-            setWeaponText(isMe, pokeState);
-          }
-        } else {
-          setDeadText(isMe, pokeState);
-        }
-      }, 1000);
-    }, 1000);
+    if (pokeState.hp > 0) {
+      //先攻か交代後に攻撃を受けた時 || 後攻で自分の攻撃が終了したらターン終了
+      if ((isMe && (myTurn.current === "first" || myChangeTurn.current)) || (!isMe && (myTurn.current === "after" || opChangeTurn.current))) {
+        setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+      }
+      //先攻の攻撃が終わったら、後攻の技テキストをセット
+      else if (!opChangeTurn.current) {
+        setWeaponText(isMe, pokeState);
+      }
+    } else {
+      setDeadText(isMe, pokeState);
+    }
   };
 
 
@@ -89,19 +86,39 @@ export function useToDoWhenFnc(battleState) {
 
     //goTextがセットされたら表示制御
     if (textKind === "go") {
-      setAreaVisibleForApp(isMe);
-      //交代時は先攻の技をセット
-      if (changeTurn.current) {
+      await setAreaVisibleForApp(isMe);
+
+      const isFirst = myTurn.current === "first";
+      //両者とも交代してないとき
+      if (!myChangeTurn.current && !opChangeTurn.current) {
+      }
+      //一方が交代したとき、先攻の技テキストをセット
+      else if (myChangeTurn.current !== opChangeTurn.current) {
+        isFirst ? opChangePokeName.current = null : myChangePokeName.current = null;
+        const atcState = isFirst ? myPokeState : opPokeState;
         setTimeout(async () => {
-          await setMyTurn();
-          setWeaponText(myTurn.current === "first", pokeState);
+          setWeaponText(isFirst, atcState);
         }, 2000);
+      }
+      //どちらも交代するとき
+      else {
+        //1周目は後攻の交代テキストをセット
+        if (myChangePokeName.current && opChangePokeName.current) {
+          isFirst ? myChangePokeName.current = null : opChangePokeName.current = null;
+          setBackText();
+        }
+        //2周目はrefの制御
+        else {
+          isFirst ? opChangePokeName.current = null : myChangePokeName.current = null;
+          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+        }
       }
     }
     //backTextがセットされたら表示制御して次のポケモン名をセット
-    else if (textKind === "back" && isMe) {
-      setAreaVisibleForChange();
-      delay(() => setPokeName(isMe, changePokeName.current), 1000);
+    else if (textKind === "back") {
+      setAreaVisibleForChange(isMe);
+      const changePokeName = (isMe ? myChangePokeName : opChangePokeName).current;
+      delay(() => setPokeName(isMe, changePokeName), 1000);
     }
     //weaponTextがセットされたら受けポケモンへの相性テキストをセット
     else if (textKind === "weapon") {
@@ -112,11 +129,11 @@ export function useToDoWhenFnc(battleState) {
       const { damage, isHit, isCriticalHit } = await getDamage(!isMe);
       await playAttackingFlow(!isMe, pokeState, isHit, isCriticalHit, damage);
       setHpOnDamage(isMe, pokeState, damage);//HPの更新
+      setOtherAreaVisible(prev => ({ ...prev, text: false, notHit: false, critical: false }));
     }
     //死亡エフェクトを入れて、ゲーム続行ORゲームセット
     else if (textKind === "dead") {
       setOtherAreaVisible(prev => ({ ...prev, actionCmd: false }));
-      changeTurn.current = false;
       await playDeathEffect(isMe, pokeState);
 
       //ライフを減らし、残りライフがあれば次のポケモンをセットする。なければゲーム終了。

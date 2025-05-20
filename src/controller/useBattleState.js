@@ -39,8 +39,10 @@ export function useBattleState() {
   const mySelectedWeapon = useRef("");
   const opSelectedWeapon = useRef("");
   const myTurn = useRef("first");       //先攻後攻
-  const changeTurn = useRef(false);       //交代したターンか否か
-  const changePokeName = useRef("");    //交代した後のポケモン
+  const myChangeTurn = useRef(false);       //交代したターンか否か
+  const opChangeTurn = useRef(false);
+  const myChangePokeName = useRef(null);    //交代するポケモン
+  const opChangePokeName = useRef(null);
   const resultText = useRef("");        //勝敗
   const turnCnt = useRef(1);            //現在のターン数(デバッグ用)
   const loopAudioRef = useRef(null);    //再生中のBGM
@@ -57,8 +59,8 @@ export function useBattleState() {
     selectedOrder, setSelectedOrder,
     myLife, opLife,
     mySelectedWeapon, opSelectedWeapon,
-    myTurn, changeTurn,
-    changePokeName,
+    myTurn, myChangeTurn, opChangeTurn,
+    myChangePokeName, opChangePokeName,
     resultText, turnCnt,
     loopAudioRef, 
   };

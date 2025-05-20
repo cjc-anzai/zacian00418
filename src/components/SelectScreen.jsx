@@ -12,10 +12,10 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
     return url;
   }
 
-  const opPokesRomaName = ["diaruga", "dodaitosu", "rizadon", "raguraji", "kairiki", "sanaito"];
-  const opPokesKanaName = ["ディアルガ", "ドダイトス", "リザードン", "ラグラージ", "カイリキー", "サーナイト"];
-  const myPokesRomaName = ["rukario", "parukia", "manyura", "genga", "megayanma", "pikachu"];
-  const myPokesKanaName = ["ルカリオ", "パルキア", "マニューラ", "ゲンガー", "メガヤンマ", "ピカチュウ"];
+  const opPokesRomaName = ["erekiburu", "erureido", "rapurasu", "manmu", "guraion", "hapinasu"];
+  const opPokesKanaName = ["エレキブル", "エルレイド", "ラプラス", "マンムー", "グライオン", "ハピナス"];
+  const myPokesRomaName = ["gaburiasu", "rukario", "genga", "mirokarosu", "jukain", "rizadon"];
+  const myPokesKanaName = ["ガブリアス", "ルカリオ", "ゲンガー", "ミロカロス", "ジュカイン", "リザードン"];
 
   //選出画面のポケモン押下時
   const handleSelect = (pokeName) => {
@@ -40,10 +40,13 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
     //お互いの選出する３体をまとめる
     const mySelectedOrder = selectedOrder;
+
     //通常選出(相手は自分の６体に対して相性の良い３体を選ぶ)
     // const opSelectedOrder = await selectBetterOpPokes(myPokesKanaName, opPokesKanaName);
     //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
     const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
+    //テスト用で相手の選出を固定　自分選出は[ゲンガー, ルカリオ, リザードン]
+    // const opSelectedOrder = ["エルレイド", "ハピナス", "エレキブル"];
 
     //DBから6体のポケモンの最大HPを取得
     const [myPokeInfos, opPokeInfos] = await Promise.all([

@@ -122,7 +122,8 @@ export const selectBetterOpPokesLogic = (resistanceMap, myPoke1Info) => {
   // まずは3体を選出
   let betterOpPokes = sortedResistanceList.slice(0, 3);
 
-  // 自分の1体目に対して「最も耐性が高い（受けが良い）相手」を先頭にする
+  //ハードモード
+  //自分の1体目に対して「最も耐性が高い（受けが良い）相手」を先頭にする
   betterOpPokes.sort((a, b) => {
     const calcDefenseScore = (opPoke) => {
       const m1 = calcMultiplier(myPoke1Info.type1, opPoke.type1, opPoke.type2);
@@ -139,6 +140,7 @@ export const selectBetterOpPokesLogic = (resistanceMap, myPoke1Info) => {
 
   betterOpPokes = betterOpPokes.map(poke => poke.name);
 
+  console.log(resistanceMap);
   console.log(`相手のポケモン\n１体目：${betterOpPokes[0]}\n２体目：${betterOpPokes[1]}\n３体目：${betterOpPokes[2]}`);
 
   return betterOpPokes;
@@ -199,18 +201,18 @@ export const calcMultiplier = (weaponType, defType1, defType2) => {
 //getMostEffectiveWeapon()のロジック
 export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => {
   //相手の全ての攻撃技で、自分のポケモンに与えるダメージを取得
-  const [opW1Damage, opW2Damage, opW3Damage] = [0, 1, 2].map(
+  const [opW1Damage, opW2Damage, opW3Damage, opW4Damage] = [0, 1, 2, 3].map(
     i => calcPureDamage(weaponsInfo[i], atcInfos[i], defInfos[i]).pureDamage
   );
 
   //相手の全ての技の優先度を取得
-  const [opW1Priority, opW2Priority, opW3Priority] = weaponsInfo.map(w => w.priority);
+  const [opW1Priority, opW2Priority, opW3Priority, opW4Priority] = weaponsInfo.map(w => w.priority);
 
   // 技とダメージ・優先度をまとめる
   const opWeapons = weaponsInfo.map((w, i) => ({
     name: w.name,
-    damage: [opW1Damage, opW2Damage, opW3Damage][i],
-    priority: [opW1Priority, opW2Priority, opW3Priority][i],
+    damage: [opW1Damage, opW2Damage, opW3Damage, opW4Damage][i],
+    priority: [opW1Priority, opW2Priority, opW3Priority, opW4Priority][i],
   }));
 
   //与えるダメージが最も大きい技のインデックスを取得
@@ -229,11 +231,16 @@ export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => 
       ? highPriorityWeapons.reduce((max, w) => w.damage > max.damage ? w : max).index
       : null;
 
-  const strongestWeapon = opWeapons[opWtrongestWeaponIndex].name;   //最も与えるダメージが大きい技
-  const strongestHighPriorityWeapon = opWeapons[strongestHighPriorityWeaponIndex].name;   //最も与えるダメージが大きい先制技
-  const strongestHighPriorityWeaponDamage = Math.round(opWeapons[strongestHighPriorityWeaponIndex].damage * 0.85);   //最も与えるダメージが大きい先制技(最低乱数)
+  //最も与えるダメージが大きい技
+  const strongestWeapon = opWeapons[opWtrongestWeaponIndex].name;
+  //最も与えるダメージが大きい先制技, 最も与えるダメージが大きい先制技(最低乱数)
+  let [strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage] = [null, null];
+  if (strongestHighPriorityWeaponIndex) {
+    strongestHighPriorityWeapon = opWeapons[strongestHighPriorityWeaponIndex].name;   
+    strongestHighPriorityWeaponDamage = Math.round(opWeapons[strongestHighPriorityWeaponIndex].damage * 0.85);
+  }
 
-  console.log(`最大火力\n${opWeapons[0].name}：${opWeapons[0].damage}\n${opWeapons[1].name}：${opWeapons[1].damage}\n${opWeapons[2].name}：${opWeapons[2].damage}`);
+  console.log(`最大火力\n${opWeapons[0].name}：${opWeapons[0].damage}\n${opWeapons[1].name}：${opWeapons[1].damage}\n${opWeapons[2].name}：${opWeapons[2].damage}\n${opWeapons[3].name}：${opWeapons[3].damage}}`);
 
   return { strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage }
 }
@@ -241,12 +248,13 @@ export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => 
 //predictMyAction()のロジック
 export const predictMyActionLogic = (weaponsInfo, atcInfos, defInfos) => {
   //自分が出すであろう技とそのダメージを求める
-  const [myW1Damage, myW2Damage, myW3Damage] = [
+  const [myW1Damage, myW2Damage, myW3Damage, myW4Damage] = [
     calcPureDamage(weaponsInfo[0], atcInfos[0], defInfos[0]).pureDamage,
     calcPureDamage(weaponsInfo[1], atcInfos[1], defInfos[1]).pureDamage,
     calcPureDamage(weaponsInfo[2], atcInfos[2], defInfos[2]).pureDamage,
+    calcPureDamage(weaponsInfo[3], atcInfos[3], defInfos[3]).pureDamage,
   ];
-  const myMaxDamage = Math.max(myW1Damage, myW2Damage, myW3Damage) * 0.93;
+  const myMaxDamage = Math.max(myW1Damage, myW2Damage, myW3Damage, myW4Damage) * 0.85;
   return myMaxDamage;
 }
 
@@ -255,8 +263,8 @@ export const choiseBetterWeaponLogic = (strongestWeapon, strongestHighPriorityWe
   let betterWeapon = "";
   //先制技を持っていているとき
   if (strongestHighPriorityWeapon) {
-    //相手の方が遅く、自分の攻撃の中乱数で、相手が倒れる時は先制技を選択する
-    if (myPokeSpeed > opPokeSpeed && opPokeHp <= myMaxDamage) {
+    //相手の方が遅く、自分の攻撃の最低乱数で、相手が倒れる時は先制技を選択する(無効の場合を除く)
+    if (myPokeSpeed > opPokeSpeed && opPokeHp <= myMaxDamage && strongestHighPriorityWeaponDamage !== 0) {
       betterWeapon = strongestHighPriorityWeapon;
     }
     //先制技(最低乱数)で自分を倒せる場合は先制技を選択する
