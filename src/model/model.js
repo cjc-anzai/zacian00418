@@ -89,7 +89,6 @@ export const calcResistanceForAllOpPokes = (myPokesInfo, opPokesInfo) => {
       return total + maxVal;
     }, 0);
 
-
     result[`opPoke${index + 1}`] = {
       name,
       type1,
@@ -146,7 +145,6 @@ export const selectBetterOpPokesLogic = (resistanceMap, myPoke1Info) => {
   return betterOpPokes;
 };
 
-
 //ダメージ後のHpを取得する
 export const calcNewHp = (currentHp, damage) => {
   const newHp = Math.max(0, currentHp - damage);
@@ -155,13 +153,88 @@ export const calcNewHp = (currentHp, damage) => {
 
 //Goテキストを取得する
 export const getGoText = (isMe, pokeName) => {
-  const goText = `${isMe ? "ゆけ！" : "相手は"}${pokeName}${isMe ? "！" : "をくりだした"}`;
+  const goText = isMe ? `ゆけ！${pokeName}！` : `相手は${pokeName}をくりだした！`;
   return goText;
+}
+
+//相手が交代できる控えポケモンを取得する
+export const getOpChangePoke = (aliveOpBenchPokes, dangerousType, safeType) => {
+  let opChangePokeName = null
+
+  //相手の控えが自分のバトルポケモンから受けるダメージをまとめる
+  const [val21, val22, val31, val32] = [
+    calcMultiplier(dangerousType[0], aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2),
+    calcMultiplier(dangerousType[1] ? dangerousType[1] : safeType[0], aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2),
+    aliveOpBenchPokes.length === 2 ? calcMultiplier(dangerousType[0], aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2) : null,
+    aliveOpBenchPokes.length === 2 ? calcMultiplier(dangerousType[1] ? dangerousType[1] : safeType[0], aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2) : null
+  ];
+
+  //抜群を取られるのが一方のタイプの場合、そのタイプを半減で受けれて、他タイプを等倍以下で受けれる場合交代する      
+  if (dangerousType.length === 1) {
+    if (val21 <= 0.5 && val22 <= 1) {
+      //1体目も2体目のポケモンも受けれる時、//より耐性が強い方に交換する
+      if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1) {
+        if ((val21 + val22) !== (val31 + val32))
+          opChangePokeName =
+            (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+        else
+          opChangePokeName =
+            aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name
+      }
+      else
+        opChangePokeName = aliveOpBenchPokes[0].name;
+    }
+    //2体目のポケモンが受けれる時
+    else if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1)
+      opChangePokeName = aliveOpBenchPokes[1].name;
+  }
+  //複合タイプのどちらも抜群の場合、控えがどちらも受けれる場合のみ交代する
+  else {
+    if ((val21 + val22) <= 1) {
+      if (aliveOpBenchPokes.length === 2 && (val31 + val32) <= 1) {
+        if ((val21 + val22) !== (val31 + val32))
+          opChangePokeName =
+            (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+        else
+          opChangePokeName =
+            aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+      }
+      else
+        opChangePokeName = aliveOpBenchPokes[0].name;
+    }
+    else if (aliveOpBenchPokes.length === 2 && (val31 + val32) <= 1)
+      opChangePokeName = aliveOpBenchPokes[1].name;
+  }
+
+  return opChangePokeName;
+}
+
+//先攻後攻を決めるロジック
+export const checkIsFirst = (myPokeSpeed, opPokeSpeed, myWeaponPriority, opWeaponPriority) => {
+  let isFirst = false;
+
+  //優先度が同じ場合、素早さが速い方が先攻
+  if (myWeaponPriority === opWeaponPriority) {
+    if (myPokeSpeed !== opPokeSpeed)
+      isFirst = myPokeSpeed > opPokeSpeed;
+    // 同速の場合ランダムで先攻を決める
+    else {
+      isFirst = Math.random() < 0.5;
+      console.log(`同速のためランダムで${isFirst ? "先攻" : "後攻"}になった`);
+    }
+  }
+  //優先度が異なる場合、優先度が高い方が先攻
+  else {
+    isFirst = myWeaponPriority > opWeaponPriority;
+    console.log(`技の優先度差で${isFirst ? "先攻" : "後攻"}`);
+  }
+
+  return isFirst;
 }
 
 //weaponテキストを取得する
 export const getWeaponText = (isMe, pokeName, weaponName) => {
-  const weaponText = `${isMe ? "" : "相手の"}${pokeName}${isMe ? "！" : "の"}${weaponName}${isMe ? "！" : ""}`;
+  const weaponText = isMe ? `${pokeName}！${weaponName}！` : `相手の${pokeName}の${weaponName}`;
   return weaponText;
 }
 
@@ -188,7 +261,7 @@ export const getCompatiTextForWeaponInfoList = (weaponType, defType1, defType2) 
 
 //deadテキストを取得する
 export const getDeadText = (isMe, pokeName) => {
-  const deadText = `${isMe ? "" : "相手の"}${pokeName}は倒れた`;
+  const deadText = isMe ? `${pokeName}は倒れた` : `相手の}${pokeName}は倒れた`;
   return deadText;
 }
 
@@ -236,7 +309,7 @@ export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => 
   //最も与えるダメージが大きい先制技, 最も与えるダメージが大きい先制技(最低乱数)
   let [strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage] = [null, null];
   if (strongestHighPriorityWeaponIndex) {
-    strongestHighPriorityWeapon = opWeapons[strongestHighPriorityWeaponIndex].name;   
+    strongestHighPriorityWeapon = opWeapons[strongestHighPriorityWeaponIndex].name;
     strongestHighPriorityWeaponDamage = Math.round(opWeapons[strongestHighPriorityWeaponIndex].damage * 0.85);
   }
 
@@ -330,33 +403,33 @@ export const calcTrueDamage = (weaponInfo, attackerInfo, defenderInfo) => {
 
     console.log(`${defenderInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameType ? 1.5 : 1}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
   }
-  else {
+  else 
     console.log(`${attackerInfo.name}の攻撃は当たらなかった`);
-  }
+  
   return { trueDamage, isHit, isCriticalHit };
 }
 
 //adjustHpBar()のロジック
-export const adjustHpBarLogic = (isMe, newHp, fullHp) => {
+export const adjustHpBarLogic = (isMe, newHp, MaxHp) => {
   //HPバーの制御
-  const hpPercent = Math.round((newHp / fullHp) * 100);
+  const HpPrcent = Math.round((newHp / MaxHp) * 100);
   //▼ロジック====
   const hpBarElem = document.querySelector(isMe ? ".my-hp-bar" : ".op-hp-bar");
-  hpBarElem.style.width = `${hpPercent}%`;
+  hpBarElem.style.width = `${HpPrcent}%`;
   hpBarElem.classList.remove("low", "mid");
-  if (hpPercent <= 25) {
+  if (HpPrcent <= 25)
     hpBarElem.classList.add("low");
-  }
-  else if (hpPercent <= 50) {
+  else if (HpPrcent <= 50)
     hpBarElem.classList.add("mid");
-  }
 }
 
 //ポケインジケータの色を取得する
-export const getPokeIndicatorsColor = (currentHp, fullHp) => {
+export const getPokeIndicatorsColor = (currentHp, MaxHp) => {
   let color = "gray";
-  if (currentHp === fullHp) color = "green";
-  else if (currentHp > 0) color = "yellow";
+  if (currentHp === MaxHp) 
+    color = "green";
+  else if (currentHp > 0) 
+    color = "yellow";
   return color;
 }
 
@@ -397,7 +470,7 @@ export const selectNextOpPokeLogic = (mypoke, opPokes) => {
   }
 
   //自分から相手への相性に差があるとき
-  //相性が悪いの速さが自分よりも速くて、自分に弱点をつけるとき
+  //相性が悪い方の速さが自分よりも速くて、自分に弱点をつけるとき
   //相性がましな方の速さも自分よりも速くて、自分に弱点を付けるなら、ましな方を選択する
   else {
     const worse = myToOp[0] > myToOp[1] ? 0 : 1;

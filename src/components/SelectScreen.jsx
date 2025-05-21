@@ -5,7 +5,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
   //インポートする変数や関数の取得
   const { setOtherAreaVisible, selectedOrder, setSelectedOrder } = battleState;
-  const { playSe, setBgm, playBgm, getPokeInfo, selectBetterOpPokes, setBattleInfo } = battleHandlers;
+  const { playSe, setBgm, playBgm, getPokeInfo, setBattleInfo } = battleHandlers;
 
   const getPokeImg = (pokeName) => {
     const url = `https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/pokeImg/${pokeName}.png`
@@ -21,12 +21,10 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
   const handleSelect = (pokeName) => {
     playSe("select");
     setSelectedOrder((prev) => {
-      if (prev.includes(pokeName)) {
+      if (prev.includes(pokeName))
         return prev.filter((name) => name !== pokeName); // クリックで解除
-      }
-      if (prev.length < 3) {
+      if (prev.length < 3)
         return [...prev, pokeName]; // 3体まで選択OK
-      }
       return prev; // 3体以上は無視
     });
   };
@@ -43,10 +41,12 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
     //通常選出(相手は自分の６体に対して相性の良い３体を選ぶ)
     // const opSelectedOrder = await selectBetterOpPokes(myPokesKanaName, opPokesKanaName);
+    
     //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
-    const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
+    // const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
+    
     //テスト用で相手の選出を固定　自分選出は[ゲンガー, ルカリオ, リザードン]
-    // const opSelectedOrder = ["エルレイド", "ハピナス", "エレキブル"];
+    const opSelectedOrder = ["エルレイド", "ハピナス", "エレキブル"];
 
     //DBから6体のポケモンの最大HPを取得
     const [myPokeInfos, opPokeInfos] = await Promise.all([

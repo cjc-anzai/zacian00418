@@ -61,15 +61,16 @@ const CommandArea = ({
     setOtherAreaVisible(prev => ({ ...prev, weaponCmd: false }));
     resetChangeTurn();
     updateTurnCnt();
+
     mySelectedWeapon.current = weaponName;
     await setOpChangePoke();    //交換すべき時はrefに交換ポケモンをセット
-    if (!opChangeTurn.current) await setOpWeapon();    //相手が交換しないときは技を選択する
+    if (!opChangeTurn.current) 
+      await setOpWeapon();    //相手が交換しないときは技を選択する
     await setMyTurn();
 
     //相手が交代するなら、相手のbackテキストをセット
-    if (opChangeTurn.current) {
+    if (opChangeTurn.current)
       setBackText();
-    }
     //相手が居座るなら先攻の技テキストをセット
     else {
       const iAmFirst = myTurn.current === "first";
@@ -87,7 +88,8 @@ const CommandArea = ({
     myChangeTurn.current = true;    //交代フラグ
     myChangePokeName.current = changePoke;    //交代するポケモンをrefに保存
     await setOpChangePoke();    //交換すべき時はrefに交換ポケモンをセット
-    if (!opChangeTurn.current) await setOpWeapon();    //相手が交換しないときは技を選択する
+    if (!opChangeTurn.current) 
+      await setOpWeapon();    //相手が交換しないときは技を選択する
     await setMyTurn();
     setBackText();    //先攻のbackテキストをセット
     console.log(`${changePoke}に交代を選択`);
@@ -101,6 +103,7 @@ const CommandArea = ({
     delay(() => setMyPokeState(p => ({ ...p, name: nextMyPoke })), 1000);
   }
 
+  //等倍ダメージのテキストはUIに表示しない
   const filterToubaiText = (text) => text === compatiTexts.toubai ? "" : text;
 
 
@@ -118,7 +121,7 @@ const CommandArea = ({
       {otherAreaVisible.actionCmd && (
         <div className="cmd-area">
           <button className="weapon-cmd-btn" onClick={openBattleCmdArea}>たたかう</button>
-          {(myPokeState.poke1H !== 0 || myPokeState.poke2H !== 0 || myPokeState.poke3H !== 0) && (
+          {(myPokeState.poke1Hp !== 0 || myPokeState.poke2Hp !== 0 || myPokeState.poke3Hp !== 0) && (
             <button className="change-cmd-btn" onClick={openChangeCmdArea}>交代</button>
           )}
         </div>
@@ -179,17 +182,17 @@ const CommandArea = ({
 
       {otherAreaVisible.changeCmd && (
         <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1H > 0 && (
+          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
             <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke1Name)}>
               {myPokeState.poke1Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2H > 0 && (
+          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
             <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke2Name)}>
               {myPokeState.poke2Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3H > 0 && (
+          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
             <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke3Name)}>
               {myPokeState.poke3Name}
             </button>
@@ -200,17 +203,17 @@ const CommandArea = ({
 
       {otherAreaVisible.nextPokeCmd && (
         <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1H > 0 && (
+          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
             <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke1Name)}>
               {myPokeState.poke1Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2H > 0 && (
+          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
             <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke2Name)}>
               {myPokeState.poke2Name}
             </button>
           )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3H > 0 && (
+          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
             <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke3Name)}>
               {myPokeState.poke3Name}
             </button>

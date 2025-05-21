@@ -18,8 +18,8 @@ export function useBattleState() {
     hp: 0, a: 0, b: 0, c: 0, d: 0, s: 0,  
     weapon1: "", weapon2: "", weapon3: "", weapon4: "",
     poke1Name: "", poke2Name: "", poke3Name: "",
-    poke1FullH: 0, poke2FullH: 0, poke3FullH: 0,
-    poke1H: 0, poke2H: 0, poke3H: 0,
+    poke1MaxHp: 0, poke2MaxHp: 0, poke3MaxHp: 0,
+    poke1Hp: 0, poke2Hp: 0, poke3Hp: 0,
     text: { content: "", kind: "" }
   };
   const [myPokeState, setMyPokeState] = useState({ ...defaultPokeState });
@@ -38,7 +38,7 @@ export function useBattleState() {
   const opLife = useRef(3);
   const mySelectedWeapon = useRef("");
   const opSelectedWeapon = useRef("");
-  const myTurn = useRef("first");       //先攻後攻
+  const myTurn = useRef("first");       
   const myChangeTurn = useRef(false);       //交代したターンか否か
   const opChangeTurn = useRef(false);
   const myChangePokeName = useRef(null);    //交代するポケモン

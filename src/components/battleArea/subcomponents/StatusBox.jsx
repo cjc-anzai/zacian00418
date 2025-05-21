@@ -8,13 +8,13 @@ const StatusBox = ({
 
     //インポートする変数や関数の取得
     const { opPokeState, myPokeState, opAreaVisible, myAreaVisible, } = battleState;
-    const { getFullHp, getPokeNum, } = battleHandlers;
+    const { getMaxHp } = battleHandlers;
 
     const isMy = who === "my";
     const areaVisible = isMy ? myAreaVisible : opAreaVisible;
     const pokeState = isMy ? myPokeState : opPokeState;
 
-    const fullHp = getFullHp(pokeState);
+    const MaxHp = getMaxHp(pokeState);
 
     return (
         <div className="status-box" style={{ display: areaVisible.poke ? "block" : "none" }}>
@@ -40,9 +40,9 @@ const StatusBox = ({
                 </h1>
                 <div className="poke-indicators">
                     {[0, 1, 2].map((index) => {
-                        const currentHp = pokeState[`poke${index + 1}H`];
-                        const fullHp = pokeState[`poke${index + 1}FullH`];
-                        const color = getPokeIndicatorsColor(currentHp, fullHp);
+                        const currentHp = pokeState[`poke${index + 1}Hp`];
+                        const MaxHp = pokeState[`poke${index + 1}MaxHp`];
+                        const color = getPokeIndicatorsColor(currentHp, MaxHp);
                         return <div key={index} className={`poke-circle ${color}`}></div>;
                     })}
                 </div>
@@ -51,7 +51,7 @@ const StatusBox = ({
                 <div className={`${who}-hp-bar`}></div>
                 {isMy && (
                     <span className="hp-text">
-                        {Math.round(myPokeState.hp)} / {fullHp}
+                        {Math.round(myPokeState.hp)} / {MaxHp}
                     </span>
                 )}
             </div>

@@ -4,7 +4,7 @@ import {
   selectBetterOpPokesLogic,
   calcNewHp,
   getGoText, getWeaponText, getCompatiTextLogic, getDeadText,
-  calcMultiplier,
+  getOpChangePoke, checkIsFirst, calcMultiplier,
   getMostEffectiveWeaponLogic, predictMyActionLogic, choiseBetterWeaponLogic,
   getAttackEffectElem, getDamageEffectElem,
   jumpEffect, attackEffectLogic, damageEffectLogic,
@@ -18,8 +18,7 @@ export function useBattleHandlers(battleState) {
   const {
     defaultAreaVisible,
     myAreaVisible, opAreaVisible,
-    setMyAreaVisible, setOpAreaVisible,
-    setOtherAreaVisible,
+    setMyAreaVisible, setOpAreaVisible, setOtherAreaVisible,
     defaultPokeState, defaultPokeStateTrigger,
     myPokeState, setMyPokeState,
     opPokeState, setOpPokeState,
@@ -57,21 +56,21 @@ export function useBattleHandlers(battleState) {
   //ポケモン登場時のHPセット
   const setHpOnEntry = (isMe, pokeState) => {
     //HPバーの制御
-    const currentHp = getPokeNumH(pokeState);
+    const currentHp = getPokeNumHp(pokeState);
     adjustHpBar(isMe, pokeState, currentHp);
     //HPのセット
     const setPokeState = isMe ? setMyPokeState : setOpPokeState;
     const setPokeStateTrigger = isMe ? setMyPokeStateTrigger : setOpPokeStateTrigger;
-    pokeState.hp === currentHp ?
-      setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 })) :
-      setPokeState(prev => ({ ...prev, hp: currentHp }));
+    pokeState.hp !== currentHp ?
+      setPokeState(prev => ({ ...prev, hp: currentHp })) :
+      setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
   }
 
-  //poke1H等のHpをバトル場のポケモンのHpと同じ値に更新する
-  const setPokeNumH = (isMe, pokeState) => {
+  //poke1Hp等のHpをバトル場のポケモンのHpと同じ値に更新する
+  const setPokeNumHp = (isMe, pokeState) => {
     const setPokeState = isMe ? setMyPokeState : setOpPokeState;
     const pokeNum = getPokeNum(pokeState);
-    setPokeState(prev => ({ ...prev, [`poke${pokeNum}H`]: pokeState.hp, }));
+    setPokeState(prev => ({ ...prev, [`poke${pokeNum}Hp`]: pokeState.hp, }));
   }
 
   //Goテキストをセットする
@@ -83,16 +82,13 @@ export function useBattleHandlers(battleState) {
 
   //backテキストをセットする
   const setBackText = () => {
+    //一方が交代の場合と両者とも交代する場合の交代ポケモン名をセット
     let backPokeName = "";
-
-    //一方が交代の場合
-    if (!!myChangePokeName.current !== !!opChangePokeName.current) {
+    if (!!myChangePokeName.current !== !!opChangePokeName.current)
       backPokeName = myChangePokeName.current ? myPokeState.name : opPokeState.name;
-    }
-    //両者とも交代する場合、先攻の交代から行う
-    else {
+    else
       backPokeName = myTurn.current === "first" ? myPokeState.name : opPokeState.name;
-    }
+
     const backText = `戻れ！${backPokeName}`;
     const setPokeState = backPokeName === myPokeState.name ? setMyPokeState : setOpPokeState;
     setPokeState(prev => ({ ...prev, text: { content: backText, kind: "back" } }));
@@ -105,9 +101,9 @@ export function useBattleHandlers(battleState) {
 
     const setPokeState = attackerIsMe ? setMyPokeState : setOpPokeState;
     const setPokeStateTrigger = attackerIsMe ? setMyPokeStateTrigger : setOpPokeStateTrigger;
-    pokeState.text.content === weaponText ?
-      setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 })) :
-      setPokeState(prev => ({ ...prev, text: { content: weaponText, kind: "weapon" } }));
+    pokeState.text.content !== weaponText ?
+      setPokeState(prev => ({ ...prev, text: { content: weaponText, kind: "weapon" } })) :
+      setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
   }
 
   //deadテキストをセットする
@@ -121,81 +117,40 @@ export function useBattleHandlers(battleState) {
   const setMyTurn = async () => {
     //素早さを取得する
     const [myPokeSpeed, opPokeSpeed] = [myPokeState.s, opPokeState.s];
+    console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${opPokeSpeed}\n`);
 
-    //どちらも交換しない場合
+    //どちらも交換しない場合、優先度と素早さを比較して先攻後攻を決める
     if (!myChangeTurn.current && !opChangeTurn.current) {
-      //優先度を取得する
       const { myWeaponPriority, opWeaponPriority } = await getWeaponsPriority();
-
-      //優先度が同じ場合、素早さが速い方が先攻
-      if (myWeaponPriority === opWeaponPriority) {
-        if (myPokeSpeed !== opPokeSpeed) {
-          myTurn.current = myPokeSpeed > opPokeSpeed ? "first" : "after";
-          console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${opPokeSpeed}\n`);
-        }
-        // 同速の場合ランダムで先攻を決める
-        else if (myPokeSpeed === opPokeSpeed) {
-          const isMyTurnFirst = Math.random() < 0.5;
-          myTurn.current = isMyTurnFirst ? "first" : "after";
-          console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
-        }
-      }
-      //優先度が異なる場合、優先度が高い方が先攻
-      else {
-        const iAmPriority = myWeaponPriority > opWeaponPriority;
-        myTurn.current = iAmPriority ? "first" : "after";
-        console.log(`技の優先度差で${iAmPriority ? "先攻" : "後攻"}`);
-      }
+      const isFirst = checkIsFirst(myPokeSpeed, opPokeSpeed, myWeaponPriority, opWeaponPriority);
+      myTurn.current = isFirst ? "first" : "after";
     }
-    //自分のみが交代する場合は後攻 
-    else if (myChangeTurn.current && !opChangeTurn.current) {
-      myTurn.current = "after"
-      console.log("自分が交代ターンのため後攻");
-    }
-    //相手のみが交代する場合は先攻 
-    else if (!myChangeTurn.current && opChangeTurn.current) {
-      myTurn.current = "first"
-      console.log("相手が交代ターンのため先攻");
-    }
-    //どちらも交代する場合、交代順序を決めるために先攻後攻を決める
-    else {
-      if (myPokeSpeed !== opPokeSpeed) {
-        myTurn.current = myPokeSpeed > opPokeSpeed ? "first" : "after";
-        console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${opPokeSpeed}\n`);
-      }
-      // 同速の場合ランダムで先攻を決める
-      else if (myPokeSpeed === opPokeSpeed) {
-        const isMyTurnFirst = Math.random() < 0.5;
-        myTurn.current = isMyTurnFirst ? "first" : "after";
-        console.log(isMyTurnFirst ? "同速のためランダムで先攻になった" : "同速のためランダムで後攻になった");
-      }
-    }
+    //一方が交代する場合、交代する方が先攻
+    else if (!!myChangeTurn.current !== !!opChangeTurn.current)
+      myTurn.current = myChangeTurn.current ? "first" : "after";
+    //どちらも交代する場合、速い方が先攻で先に交代する　同速の分岐はしない
+    else
+      myTurn.current = myPokeSpeed > opPokeSpeed ? "first" : "after";
   }
 
+  //指定した時間、処理を停止する
   const stopProcessing = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   //goTextがセットされた時の表示制御
   const setAreaVisibleForApp = async (isMe) => {
     //バトル開始時の表示制御(バトル開始時はお互いにGoテキストがセットされるため、一方のみ処理を行うため、isMeを入れる)
     if (isMe && !myAreaVisible.poke && !opAreaVisible.poke) {
-      await controllAreaVisibleForApp(setMyAreaVisible, myPokeState.name);
-      await controllAreaVisibleForApp(setOpAreaVisible, opPokeState.name);
+      await controllAreaVisibleForApp(isMe);
+      await controllAreaVisibleForApp(!isMe);
       setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
     }
-    //自分のポケモン交換時の表示制御
-    else if (!myAreaVisible.poke && opAreaVisible.poke) {
-      await controllAreaVisibleForApp(setMyAreaVisible, myPokeState.name);
-      //死亡後の交代の場合はコマンドボタンを表示　それ以外は相手から攻撃される
-      if (!myChangeTurn.current) {
+    //一方のポケモン登場時の表示制御
+    else if (!!myAreaVisible.poke !== !!opAreaVisible.poke) {
+      const changeTurn = (myAreaVisible.poke ? opChangeTurn : myChangeTurn).current;
+      await controllAreaVisibleForApp(isMe);
+      //死亡後の交代の場合はコマンドボタンを表示
+      if (!changeTurn)
         setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-      }
-    }
-    //相手のポケモン交換時の表示制御
-    else if (myAreaVisible.poke && !opAreaVisible.poke) {
-      await controllAreaVisibleForApp(setOpAreaVisible, opPokeState.name);
-      if (!opChangeTurn.current) {
-        setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-      }
     }
   }
 
@@ -203,9 +158,7 @@ export function useBattleHandlers(battleState) {
   const setAreaVisibleForChange = (isMe) => {
     playSe("back");
     const setAreaVisible = isMe ? setMyAreaVisible : setOpAreaVisible;
-
-    setOtherAreaVisible(p => ({ ...p, text: true }));
-    setAreaVisible(p => ({ ...p, text: true }));
+    setTextArea(isMe, true);
     delay(() => setAreaVisible(p => ({ ...p, poke: false })), 1000);
   }
 
@@ -222,9 +175,9 @@ export function useBattleHandlers(battleState) {
       [setOpPokeState, setOpPokeStateTrigger] : [setMyPokeState, setMyPokeStateTrigger];
 
     const conpatiText = await getCompatiText(attackerIsMe, defState);
-    defState.text.content === conpatiText ?
-      setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 })) :
-      setPokeState(prev => ({ ...prev, text: { content: conpatiText, kind: "compati" } }));
+    defState.text.content !== conpatiText ?
+      setPokeState(prev => ({ ...prev, text: { content: conpatiText, kind: "compati" } })) :
+      setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
   }
 
   //ダメ計に必要な情報を取得して、モデル側の関数に渡す
@@ -237,9 +190,9 @@ export function useBattleHandlers(battleState) {
 
   //攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
   const playAttackingFlow = async (attackerIsMe, defState, isHit, isCriticalHit, damage) => {
-    const [setAreaVisible, setOtherTextInvisible] = attackerIsMe ? [setMyAreaVisible, setOpAreaVisible] : [setOpAreaVisible, setMyAreaVisible];
-    setOtherAreaVisible(prev => ({ ...prev, text: true }));
-    setAreaVisible(prev => ({ ...prev, text: true }));    //技テキスト表示
+    const [setAreaVisible, setOtherTextInvisible] = attackerIsMe ?
+      [setMyAreaVisible, setOpAreaVisible] : [setOpAreaVisible, setMyAreaVisible];
+    setTextArea(attackerIsMe, true);    //技テキスト表示
 
     //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
     await attackEffect(attackerIsMe, defState, isHit);
@@ -257,59 +210,32 @@ export function useBattleHandlers(battleState) {
           setOtherAreaVisible(prev => ({ ...prev, text: false }));
 
         //HPバー調整とダメージエフェクト
-        const currentHp = getPokeNumH(defState);
+        const currentHp = getPokeNumHp(defState);
         const newHp = calcNewHp(currentHp, damage);
         adjustHpBar(!attackerIsMe, defState, newHp);
         await damageEffect(attackerIsMe, defState);
       }
-      else {
+      else
         setOtherAreaVisible(prev => ({ ...prev, notHit: true }));
-      }
     }
-    else {
+    else
       setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
-    }
-    // delay(setOtherTextInvisible(prev => ({ ...prev, text: false })), 2000);
+
     await stopProcessing(2000);
     setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
-
-
-    // if (isHit) {
-    //   setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
-    //   //無効ではない場合
-    //   if (defState.text.content !== compatiTexts.mukou) {
-    //     //急所テキストの表示
-    //     if (isCriticalHit) setOtherAreaVisible(prev => ({ ...prev, critical: true }));
-    //     // 急所ではなく、相性が等倍の場合はテキストエリアは表示しない
-    //     else if (defState.text.content === compatiTexts.toubai) setOtherAreaVisible(prev => ({ ...prev, text: false }));
-
-    //     //HPバー調整とダメージエフェクト
-    //     const currentHp = getPokeNumH(defState);
-    //     const newHp = calcNewHp(currentHp, damage);
-    //     adjustHpBar(!attackerIsMe, defState, newHp);
-    //     await damageEffect(attackerIsMe, defState);
-    //   }
-    // }
-    // //当たらなかったテキストを表示
-    // else {
-    //   if (defState.text.content !== compatiTexts.mukou)
-    //     setOtherAreaVisible(prev => ({ ...prev, notHit: true }));
-    //   else setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
-    // }
-    // setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
   }
 
   //攻撃を受けた後のHPセット
   const setHpOnDamage = (isMe, pokeState, damage) => {
     //HPバーの制御
-    const currentHp = getPokeNumH(pokeState);
+    const currentHp = getPokeNumHp(pokeState);
     const newHp = calcNewHp(currentHp, damage);
     //HPのセット
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
-    const setPokeStateTrigger = isMe ? setMyPokeStateTrigger : setOpPokeStateTrigger;
-    checkIsSameHp(pokeState.hp, currentHp, newHp) ?
-      setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 })) :
-      setPokeState(prev => ({ ...prev, hp: newHp }));
+    const [setPokeState, setPokeStateTrigger] = isMe ?
+      [setMyPokeState, setMyPokeStateTrigger] : [setOpPokeState, setOpPokeStateTrigger];
+    !checkIsSameHp(pokeState.hp, currentHp, newHp) ?
+      setPokeState(prev => ({ ...prev, hp: newHp })) :
+      setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
   }
 
   //倒れたポケモンに死亡エフェクトを入れる
@@ -320,21 +246,21 @@ export function useBattleHandlers(battleState) {
 
       // 1秒後に死亡演出を開始
       setTimeout(async () => {
-        setOtherAreaVisible(prev => ({ ...prev, text: true }));
-        setAreaVisible(prev => ({ ...prev, text: true }));
+        setTextArea(isMe, true);
         await playPokeVoice(pokeState.name);
         pokeIMGElm.classList.add("pokemon-dead");
       }, 1000);
 
       // さらに2秒後に非表示 & resolve
       setTimeout(() => {
-        setOtherAreaVisible(prev => ({ ...prev, text: false }));
-        setAreaVisible(prev => ({ ...prev, poke: false, text: false }));
-        resolve(); // ←これが重要！
-      }, 3000 + 1); // 最初の1000ms + 次の2000ms
+        setTextArea(isMe, false);
+        setAreaVisible(prev => ({ ...prev, poke: false }));
+        resolve();
+      }, 3000 + 1);
     });
   };
 
+  //ライフを減らす
   const setLife = (isMe) => {
     const life = isMe ? myLife : opLife;
     life.current--;
@@ -401,15 +327,16 @@ export function useBattleHandlers(battleState) {
 
   //現在のstateのポケモンが何番目のポケモンかを取得して返す。
   const getPokeNum = (pokeState) => {
-    const pokeNum = [pokeState.poke1Name, pokeState.poke2Name, pokeState.poke3Name].findIndex(name => name === pokeState.name) + 1;
+    const pokeNum = [pokeState.poke1Name, pokeState.poke2Name, pokeState.poke3Name]
+      .findIndex(name => name === pokeState.name) + 1;
     return pokeNum;
   }
 
   //指定したポケモンの最大HPを取得する
-  const getFullHp = (pokeState) => {
+  const getMaxHp = (pokeState) => {
     const pokeNum = getPokeNum(pokeState);
-    const fullHp = pokeState[`poke${pokeNum}FullH`];
-    return fullHp;
+    const MaxHp = pokeState[`poke${pokeNum}MaxHp`];
+    return MaxHp;
   }
 
   //指定したSEを再生
@@ -417,15 +344,21 @@ export function useBattleHandlers(battleState) {
     const se = new Audio(`https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/${kind}Se.mp3`);
 
     // onended 仕込みたい音は元のインスタンスで
-    if (kind === "start") {
+    if (kind === "start")
       se.play().catch(e => console.error(`効果音の再生に失敗:${kind}`, e));
-    }
     // その他は clone で連続再生対応
-    else {
+    else
       se.cloneNode().play().catch(e => console.error(`効果音の再生に失敗:${kind}`, e));
-    }
     return se;
   };
+
+  //交換関係のrefをresetする 
+  const resetChangeTurn = () => {
+    myChangeTurn.current = false;
+    opChangeTurn.current = false;
+    myChangePokeName.current = false;
+    opChangePokeName.current = false;
+  }
 
   //jsxファイルで呼び出し=================================================================================
 
@@ -438,6 +371,7 @@ export function useBattleHandlers(battleState) {
     loopAudioRef.current = bgm;
   }
 
+  //BGMを再生する
   const playBgm = () => {
     loopAudioRef.current.play();
   }
@@ -450,13 +384,9 @@ export function useBattleHandlers(battleState) {
 
   //相手は自分のポケモン６体に対して相性がより良い３体を選出する
   const selectBetterOpPokes = async (mySelectedOrder, opPokesName) => {
-    //お互いの６体のポケモンの情報を取得する。
     const { myPokesInfo, opPokesInfo } = await getAllPokeInfos(mySelectedOrder, opPokesName);
-    //相手のポケモン全ての受け/攻め相性と素早さを取得する
     const resistanceMap = calcResistanceForAllOpPokes(myPokesInfo, opPokesInfo);
-    //まとめた情報をもとに選出する３体を選ぶ(耐性等を考慮して３体選び、その中から自分の１体目に相性が良いポケモンを１体目にする)
     const betterOpPokes = selectBetterOpPokesLogic(resistanceMap, myPokesInfo[0])
-
     return betterOpPokes;
   }
 
@@ -465,24 +395,16 @@ export function useBattleHandlers(battleState) {
     setMyPokeState(prev => ({
       ...prev,
       name: myPokeInfos[0].name, poke1Name: myPokeInfos[0].name, poke2Name: myPokeInfos[1].name, poke3Name: myPokeInfos[2].name,
-      poke1FullH: myPokeInfos[0].hp, poke2FullH: myPokeInfos[1].hp, poke3FullH: myPokeInfos[2].hp,
-      poke1H: myPokeInfos[0].hp, poke2H: myPokeInfos[1].hp, poke3H: myPokeInfos[2].hp,
+      poke1MaxHp: myPokeInfos[0].hp, poke2MaxHp: myPokeInfos[1].hp, poke3MaxHp: myPokeInfos[2].hp,
+      poke1Hp: myPokeInfos[0].hp, poke2Hp: myPokeInfos[1].hp, poke3Hp: myPokeInfos[2].hp,
     }));
 
     setOpPokeState(prev => ({
       ...prev,
       name: opPokeInfos[0].name, poke1Name: opPokeInfos[0].name, poke2Name: opPokeInfos[1].name, poke3Name: opPokeInfos[2].name,
-      poke1FullH: opPokeInfos[0].hp, poke2FullH: opPokeInfos[1].hp, poke3FullH: opPokeInfos[2].hp,
-      poke1H: opPokeInfos[0].hp, poke2H: opPokeInfos[1].hp, poke3H: opPokeInfos[2].hp,
+      poke1MaxHp: opPokeInfos[0].hp, poke2MaxHp: opPokeInfos[1].hp, poke3MaxHp: opPokeInfos[2].hp,
+      poke1Hp: opPokeInfos[0].hp, poke2Hp: opPokeInfos[1].hp, poke3Hp: opPokeInfos[2].hp,
     }));
-  }
-
-  //交換関係のrefをresetする 
-  const resetChangeTurn = () => {
-    myChangeTurn.current = false;
-    opChangeTurn.current = false;
-    myChangePokeName.current = false;
-    opChangePokeName.current = false;
   }
 
   //ターン数を更新してコンソールに表示する。（デバッグ用）
@@ -493,86 +415,24 @@ export function useBattleHandlers(battleState) {
 
   //相手はバトルポケモンを交換すべき時は、refにセットする
   const setOpChangePoke = async () => {
-    //今の相手のバトル場のポケモンが自分のポケモンからの相性を取得
-    const val11 = calcMultiplier(myPokeState.type1, opPokeState.type1, opPokeState.type2);
-    const val12 = calcMultiplier(myPokeState.type2, opPokeState.type1, opPokeState.type2);
-    const myToOp1 = Math.max(val11, val12);
+    // 相手のポケモンが、自分のポケモンのタイプ一致技で抜群をとられるかチェックする
+    const { isDangerous, dangerousType, safeType } = checkDangerous();
+    if (!isDangerous) return;
 
-    opChangePokeName.current = null;
-    //今の相手のバトル場のポケモンが自分のポケモンから抜群をとられる時
-    if (myToOp1 >= 2) {
-      //控えポケモンで受けられるか確認する
-      const opPoke1Info = opPokeState.name !== opPokeState.poke1Name && opPokeState.poke1H !== 0 ? await getPokeInfo(opPokeState.poke1Name) : null;
-      const opPoke2Info = opPokeState.name !== opPokeState.poke2Name && opPokeState.poke2H !== 0 ? await getPokeInfo(opPokeState.poke2Name) : null;
-      const opPoke3Info = opPokeState.name !== opPokeState.poke3Name && opPokeState.poke3H !== 0 ? await getPokeInfo(opPokeState.poke3Name) : null;
+    //生存中の控えポケモンを情報を配列に格納
+    const opPokesInfo = await Promise.all(
+      [1, 2, 3].map(i => {
+        const name = opPokeState[`poke${i}Name`];
+        const hp = opPokeState[`poke${i}Hp`];
+        return (opPokeState.name !== name && hp !== 0) ? getPokeInfo(name) : null;
+      })
+    );
+    const aliveOpBenchPokes = opPokesInfo.filter(Boolean);
 
-      //生存中の控えポケモンを確認
-      const aliveBenchPokes = [opPoke1Info, opPoke2Info, opPoke3Info].filter(info => info !== null);
-
-      //抜群を取られるタイプを取得する
-      const [dangerousType, safeType]
-        = val11 > val12 ? [myPokeState.type1, myPokeState.type2]
-          : val11 === val12 ? [[myPokeState.type1, myPokeState.type2], []]
-            : [myPokeState.type2, myPokeState.type1];
-      if (aliveBenchPokes.length === 2) {
-        //抜群を取られるのが一方のタイプの場合      
-        if (!Array.isArray(dangerousType)) {
-          const val21 = calcMultiplier(dangerousType, aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          const val22 = calcMultiplier(safeType, aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          const val31 = calcMultiplier(dangerousType, aliveBenchPokes[1].type1, aliveBenchPokes[1].type2);
-          const val32 = calcMultiplier(safeType, aliveBenchPokes[1].type1, aliveBenchPokes[1].type2);
-
-          //2体目のポケモンが受けれる時
-          if (val21 <= 0.5 && val22 <= 1) {
-            //3体目のポケモンも受けれる時、//より耐性が強い方に交換する
-            if (val31 <= 0.5 && val32 <= 1) {
-              opChangePokeName.current = (val21 + val22) < (val31 + val32) ? aliveBenchPokes[0].name
-                : (val21 + val22) === (val31 + val32) ? (opPoke2Info.s > opPoke3Info.s ? aliveBenchPokes[0].name : aliveBenchPokes[1].name)
-                  : aliveBenchPokes[0].name;
-            }
-            else opChangePokeName.current = aliveBenchPokes[0].name;
-          }
-          //3体目のポケモンが受けれる時
-          else if (val31 <= 0.5 && val32 <= 1) {
-            opChangePokeName.current = aliveBenchPokes[1].name;
-          }
-        }
-        //複合タイプのどちらも抜群の場合、控えがどちらも受けれる場合のみ交代する
-        else {
-          const val21 = calcMultiplier(dangerousType[0], aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          const val22 = calcMultiplier(dangerousType[1], aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          const val31 = calcMultiplier(dangerousType[0], aliveBenchPokes[1].type1, aliveBenchPokes[1].type2);
-          const val32 = calcMultiplier(dangerousType[1], aliveBenchPokes[1].type1, aliveBenchPokes[1].type2);
-
-          if ((val21 + val22) <= 1) {
-            if ((val31 + val32) <= 1) {
-              opChangePokeName.current = (val21 + val22) < (val31 + val32) ? aliveBenchPokes[0].name
-                : (val21 + val22) === (val31 + val32) ? (opPoke2Info.s > opPoke3Info ? aliveBenchPokes[0].name : aliveBenchPokes[1].name)
-                  : aliveBenchPokes[1].name;
-            }
-            else opChangePokeName.current = aliveBenchPokes[0].name;
-          }
-          //3体目のポケモンが受けれる時
-          else if ((val31 + val32) <= 1) {
-            opChangePokeName.current = aliveBenchPokes[1].name;
-          }
-        }
-      }
-      else if (aliveBenchPokes.length === 1) {
-        if (!Array.isArray(dangerousType)) {
-          const val21 = calcMultiplier(dangerousType, aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          const val22 = calcMultiplier(safeType, aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          if (val21 <= 0.5 && val22 <= 1) opChangePokeName.current = aliveBenchPokes[0].name;
-        }
-        else {
-          const val21 = calcMultiplier(dangerousType[0], aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          const val22 = calcMultiplier(dangerousType[1], aliveBenchPokes[0].type1, aliveBenchPokes[0].type2);
-          if ((val21 + val22) <= 1) opChangePokeName.current = aliveBenchPokes[0].name;
-        }
-      }
-    }
-    console.log(`${opChangePokeName.current ? "相手の交代ポケモン：" + opChangePokeName.current : "相手は交代しない交代しない"}`);
+    opChangePokeName.current =
+      aliveOpBenchPokes.length > 0 ? getOpChangePoke(aliveOpBenchPokes, dangerousType, safeType) : null;
     opChangeTurn.current = opChangePokeName.current ? true : false;
+    console.log(`${opChangePokeName.current ? "相手の交代ポケモン：" + opChangePokeName.current : "相手は交代しない"}`);
   }
 
   //相手が自分のバトル場のポケモンに対して、相性の良い技をセットする
@@ -696,12 +556,29 @@ export function useBattleHandlers(battleState) {
     };
   };
 
-  //poke1H等を取得する state名を文字列で返す
-  const getPokeNumH = (pokeState) => {
+  //poke1Hp等を取得する
+  const getPokeNumHp = (pokeState) => {
     const pokeNum = getPokeNum(pokeState);
-    const pokeNumH = pokeState[`poke${pokeNum}H`];
-    return pokeNumH;
+    const pokeNumHp = pokeState[`poke${pokeNum}Hp`];
+    return pokeNumHp;
   }
+
+  // 相手が、自分のタイプ一致技で抜群をとられるかの真偽と危険/安全タイプを返す
+  const checkDangerous = () => {
+    // 抜群を取られるかチェック
+    const [val11, val12] = [
+      calcMultiplier(myPokeState.type1, opPokeState.type1, opPokeState.type2),
+      calcMultiplier(myPokeState.type2, opPokeState.type1, opPokeState.type2)
+    ];
+    const isDangerous = Math.max(val11, val12) >= 2;
+
+    // 自分のポケモンのタイプを相手目線で危険と安全に仕分け
+    const [dangerousType, safeType] = [[], []];
+    val11 >= 2 ? dangerousType.push(myPokeState.type1) : safeType.push(myPokeState.type1);
+    val12 >= 2 ? dangerousType.push(myPokeState.type2) : safeType.push(myPokeState.type2);
+
+    return { isDangerous, dangerousType, safeType };
+  };
 
   //相手目線で合理的な技を選択して返す
   const choiseBetterWeapon = (strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage) => {
@@ -764,9 +641,9 @@ export function useBattleHandlers(battleState) {
 
   //HPバーの幅や色の制御をして現在HPを返す
   const adjustHpBar = (isMe, pokeState, currentHp) => {
-    const fullHp = getFullHp(pokeState);
-    adjustHpBarLogic(isMe, currentHp, fullHp);
-    console.log(`${pokeState.name}\n最大HP：${fullHp}\n残HP：${currentHp}`);
+    const MaxHp = getMaxHp(pokeState);
+    adjustHpBarLogic(isMe, currentHp, MaxHp);
+    console.log(`${pokeState.name}\n最大HP：${MaxHp}\n残HP：${currentHp}`);
   }
 
   //stateのHpと新しくセットするHpが同じか確認する
@@ -776,13 +653,14 @@ export function useBattleHandlers(battleState) {
   }
 
   //ポケモン登場の表示制御
-  const controllAreaVisibleForApp = async (setAreaVisible, pokeName) => {
-    delay(() => setOtherAreaVisible(prev => ({ ...prev, text: true })), 0);         //テキストエリアの表示
-    delay(() => setAreaVisible(prev => ({ ...prev, text: true })), 0);              //Goテキストの表示
+  const controllAreaVisibleForApp = async (isMe) => {
+    const setAreaVisible = isMe ? setMyAreaVisible : setOpAreaVisible;
+    const pokeName = isMe ? myPokeState.name : opPokeState.name;
+
+    setTextArea(isMe, true);    //Goテキストの表示
     delay(() => setAreaVisible(prev => ({ ...prev, poke: true })), 1000);       //ポケモンの表示
     delay(async () => await playPokeVoice(pokeName), 1000);                     //鳴き声再生
-    delay(() => setOtherAreaVisible(prev => ({ ...prev, text: false })), 2000); //テキストエリアの非表示
-    delay(() => setAreaVisible(prev => ({ ...prev, text: false })), 2000);      //Goテキストテキストの非表示   
+    delay(() => setTextArea(isMe, false), 2000);    //Goテキストの非表示    
     await stopProcessing(2000);
   };
 
@@ -823,23 +701,30 @@ export function useBattleHandlers(battleState) {
     });
   };
 
+  //テキスト表示エリアとそれぞれのテキストの表示制御を同時に行う
+  const setTextArea = (isMe, boolean) => {
+    const setAreaVisible = isMe ? setMyAreaVisible : setOpAreaVisible;
+    setOtherAreaVisible(prev => ({ ...prev, text: boolean }));
+    setAreaVisible(prev => ({ ...prev, text: boolean }));
+  }
+
   //相手は自分のポケモンとの相性を考慮した、最適なポケモンを選択肢て返す
   const selectNextOpPoke = async (life) => {
     let nextOpPoke = "";
     if (life === 2) {
       const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, s: myPokeState.s };
       const deadOpPokeIndex = getPokeNum(opPokeState) - 1;
-      const opPokesInfo = [
-        await getPokeInfo(opPokeState.poke1Name),
-        await getPokeInfo(opPokeState.poke2Name),
-        await getPokeInfo(opPokeState.poke3Name)
-      ];
+      const opPokesInfo = await Promise.all(
+        [1, 2, 3].map(i => getPokeInfo(opPokeState[`poke${i}Name`]))
+      );
       opPokesInfo.splice(deadOpPokeIndex, 1);
       nextOpPoke = selectNextOpPokeLogic(myPokeInfo, opPokesInfo);
     }
     else {
-      nextOpPoke = opPokeState.poke1H ? opPokeState.poke1Name :
-        opPokeState.poke2H ? opPokeState.poke2Name : opPokeState.poke3H ? opPokeState.poke3Name : null;
+      nextOpPoke =
+        opPokeState.poke1Hp ? opPokeState.poke1Name :
+          opPokeState.poke2Hp ? opPokeState.poke2Name :
+            opPokeState.poke3Hp ? opPokeState.poke3Name : null;
     }
     return nextOpPoke;
   };
@@ -849,7 +734,7 @@ export function useBattleHandlers(battleState) {
     checkIsMe,
     setPokeInfo,
     setHpOnEntry,
-    setPokeNumH,
+    setPokeNumHp,
     setGoText,
     setBackText,
     setWeaponText,
@@ -871,15 +756,15 @@ export function useBattleHandlers(battleState) {
     getPokeInfo,
     getWeaponInfo,
     getPokeNum,
-    getFullHp,
+    getMaxHp,
     playSe,
+    resetChangeTurn,
 
     //jsxで使用
     setBgm,
     playBgm,
     selectBetterOpPokes,
     setBattleInfo,
-    resetChangeTurn,
     updateTurnCnt,
     setOpChangePoke,
     setOpWeapon,
