@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { getCompatiTextForWeaponInfoList, delay, compatiTexts, calcMultiplier, } from "../../../model/model";
+import {
+  soundList,
+  typeColors,
+  getCompatiTextForWeaponInfoList,
+  delay,
+} from "../../../model/model";
 
 const CommandArea = ({
   battleState,
@@ -9,33 +14,47 @@ const CommandArea = ({
   //インポートする変数や関数の取得
   const {
     opPokeState, myPokeState,
-    setMyPokeState, setMyPokeStateTrigger,
+    setMyPokeState,
     opAreaVisible, myAreaVisible,
     otherAreaVisible, setOtherAreaVisible,
-    mySelectedWeapon, opSelectedWeapon,
-    myTurn,
+    otherText,
+    mySelectedWeapon,
+    isTerastalActive, setIsTerastalActive,
     myChangePokeName,
-    turnCnt, myChangeTurn, opChangeTurn,
+    myChangeTurn,
   } = battleState;
-  const { playSe, resetChangeTurn, updateTurnCnt, setMyTurn, setWeaponText, setOpChangePoke, setOpWeapon, setBackText, getWeaponInfo, } = battleHandlers;
+
+  const {
+    resetChangeTurn,
+    updateTurnCnt,
+    setMyTurn,
+    setBackText,
+    getWeaponInfo,
+    getPokeNum,
+    decideOpAction,
+    setTextWhenClickWeaponBtn,
+  } = battleHandlers;
 
   const [weaponInfoList, setWeaponInfoList] = useState(null);
 
+  const isTerastal = myPokeState.terastalPokeNum === getPokeNum(myPokeState);
+
   //たたかうボタン押下時、コマンド表示を切り替える
   const openBattleCmdArea = () => {
-    playSe("decide");
+    soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, weaponCmd: true }));
   };
 
   //交代ボタン押下時、コマンド表示を切り替える
   const openChangeCmdArea = () => {
-    playSe("decide");
+    soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, changeCmd: true }));
   };
 
   // 戻るボタン押下時、コマンド表示を切り替える
   const backCmd = () => {
-    playSe("cancel");
+    soundList.general.cancel.cloneNode().play();
+    setIsTerastalActive(false);
     setOtherAreaVisible(prev => ({ ...prev, actionCmd: true, weaponCmd: false, changeCmd: false }));
   };
 
@@ -55,41 +74,37 @@ const CommandArea = ({
     setWeaponInfoList(null);
   };
 
+  //テラスタルボタン押下時、状態を切り替える
+  const togglTerastal = () => {
+    isTerastalActive
+      ? soundList.general.cancel.cloneNode().play()
+      : soundList.general.terastal.cloneNode().play();
+    setIsTerastalActive(prev => !prev);
+  }
+
   //技名ボタン押下時
   const setWeapons = async (weaponName) => {
-    playSe("decide");
+    soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, weaponCmd: false }));
     resetChangeTurn();
     updateTurnCnt();
 
     mySelectedWeapon.current = weaponName;
-    await setOpChangePoke();    //交換すべき時はrefに交換ポケモンをセット
-    if (!opChangeTurn.current) 
-      await setOpWeapon();    //相手が交換しないときは技を選択する
+    await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
     await setMyTurn();
-
-    //相手が交代するなら、相手のbackテキストをセット
-    if (opChangeTurn.current)
-      setBackText();
-    //相手が居座るなら先攻の技テキストをセット
-    else {
-      const iAmFirst = myTurn.current === "first";
-      setWeaponText(iAmFirst, iAmFirst ? myPokeState : opPokeState);
-    }
+    setTextWhenClickWeaponBtn();
   };
 
   //〇〇に交代ボタン押下時、交代するポケモン名を保存し、交代フラグを立てる
   const changeMyPoke = async (changePoke) => {
-    playSe("decide");
+    soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, changeCmd: false }));
     resetChangeTurn();
     updateTurnCnt();
 
     myChangeTurn.current = true;    //交代フラグ
     myChangePokeName.current = changePoke;    //交代するポケモンをrefに保存
-    await setOpChangePoke();    //交換すべき時はrefに交換ポケモンをセット
-    if (!opChangeTurn.current) 
-      await setOpWeapon();    //相手が交換しないときは技を選択する
+    await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
     await setMyTurn();
     setBackText();    //先攻のbackテキストをセット
     console.log(`${changePoke}に交代を選択`);
@@ -97,24 +112,19 @@ const CommandArea = ({
 
   //倒れた後、次に出すポケモンボタン押下時、次のポケモン名を保存し、HPをセット
   const setNextMyPoke = (nextMyPoke) => {
-    playSe("decide");
+    soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, nextPokeCmd: false }));
     myChangePokeName.current = nextMyPoke;
     delay(() => setMyPokeState(p => ({ ...p, name: nextMyPoke })), 1000);
   }
 
-  //等倍ダメージのテキストはUIに表示しない
-  const filterToubaiText = (text) => text === compatiTexts.toubai ? "" : text;
-
-
   return (
     <div className="cmd-text-area">
-      {otherAreaVisible.text && (
+      {(opAreaVisible.text || myAreaVisible.text || otherText) && (
         <div className="text-area">
-          {opAreaVisible.text && !otherAreaVisible.notHit && <p>{filterToubaiText(opPokeState.text.content)}</p>}
-          {myAreaVisible.text && !otherAreaVisible.notHit && <p>{filterToubaiText(myPokeState.text.content)}</p>}
-          {otherAreaVisible.notHit && <p>{myPokeState.text.content.includes(myPokeState.name) ? opPokeState.name : myPokeState.name}には当たらなかった</p>}
-          {otherAreaVisible.critical && <p>急所に当たった</p>}
+          {opAreaVisible.text && <p>{opPokeState.text.content}</p>}
+          {myAreaVisible.text && <p>{myPokeState.text.content}</p>}
+          {otherText && <p>{otherText}</p>}
         </div>
       )}
 
@@ -128,7 +138,7 @@ const CommandArea = ({
       )}
 
       {otherAreaVisible.weaponCmd && (
-        <div className="cmd-area">
+        <div className="cmd-area weapon-cmd-area">
           <button
             className="weapon-cmd-btn"
             onClick={async () => await setWeapons(myPokeState.weapon1)}
@@ -145,6 +155,15 @@ const CommandArea = ({
             onMouseLeave={handleMouseLeave}
           >
             {myPokeState.weapon2}
+          </button>
+
+          <button
+            onClick={() => togglTerastal()}
+            disabled={!myPokeState.canTerastal}
+            className={`terastal-cmd-btn ${isTerastalActive || isTerastal ? 'active' : ''}`}
+            style={isTerastalActive || isTerastal ? { backgroundColor: typeColors[myPokeState.terastal] } : undefined}
+          >
+            {isTerastalActive || isTerastal ? myPokeState.terastal : "テラスタル"}
           </button>
 
           <button
@@ -178,49 +197,54 @@ const CommandArea = ({
             </div>
           )}
         </div>
-      )}
+      )
+      }
 
-      {otherAreaVisible.changeCmd && (
-        <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
-            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke1Name)}>
-              {myPokeState.poke1Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
-            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke2Name)}>
-              {myPokeState.poke2Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
-            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke3Name)}>
-              {myPokeState.poke3Name}
-            </button>
-          )}
-          <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
-        </div>
-      )}
+      {
+        otherAreaVisible.changeCmd && (
+          <div className="cmd-area">
+            {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
+              <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke1Name)}>
+                {myPokeState.poke1Name}
+              </button>
+            )}
+            {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
+              <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke2Name)}>
+                {myPokeState.poke2Name}
+              </button>
+            )}
+            {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
+              <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke3Name)}>
+                {myPokeState.poke3Name}
+              </button>
+            )}
+            <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
+          </div>
+        )
+      }
 
-      {otherAreaVisible.nextPokeCmd && (
-        <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
-            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke1Name)}>
-              {myPokeState.poke1Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
-            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke2Name)}>
-              {myPokeState.poke2Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
-            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke3Name)}>
-              {myPokeState.poke3Name}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+      {
+        otherAreaVisible.nextPokeCmd && (
+          <div className="cmd-area">
+            {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
+              <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke1Name)}>
+                {myPokeState.poke1Name}
+              </button>
+            )}
+            {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
+              <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke2Name)}>
+                {myPokeState.poke2Name}
+              </button>
+            )}
+            {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
+              <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke3Name)}>
+                {myPokeState.poke3Name}
+              </button>
+            )}
+          </div>
+        )
+      }
+    </div >
   );
 };
 

@@ -1,5 +1,115 @@
 //一般変数========================================================================================================================================
 
+//サウンド
+export const soundList = {
+  general: {
+    decide: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/decideSe.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    start: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/startSe.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    select: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/selectSe.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    terastal: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/terastal.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    cancel: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/cancelSe.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    back: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/backSe.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    win: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/winSe.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    lose: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/loseSe.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+  },
+  bgm: {
+    selection: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/bgm/selectionBgm.wav');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    battle: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/bgm/battleBgm.wav');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+  },
+  damage: {
+    batsugun: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/damage/batsugun.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    toubai: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/damage/toubai.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    imahitotsu: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/damage/imahitotsu.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+  }
+};
+
+//テラスタル画像
+export const terastalImgList = {
+  ノーマル: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/normalTerastal.png",
+  ほのお: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/honoTerastal.png",
+  みず: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/mizuTerastal.png",
+  でんき: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/denkiTerastal.png",
+  くさ: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/kusaTerastal.png",
+  かくとう: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/kakutoTerastal.png",
+  こおり: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/koriTerastal.png",
+  どく: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/dokuTerastal.png",
+  じめん: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/jimenTerastal.png",
+  ひこう: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/hikoTerastal.png",
+  エスパー: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/esperTerastal.png",
+  むし: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/mushiTerastal.png",
+  いわ: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/iwaTerastal.png",
+  ゴースト: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/ghostTerastal.png",
+  ドラゴン: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/dragonTerastal.png",
+  // あく: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/akuTerastal.png",
+  はがね: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/haganeTerastal.png",
+  フェアリー: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/fairyTerastal.png",
+}
+
 //技相性テキスト
 export const compatiTexts = {
   batsugun: "効果はバツグンだ",
@@ -157,6 +267,36 @@ export const getGoText = (isMe, pokeName) => {
   return goText;
 }
 
+//テラスタルテキストを取得する
+export const getTerastalText = (isMe, pokeName) => {
+  const terastalText = isMe
+    ? `${pokeName}！テラスタル！`
+    : `相手の${pokeName}はテラスタルした！`;
+  return terastalText;
+}
+
+//weaponテキストを取得する
+export const getWeaponText = (isMe, pokeName, weaponName) => {
+  const weaponText = isMe ? `${pokeName}！${weaponName}！` : `相手の${pokeName}の${weaponName}`;
+  return weaponText;
+}
+
+//getCompatiText()のロジック
+export const getCompatiTextLogic = (multiplier) => {
+  let compatiText = "";
+  if (multiplier >= 2) compatiText = compatiTexts.batsugun;
+  else if (multiplier === 1) compatiText = compatiTexts.toubai;
+  else if (multiplier > 0) compatiText = compatiTexts.imahitotsu;
+  else compatiText = compatiTexts.mukou;
+  return compatiText;
+}
+
+//deadテキストを取得する
+export const getDeadText = (isMe, pokeName) => {
+  const deadText = isMe ? `${pokeName}は倒れた` : `相手の${pokeName}は倒れた`;
+  return deadText;
+}
+
 //相手が交代できる控えポケモンを取得する
 export const getOpChangePoke = (aliveOpBenchPokes, dangerousType, safeType) => {
   let opChangePokeName = null
@@ -232,22 +372,6 @@ export const checkIsFirst = (myPokeSpeed, opPokeSpeed, myWeaponPriority, opWeapo
   return isFirst;
 }
 
-//weaponテキストを取得する
-export const getWeaponText = (isMe, pokeName, weaponName) => {
-  const weaponText = isMe ? `${pokeName}！${weaponName}！` : `相手の${pokeName}の${weaponName}`;
-  return weaponText;
-}
-
-//getCompatiText()のロジック
-export const getCompatiTextLogic = (multiplier) => {
-  let compatiText = "";
-  if (multiplier >= 2) compatiText = compatiTexts.batsugun;
-  else if (multiplier === 1) compatiText = compatiTexts.toubai;
-  else if (multiplier > 0) compatiText = compatiTexts.imahitotsu;
-  else compatiText = compatiTexts.mukou;
-  return compatiText;
-}
-
 // 相性倍率を求めて、相性テキストを返す
 export const getCompatiTextForWeaponInfoList = (weaponType, defType1, defType2) => {
   const multiplier = calcMultiplier(weaponType, defType1, defType2)
@@ -258,12 +382,6 @@ export const getCompatiTextForWeaponInfoList = (weaponType, defType1, defType2) 
   else compatiText = "効果なし";
   return compatiText;
 };
-
-//deadテキストを取得する
-export const getDeadText = (isMe, pokeName) => {
-  const deadText = isMe ? `${pokeName}は倒れた` : `相手の}${pokeName}は倒れた`;
-  return deadText;
-}
 
 //相性倍率を取得する
 export const calcMultiplier = (weaponType, defType1, defType2) => {
@@ -304,8 +422,9 @@ export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => 
       ? highPriorityWeapons.reduce((max, w) => w.damage > max.damage ? w : max).index
       : null;
 
-  //最も与えるダメージが大きい技
-  const strongestWeapon = opWeapons[opWtrongestWeaponIndex].name;
+  //最も与えるダメージが大きい技とダメージ
+  const [strongestWeapon, strongestWeaponDamage,] =
+    [opWeapons[opWtrongestWeaponIndex].name, Math.floor(opWeapons[opWtrongestWeaponIndex].damage * 0.85)];
   //最も与えるダメージが大きい先制技, 最も与えるダメージが大きい先制技(最低乱数)
   let [strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage] = [null, null];
   if (strongestHighPriorityWeaponIndex) {
@@ -313,23 +432,33 @@ export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => 
     strongestHighPriorityWeaponDamage = Math.round(opWeapons[strongestHighPriorityWeaponIndex].damage * 0.85);
   }
 
-  console.log(`最大火力\n${opWeapons[0].name}：${opWeapons[0].damage}\n${opWeapons[1].name}：${opWeapons[1].damage}\n${opWeapons[2].name}：${opWeapons[2].damage}\n${opWeapons[3].name}：${opWeapons[3].damage}}`);
+  console.log(`最大火力\n${opWeapons[0].name}：${opWeapons[0].damage}\n${opWeapons[1].name}：${opWeapons[1].damage}\n${opWeapons[2].name}：${opWeapons[2].damage}\n${opWeapons[3].name}：${opWeapons[3].damage}`);
 
-  return { strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage }
+  return { strongestWeapon, strongestWeaponDamage, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage }
 }
 
 //predictMyAction()のロジック
-export const predictMyActionLogic = (weaponsInfo, atcInfos, defInfos) => {
-  //自分が出すであろう技とそのダメージを求める
-  const [myW1Damage, myW2Damage, myW3Damage, myW4Damage] = [
+export const predictMyActionLogic = (weaponsInfo, atcInfos, defInfos, randomMultiplier) => {
+  // 各技のダメージを計算して配列にする
+  const damageList = [
     calcPureDamage(weaponsInfo[0], atcInfos[0], defInfos[0]).pureDamage,
     calcPureDamage(weaponsInfo[1], atcInfos[1], defInfos[1]).pureDamage,
     calcPureDamage(weaponsInfo[2], atcInfos[2], defInfos[2]).pureDamage,
     calcPureDamage(weaponsInfo[3], atcInfos[3], defInfos[3]).pureDamage,
   ];
-  const myMaxDamage = Math.max(myW1Damage, myW2Damage, myW3Damage, myW4Damage) * 0.85;
-  return myMaxDamage;
+
+  // 最大ダメージのインデックスを取得
+  const maxIndex = damageList.reduce((maxIdx, current, idx, arr) =>
+    current > arr[maxIdx] ? idx : maxIdx, 0
+  );
+
+  const myStrongestWeapon = weaponsInfo[maxIndex].name;
+  const myMaxDamage = damageList[maxIndex] * randomMultiplier;
+  const myMaxDamageWeaponType = weaponsInfo[maxIndex].type;
+
+  return { myStrongestWeapon, myMaxDamage, myMaxDamageWeaponType };
 }
+
 
 //choiseBetterWeapon()のロジック
 export const choiseBetterWeaponLogic = (strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeSpeed, opPokeSpeed, myPokeHp, opPokeHp) => {
@@ -394,18 +523,19 @@ export const calcTrueDamage = (weaponInfo, attackerInfo, defenderInfo) => {
 
   //命中時のみダメージ計算する
   if (isHit) {
-    const { pureDamage, basicDamage, isSameType, multiplier } = calcPureDamage(weaponInfo, attackerInfo, defenderInfo);
+    const { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier } = calcPureDamage(weaponInfo, attackerInfo, defenderInfo);
     const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
     isCriticalHit = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
+    // isCriticalHit = true;   //テスト用
 
     trueDamage = Math.floor(pureDamage * randomMultiplier);    // 乱数
     trueDamage = Math.floor(trueDamage * (isCriticalHit ? 1.5 : 1));   //急所
 
-    console.log(`${defenderInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameType ? 1.5 : 1}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
+    console.log(`${defenderInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
   }
-  else 
+  else
     console.log(`${attackerInfo.name}の攻撃は当たらなかった`);
-  
+
   return { trueDamage, isHit, isCriticalHit };
 }
 
@@ -426,9 +556,9 @@ export const adjustHpBarLogic = (isMe, newHp, MaxHp) => {
 //ポケインジケータの色を取得する
 export const getPokeIndicatorsColor = (currentHp, MaxHp) => {
   let color = "gray";
-  if (currentHp === MaxHp) 
+  if (currentHp === MaxHp)
     color = "green";
-  else if (currentHp > 0) 
+  else if (currentHp > 0)
     color = "yellow";
   return color;
 }
@@ -491,19 +621,27 @@ export const selectNextOpPokeLogic = (mypoke, opPokes) => {
 //setTimeout()の簡略化
 export const delay = (fn, ms) => setTimeout(fn, ms);
 
-//model内の関数のパーツ=========================================================
 
 //乱数と急所を考慮しないダメージ数と、基礎ダメージを返す
-const calcPureDamage = (weaponInfo, attackerInfo, defenderInfo) => {
-  const isSameType = (weaponInfo.type === attackerInfo.type1) || (weaponInfo.type === attackerInfo.type2);    //タイプ一致フラグ
-  const multiplier = calcMultiplier(weaponInfo.type, defenderInfo.type1, defenderInfo.type2);
+export const calcPureDamage = (weaponInfo, attackerInfo, defenderInfo) => {
+  const isSameTerastal = attackerInfo.isTerastalAtc
+    ? (weaponInfo.type === attackerInfo.terastal && weaponInfo.type === attackerInfo.type1)
+    || (weaponInfo.type === attackerInfo.terastal && weaponInfo.type === attackerInfo.type2)
+    : false;
+  const isSameType =
+    (weaponInfo.type === attackerInfo.type1) || (weaponInfo.type === attackerInfo.type2)
+    || (weaponInfo.type === attackerInfo.terastal && attackerInfo.isTerastalAtc);    //タイプ一致フラグ
+  const [defType1, defType2] = defenderInfo.isTerastalDef
+    ? [defenderInfo.terastal, "なし"]
+    : [defenderInfo.type1, defenderInfo.type2];
+  const multiplier = calcMultiplier(weaponInfo.type, defType1, defType2);
 
   //ダメージ計算　22 * 技威力 * (AorC / BorD) / 50 + 2 * ダメージ補正(* 乱数　* タイプ一致 * 相性 * 急所)
   let pureDamage = Math.floor(22 * weaponInfo.power * (attackerInfo.power / defenderInfo.power));
   pureDamage = Math.floor(pureDamage / 50 + 2);   //基礎ダメージ
   const basicDamage = pureDamage;   //デバッグ用
-  pureDamage = Math.floor(pureDamage * (isSameType ? 1.5 : 1));    // タイプ一致補正
+  pureDamage = Math.floor(pureDamage * (isSameTerastal ? 2 : (isSameType ? 1.5 : 1)));    // タイプ一致補正
   pureDamage = Math.floor(pureDamage * multiplier);   //相性補正
 
-  return { pureDamage, basicDamage, isSameType, multiplier };
+  return { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier };
 }

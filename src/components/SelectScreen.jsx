@@ -1,11 +1,11 @@
 import React from "react";
-import { delay } from "../model/model";
+import { soundList, delay } from "../model/model";
 
 const SelectScreen = ({ battleState, battleHandlers, }) => {
 
   //インポートする変数や関数の取得
   const { setOtherAreaVisible, selectedOrder, setSelectedOrder } = battleState;
-  const { playSe, setBgm, playBgm, getPokeInfo, setBattleInfo } = battleHandlers;
+  const { setBgm, playBgm, getPokeInfo, setBattleInfo, selectBetterOpPokes } = battleHandlers;
 
   const getPokeImg = (pokeName) => {
     const url = `https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/pokeImg/${pokeName}.png`
@@ -19,7 +19,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
   //選出画面のポケモン押下時
   const handleSelect = (pokeName) => {
-    playSe("select");
+    soundList.general.select.cloneNode().play();
     setSelectedOrder((prev) => {
       if (prev.includes(pokeName))
         return prev.filter((name) => name !== pokeName); // クリックで解除
@@ -31,7 +31,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
   //選出確定ボタン
   const confirmSelection = async () => {
-    playSe("decide");
+    soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, select: false, battle: true }));
     setBgm("battle");
     delay(() => playBgm(), 50);
@@ -45,8 +45,8 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
     //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
     // const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
     
-    //テスト用で相手の選出を固定　自分選出は[ゲンガー, ルカリオ, リザードン]
-    const opSelectedOrder = ["エルレイド", "ハピナス", "エレキブル"];
+    //テスト用で相手の選出を固定
+    const opSelectedOrder = ["エレキブル", "マンムー", "ハピナス"];
 
     //DBから6体のポケモンの最大HPを取得
     const [myPokeInfos, opPokeInfos] = await Promise.all([

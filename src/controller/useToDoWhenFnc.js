@@ -1,5 +1,5 @@
 import { useBattleHandlers } from "./useBattleHandlers";
-import { delay } from "../model/model";
+import { soundList, delay } from "../model/model";
 
 export function useToDoWhenFnc(battleState) {
 
@@ -8,9 +8,10 @@ export function useToDoWhenFnc(battleState) {
     myAreaVisible, opAreaVisible,
     setOtherAreaVisible,
     myPokeState, opPokeState,
-    myLife, opLife,
+    isTerastalActive, setIsTerastalActive,
+    myLife, opLife, opTerastalFlag,
     myChangePokeName, opChangePokeName,
-    myTurn, myChangeTurn, opChangeTurn,
+    iAmFirst, myChangeTurn, opChangeTurn,
   } = battleState;
 
   const {
@@ -20,11 +21,14 @@ export function useToDoWhenFnc(battleState) {
     setPokeNumHp,
     setGoText,
     setBackText,
+    setTerastalPokeNum,
     setWeaponText,
     setDeadText,
     setAreaVisibleForApp,
     setAreaVisibleForChange,
+    setAreaVisibleForTerastal, 
     setPokeName,
+    setTerastalText,
     setCompatiText,
     getDamage,
     playAttackingFlow,
@@ -67,7 +71,7 @@ export function useToDoWhenFnc(battleState) {
 
     //生存の場合、ターン終了か、後攻の技テキストをセット
     if (pokeState.hp > 0) {
-      if ((isMe && myTurn.current === "first") || (!isMe && myTurn.current === "after"))
+      if ((isMe && iAmFirst.current) || (!isMe && !iAmFirst.current))
         setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
       else setWeaponText(isMe, pokeState);
     }
@@ -84,51 +88,55 @@ export function useToDoWhenFnc(battleState) {
     //goTextがセットされたら表示制御
     if (textKind === "go") {
       await setAreaVisibleForApp(isMe);
-      if(!myAreaVisible.poke && !opAreaVisible.poke)
+      if (!myAreaVisible.poke && !opAreaVisible.poke)
         return;
 
-      const isFirst = myTurn.current === "first";
-      //一方が交代したとき、後攻の技テキストをセット
+      //一方が交代したとき、もう一方のテラスタルか技テキストをセット
       if (myChangeTurn.current !== opChangeTurn.current) {
-        isFirst ? myChangePokeName.current = null : opChangePokeName.current = null;
-        const atcState = isFirst ? opPokeState : myPokeState;
-        delay(setWeaponText(!isFirst, atcState), 2000);
+        iAmFirst.current ? myChangePokeName.current = null : opChangePokeName.current = null;
+        if (isTerastalActive !== opTerastalFlag.current) {
+          const pokeState = isTerastalActive ? myPokeState : opPokeState;
+          setTerastalText(pokeState);
+        }
+        else {
+          const atcState = iAmFirst.current ? opPokeState : myPokeState;
+          delay(() => setWeaponText(!iAmFirst.current, atcState), 2000); 
+        }
       }
       //どちらも交代するとき
       else {
         //1周目は後攻の交代テキストをセット
         if (myChangePokeName.current && opChangePokeName.current) {
-          isFirst ? myChangePokeName.current = null : opChangePokeName.current = null;
+          iAmFirst.current ? myChangePokeName.current = null : opChangePokeName.current = null;
           setBackText();
         }
         //2周目はrefの制御
         else {
-          isFirst ? opChangePokeName.current = null : myChangePokeName.current = null;
+          iAmFirst.current ? opChangePokeName.current = null : myChangePokeName.current = null;
           setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
         }
       }
     }
-
     //backTextがセットされたら表示制御して次のポケモン名をセット
     else if (textKind === "back") {
       setAreaVisibleForChange(isMe);
       const changePokeName = (isMe ? myChangePokeName : opChangePokeName).current;
       delay(() => setPokeName(isMe, changePokeName), 1000);
     }
-
-    //weaponTextがセットされたら受けポケモンへの相性テキストをセット
-    else if (textKind === "weapon") {
-      await setCompatiText(isMe);
+    //terastalTextがセットされたら、テキスト表示とstate制御して先攻の技テキストをセット
+    else if (textKind === "terastal") {
+      setAreaVisibleForTerastal(isMe);
+      setTerastalPokeNum(isMe);
     }
-
+    //weaponTextがセットされたら受けポケモンへの相性テキストをセット
+    else if (textKind === "weapon")
+      await setCompatiText(isMe);
     //compatiTextがセットされたら、攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
     else if (textKind === "compati") {
       const { damage, isHit, isCriticalHit } = await getDamage(!isMe);
       await playAttackingFlow(!isMe, pokeState, isHit, isCriticalHit, damage);
       setHpOnDamage(isMe, pokeState, damage);
-      setOtherAreaVisible(prev => ({ ...prev, text: false, notHit: false, critical: false }));
     }
-
     //deadTextがセットされたら、死亡エフェクトを入れて、ゲーム続行ORゲームセット
     else if (textKind === "dead") {
       setOtherAreaVisible(prev => ({ ...prev, actionCmd: false }));
@@ -139,15 +147,44 @@ export function useToDoWhenFnc(battleState) {
       if (life > 0) {
         if (isMe) setOtherAreaVisible(prev => ({ ...prev, nextPokeCmd: true }));
         else await setNextOpPokeName(life);
-      } 
+      }
       else setWinner(!isMe)
     }
   };
+
+  //テラスタルしたら、もう一方もテラスするか否かでテラスタルテキストセットか、先攻の技テキストセット
+  const toDoWhenSetTerastalPokeNum = (pokeState) => {
+    soundList.general.terastal.play();
+
+    setTimeout(() => {
+      //一方のみテラスタルする場合、先攻の技テキストをセット
+      if (isTerastalActive !== opTerastalFlag.current) {
+        const attackerIsMe = iAmFirst.current || opChangeTurn.current;
+        const atcState = attackerIsMe ? myPokeState : opPokeState;
+        setWeaponText(attackerIsMe, atcState);
+        isTerastalActive ? setIsTerastalActive(false) : opTerastalFlag.current = false;
+      }
+      else {
+        //1周目は後攻のテラスタルテキストセット　2周目は先攻の技テキストをセット
+        if (!myPokeState.terastalPokeNum || !opPokeState.terastalPokeNum) {
+          const afterPokeState = pokeState.name === myPokeState.name ? opPokeState : myPokeState;
+          setTerastalText(afterPokeState);
+        }
+        else {
+          const atcState = iAmFirst.current ? myPokeState : opPokeState;
+          setWeaponText(iAmFirst.current, atcState);
+        }
+        setIsTerastalActive(false);
+        opTerastalFlag.current = false;
+      }
+    }, 1000);
+  }
 
   return {
     toDoWhenSetPokeName,
     toDoWhenSetImg,
     toDoWhenSetHp,
     toDoWhenSetText,
+    toDoWhenSetTerastalPokeNum,
   };
 }

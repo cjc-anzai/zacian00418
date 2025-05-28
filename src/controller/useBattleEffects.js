@@ -13,6 +13,7 @@ export function useBattleEffects(battleState) {
     toDoWhenSetImg,
     toDoWhenSetHp,
     toDoWhenSetText,
+    toDoWhenSetTerastalPokeNum,
   } = useToDoWhenFnc(battleState);
 
   //name=============================================
@@ -99,6 +100,17 @@ export function useBattleEffects(battleState) {
     };
     run();
   }, [opPokeStateTrigger.text]);
+
+  //テラスタル======================================
+  useEffect(() => {
+    if (!myPokeState.terastalPokeNum) return;
+    toDoWhenSetTerastalPokeNum(myPokeState);
+  }, [myPokeState.terastalPokeNum]);
+
+  useEffect(() => {
+    if (!opPokeState.terastalPokeNum) return;
+    toDoWhenSetTerastalPokeNum(opPokeState);
+  }, [opPokeState.terastalPokeNum]);
 
   return {};
 }

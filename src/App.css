@@ -55,10 +55,10 @@
 }
 
 .top-screen button:hover {
-  background-color: #f1c40f; 
+  background-color: #f1c40f;
   color: white;
-  box-shadow: 0 8px 20px rgba(241, 196, 15, 0.7); 
-  transform: translateY(-4px); 
+  box-shadow: 0 8px 20px rgba(241, 196, 15, 0.7);
+  transform: translateY(-4px);
 }
 
 /* 選出画面============================================================================ */
@@ -75,13 +75,14 @@
   box-sizing: border-box;
 }
 
-.select-area > .content {
+.select-area>.content {
   height: 100%;
   display: flex;
-  flex-direction: column;  
+  flex-direction: column;
 }
 
-.op-poke-select, .my-poke-select {
+.op-poke-select,
+.my-poke-select {
   height: 30%;
   display: flex;
   justify-content: center;
@@ -90,7 +91,8 @@
   box-sizing: border-box;
 }
 
-.poke-option, .poke-preview {
+.poke-option,
+.poke-preview {
   height: 100%;
   padding: 10px;
 }
@@ -102,7 +104,8 @@
   transition: 0.2s;
 }
 
-.poke-option img, .poke-preview img {
+.poke-option img,
+.poke-preview img {
   width: auto;
   height: 50%;
 }
@@ -125,8 +128,8 @@
 .select-actions {
   height: 100px;
   display: flex;
-  justify-content: center; 
-  align-items: center; 
+  justify-content: center;
+  align-items: center;
 }
 
 .select-actions button {
@@ -156,14 +159,14 @@
 
 /* 対戦画面============================================================================ */
 
-.battle-area-wrap{
+.battle-area-wrap {
   width: 100%;
-  padding: 50px 0;
+  /* padding: 50px 0; */
 }
 
 .battle-area {
   width: 80%;
-  height: 400px;
+  height: 450px;
   justify-content: space-between;
   margin: 0 auto;
 }
@@ -179,6 +182,17 @@
   box-sizing: border-box;
 }
 
+.poke-img-wrapper {
+  position: relative;
+  width: 220px;
+  height: 240px;
+  /* 少し伸ばすことで下に下がる */
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  /* 下に寄せる */
+}
+
 .my-poke-area,
 .op-poke-area {
   width: 100%;
@@ -186,26 +200,43 @@
   flex-direction: column;
   align-items: center;
   flex: 0 0 300px;
-  justify-content: flex-end; 
+  justify-content: flex-end;
+  position: relative;
+  /* ラップの基準になる */
+}
+
+/* テラスタル画像の表示 */
+.terastal-img {
+  width: 120px;
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* ポケモン画像 */
+.my-poke-img,
+.op-poke-img {
+  width: 220px;
+  height: 220px;
+  position: relative;
+  z-index: 5;
+  /* 必要なら下マージン追加で微調整 */
+  margin-bottom: -30px;
 }
 
 .poke-ground {
   width: 90%;
   height: 50px;
-  background-color: #bbb; 
+  background-color: #bbb;
   border-radius: 50%;
-}
-
-.op-poke-area-wrap img,
-.my-poke-area-wrap img {
-  width: 220px;
-  height: 220px;
-  position: absolute;
+  /* margin-top: 10px; ポケモンとの間隔 */
 }
 
 .status-box {
   width: 90%;
-  background-color: #144a80; 
+  background-color: #144a80;
   border-radius: 12px;
   padding: 10px 16px;
   margin-top: 20px;
@@ -224,14 +255,19 @@
   text-align: left;
   margin: 10px 0;
   font-size: 1.5rem;
-  display: flex; /* 横並びにする！ */
-  align-items: center; /* 中央揃えにする！ */
+  display: flex;
+  /* 横並びにする！ */
+  align-items: center;
+  /* 中央揃えにする！ */
 }
 
 .type-wrapper {
-  display: flex; /* タイプ同士も横並びにする！ */
-  gap: 4px; /* タイプ1とタイプ2の間にちょっとすき間 */
-  margin-left: 8px; /* 名前とタイプの間を空ける */
+  display: flex;
+  /* タイプ同士も横並びにする！ */
+  gap: 4px;
+  /* タイプ1とタイプ2の間にちょっとすき間 */
+  margin-left: 8px;
+  /* 名前とタイプの間を空ける */
 }
 
 .type-box {
@@ -242,7 +278,8 @@
   font-weight: bold;
   min-width: 48px;
   text-align: center;
-  font-size: 0.6em; /* 名前の70%の大きさに設定 */
+  font-size: 0.6em;
+  /* 名前の70%の大きさに設定 */
 }
 
 .poke-indicators {
@@ -285,12 +322,14 @@
   width: 100%;
   height: 100%;
   background-color: #00ff00;
-  transition: width 0.6s ease, background-color 0.3s ease; /* widthに対するtransitionを追加 */
+  transition: width 0.6s ease, background-color 0.3s ease;
+  /* widthに対するtransitionを追加 */
 }
 
 .hp-text {
   position: absolute;
-  right: 8px; /* こっちで余白を作る */
+  right: 8px;
+  /* こっちで余白を作る */
   top: 50%;
   transform: translateY(-50%);
   color: white;
@@ -338,7 +377,7 @@
 }
 
 .text-area {
-  width: 60%;
+  width: 50%;
   background-color: #e0e0e0;
   color: #333;
   padding: 5px 10px;
@@ -348,7 +387,7 @@
   font-size: 1.2rem;
   font-family: 'Press Start 2P', 'Courier New', monospace;
   border: 2px solid #444;
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .text-area p {
@@ -361,8 +400,14 @@
   padding: 15px 30px;
   border-radius: 8px;
   border: 2px solid #444;
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
   gap: 20px;
+}
+
+.weapon-cmd-area {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 auto;
 }
 
 .cmd-text-area button {
@@ -377,7 +422,7 @@
 }
 
 .cmd-text-area button:hover {
-  transform: scale(1.1); 
+  transform: scale(1.1);
   font-weight: bold;
 }
 
@@ -391,13 +436,16 @@
   background-color: #45a049;
 }
 
-.cancel-cmd-btn {
-  background-color: #f44336;
-  color: white;
+.terastal-cmd-btn {
+  background-color: white;
+  color: black;
+  margin-right: 8px;
 }
 
-.cancel-cmd-btn:hover {
-  background-color: #d32f2f;
+.terastal-cmd-btn.active {
+  /* background-color: gold; */
+  color: black;
+  font-weight: bold;
 }
 
 .tooltip {
@@ -406,19 +454,21 @@
   color: white;
   padding: 10px;
   border-radius: 5px;
-  top: 50px; /* 調整可能 */
-  left: 50%; /* 調整可能 */
+  top: 50px;
+  /* 調整可能 */
+  left: 50%;
+  /* 調整可能 */
   transform: translateX(-50%);
   font-size: 14px;
   width: 150px;
 }
 
-.change-cmd-btn{
+.change-cmd-btn {
   background-color: lightblue;
   color: white;
 }
 
-.cancel-cmd-btn{
+.cancel-cmd-btn {
   background-color: white;
   color: black;
 }
@@ -431,22 +481,22 @@
   width: 100vw;
   height: 100vh;
   display: flex;
-  flex-direction: column; 
-  justify-content: center; 
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
 }
 
 .result-screen.win {
-  background-color: #fff8c6; 
+  background-color: #fff8c6;
 }
 
 .result-screen.lose {
-  background-color: #1a1a1a; 
+  background-color: #1a1a1a;
 }
 
 .result-screen h1 {
   font-size: 6rem;
-  transition: transform 1s ease-out, opacity 1s ease-out; 
+  transition: transform 1s ease-out, opacity 1s ease-out;
   margin-bottom: 1rem;
 }
 
@@ -457,7 +507,7 @@
 
 .result-screen.lose h1 {
   color: white;
-  text-shadow: 0 0 10px rgba(255, 0, 0, 0.7); 
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
   animation: slide-down 1s ease-out forwards;
 }
 
@@ -473,20 +523,35 @@
 }
 
 .result-screen button:hover {
-  transform: scale(1.1); 
+  transform: scale(1.1);
   font-weight: bold;
 }
 
 /* アニメーション========================================================= */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes jump {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
-  100% { transform: translateY(0); }
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-30px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* 攻撃エフェクト */
@@ -494,11 +559,15 @@
   0% {
     transform: translateX(0) rotate(0deg);
   }
+
   50% {
-    transform: translateX(-50px) rotate(-30deg); /* 左に50px移動して、-30度回転 */
+    transform: translateX(-50px) rotate(-30deg);
+    /* 左に50px移動して、-30度回転 */
   }
+
   100% {
-    transform: translateX(0) rotate(0deg); /* 元の位置に戻る */
+    transform: translateX(0) rotate(0deg);
+    /* 元の位置に戻る */
   }
 }
 
@@ -506,11 +575,15 @@
   0% {
     transform: translateX(0) rotate(0deg);
   }
+
   50% {
-    transform: translateX(50px) rotate(30deg); /* 左に50px移動して、-30度回転 */
+    transform: translateX(50px) rotate(30deg);
+    /* 左に50px移動して、-30度回転 */
   }
+
   100% {
-    transform: translateX(0) rotate(0deg); /* 元の位置に戻る */
+    transform: translateX(0) rotate(0deg);
+    /* 元の位置に戻る */
   }
 }
 
@@ -518,33 +591,43 @@
   0% {
     opacity: 1;
   }
+
   10% {
     opacity: 0;
   }
+
   20% {
     opacity: 1;
   }
+
   30% {
     opacity: 0;
   }
+
   40% {
     opacity: 1;
   }
+
   50% {
     opacity: 0;
   }
+
   60% {
     opacity: 1;
   }
+
   70% {
     opacity: 0;
   }
+
   80% {
     opacity: 1;
   }
+
   90% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -555,6 +638,7 @@
     transform: translateY(0);
     opacity: 1;
   }
+
   100% {
     transform: translateY(100px);
     opacity: 0;
@@ -566,6 +650,7 @@
     transform: scale(0.1);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -577,6 +662,7 @@
     transform: translateY(-100%);
     opacity: 0;
   }
+
   100% {
     transform: translateY(0);
     opacity: 1;

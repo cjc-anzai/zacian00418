@@ -15,6 +15,7 @@ const BattleArea = ({
           <PokeArea
             who={"op"}
             battleState={battleState}
+            battleHandlers={battleHandlers}
           />
           <StatusBox
             who={"op"}
@@ -28,6 +29,7 @@ const BattleArea = ({
           <PokeArea
             who={"my"}
             battleState={battleState}
+            battleHandlers={battleHandlers}
           />
           <StatusBox
             who={"my"}

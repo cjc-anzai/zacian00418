@@ -29,12 +29,10 @@ function App() {
           />
         )}
         {battleState.otherAreaVisible.battle && (
-          <div className="battle-area-wrap">
-            <BattleArea
-              battleState={battleState}
-              battleHandlers={battleHandlers}
-            />
-          </div>
+          <BattleArea
+            battleState={battleState}
+            battleHandlers={battleHandlers}
+          />
         )}
         {!battleState.otherAreaVisible.top && !battleState.otherAreaVisible.select && !battleState.otherAreaVisible.battle && (
           <ResultScreen
