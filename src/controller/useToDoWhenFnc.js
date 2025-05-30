@@ -159,7 +159,7 @@ export function useToDoWhenFnc(battleState) {
     setTimeout(() => {
       //一方のみテラスタルする場合、先攻の技テキストをセット
       if (isTerastalActive !== opTerastalFlag.current) {
-        const attackerIsMe = iAmFirst.current || opChangeTurn.current;
+        const attackerIsMe = (iAmFirst.current || opChangeTurn.current) && !myChangeTurn.current;
         const atcState = attackerIsMe ? myPokeState : opPokeState;
         setWeaponText(attackerIsMe, atcState);
         isTerastalActive ? setIsTerastalActive(false) : opTerastalFlag.current = false;

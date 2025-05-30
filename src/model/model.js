@@ -105,7 +105,7 @@ export const terastalImgList = {
   いわ: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/iwaTerastal.png",
   ゴースト: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/ghostTerastal.png",
   ドラゴン: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/dragonTerastal.png",
-  // あく: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/akuTerastal.png",
+  あく: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/akuTerastal.png",
   はがね: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/haganeTerastal.png",
   フェアリー: "https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/terastalImg/fairyTerastal.png",
 }
@@ -298,52 +298,148 @@ export const getDeadText = (isMe, pokeName) => {
 }
 
 //相手が交代できる控えポケモンを取得する
-export const getOpChangePoke = (aliveOpBenchPokes, dangerousType, safeType) => {
+export const getOpChangePoke = (aliveOpBenchPokes, dangerousType, safeType, IsDangerousTerastal, terastalType) => {
   let opChangePokeName = null
 
   //相手の控えが自分のバトルポケモンから受けるダメージをまとめる
-  const [val21, val22, val31, val32] = [
-    calcMultiplier(dangerousType[0], aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2),
-    calcMultiplier(dangerousType[1] ? dangerousType[1] : safeType[0], aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2),
-    aliveOpBenchPokes.length === 2 ? calcMultiplier(dangerousType[0], aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2) : null,
-    aliveOpBenchPokes.length === 2 ? calcMultiplier(dangerousType[1] ? dangerousType[1] : safeType[0], aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2) : null
-  ];
+  const [val21, val22] = getCompati(dangerousType[0], (dangerousType[1] ? dangerousType[1] : safeType[0]), aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2);
+  const val23 = terastalType
+    ? calcMultiplier(terastalType, aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2)
+    : null;
+  const [val31, val32] = aliveOpBenchPokes.length === 2
+    ? getCompati(dangerousType[0], (dangerousType[1] ? dangerousType[1] : safeType[0]), aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2)
+    : [null, null];
+  const val33 = aliveOpBenchPokes.length === 2 && terastalType
+    ? calcMultiplier(terastalType, aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2)
+    : null;
 
-  //抜群を取られるのが一方のタイプの場合、そのタイプを半減で受けれて、他タイプを等倍以下で受けれる場合交代する      
-  if (dangerousType.length === 1) {
-    if (val21 <= 0.5 && val22 <= 1) {
-      //1体目も2体目のポケモンも受けれる時、//より耐性が強い方に交換する
-      if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1) {
-        if ((val21 + val22) !== (val31 + val32))
-          opChangePokeName =
-            (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-        else
-          opChangePokeName =
-            aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name
+  if (dangerousType.length === 2) {
+    if (IsDangerousTerastal) {
+      if ((val21 + val22 + val23) <= 1.5) {
+        if (aliveOpBenchPokes.length === 2) {
+          if ((val31 + val32 + val33) <= 1.5) {
+            if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+              opChangePokeName =
+                (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+            else {
+              opChangePokeName =
+                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+          }
+          else {
+            opChangePokeName = aliveOpBenchPokes[0].name;
+          }
+        }
+        else {
+          opChangePokeName = aliveOpBenchPokes[0].name;
+        }
       }
-      else
-        opChangePokeName = aliveOpBenchPokes[0].name;
+      else if (aliveOpBenchPokes.length === 2 && (val31 + val32 + val33) <= 1.5) {
+        opChangePokeName = aliveOpBenchPokes[1].name;
+      }
     }
-    //2体目のポケモンが受けれる時
-    else if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1)
-      opChangePokeName = aliveOpBenchPokes[1].name;
+    else {
+      if ((val21 + val22) <= 1) {
+        if (aliveOpBenchPokes.length === 2) {
+          if ((val31 + val32) <= 1) {
+            if ((val21 + val22) !== (val31 + val32)) {
+              opChangePokeName =
+                (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+            else {
+              opChangePokeName =
+                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+          }
+          else {
+            opChangePokeName = aliveOpBenchPokes[0].name;
+          }
+        }
+        else {
+          opChangePokeName = aliveOpBenchPokes[0].name;
+        }
+      }
+      else if (aliveOpBenchPokes.length === 2 && (val31 + val32) <= 1) {
+        opChangePokeName = aliveOpBenchPokes[1].name;
+      }
+    }
   }
-  //複合タイプのどちらも抜群の場合、控えがどちらも受けれる場合のみ交代する
-  else {
-    if ((val21 + val22) <= 1) {
-      if (aliveOpBenchPokes.length === 2 && (val31 + val32) <= 1) {
-        if ((val21 + val22) !== (val31 + val32))
-          opChangePokeName =
-            (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-        else
-          opChangePokeName =
-            aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+  else if (dangerousType.length === 1) {
+    if (IsDangerousTerastal) {
+      if (val21 <= 0.5 && val22 <= 1 && val23 <= 0.5) {
+        if (aliveOpBenchPokes.length === 2) {
+          if (val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
+            if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+              opChangePokeName =
+                (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+            else {
+              opChangePokeName =
+                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+          }
+          else {
+            opChangePokeName = aliveOpBenchPokes[0].name;
+          }
+        }
+        else {
+          opChangePokeName = aliveOpBenchPokes[0].name;
+        }
       }
-      else
-        opChangePokeName = aliveOpBenchPokes[0].name;
+      else if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
+        opChangePokeName = aliveOpBenchPokes[1].name;
+      }
     }
-    else if (aliveOpBenchPokes.length === 2 && (val31 + val32) <= 1)
+    else {
+      if (val21 <= 0.5 && val22 <= 1) {
+        if (aliveOpBenchPokes.length === 2) {
+          if (val31 <= 0.5 && val32 <= 1) {
+            if ((val21 + val22) !== (val31 + val32)) {
+              opChangePokeName =
+                (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+            else {
+              opChangePokeName =
+                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+            }
+          }
+          else {
+            opChangePokeName = aliveOpBenchPokes[0].name;
+          }
+        }
+        else {
+          opChangePokeName = aliveOpBenchPokes[0].name;
+        }
+      }
+      else if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1) {
+        opChangePokeName = aliveOpBenchPokes[1].name;
+      }
+    }
+  }
+  else {
+    if (val23 <= 0.5) {
+      if (aliveOpBenchPokes.length === 2) {
+        if (val33 <= 0.5) {
+          if (val23 !== val33) {
+            opChangePokeName = val23 < val33 ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+          }
+          else {
+            opChangePokeName =
+              aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+          }
+        }
+        else {
+          opChangePokeName = aliveOpBenchPokes[0].name;
+        }
+      }
+      else {
+        opChangePokeName = aliveOpBenchPokes[0].name;
+      }
+    }
+    else if (aliveOpBenchPokes.length === 2 && val33 <= 0.5) {
       opChangePokeName = aliveOpBenchPokes[1].name;
+    }
   }
 
   return opChangePokeName;
@@ -564,20 +660,25 @@ export const getPokeIndicatorsColor = (currentHp, MaxHp) => {
 }
 
 //相手は自分のポケモンとの相性を考慮した、最適なポケモンを選択肢て返す
-export const selectNextOpPokeLogic = (mypoke, opPokes) => {
+export const selectNextOpPokeLogic = (myPoke, opPokes) => {
   console.log(`相手の残りのポケモンは\n${opPokes[0].name}と${opPokes[1].name}`);
 
   //お互いの相性を取得する
   const myToOp = opPokes.map(op =>
     Math.max(
-      calcMultiplier(mypoke.type1, op.type1, op.type2),
-      calcMultiplier(mypoke.type2, op.type1, op.type2)
+      calcMultiplier(myPoke.type1, op.type1, op.type2),
+      calcMultiplier(myPoke.type2, op.type1, op.type2),
+      myPoke.terastalType ? calcMultiplier(myPoke.terastalType, op.type1, op.type2) : 0
     )
   );
   const opToMy = opPokes.map(op =>
     Math.max(
-      calcMultiplier(op.type1, mypoke.type1, mypoke.type2),
-      calcMultiplier(op.type2, mypoke.type1, mypoke.type2)
+      myPoke.terastalType 
+      ? calcMultiplier(op.type1, myPoke.terastalType, "なし")
+      : calcMultiplier(op.type1, myPoke.type1, myPoke.type2),
+      myPoke.terastalType
+      ? calcMultiplier(op.type2, myPoke.terastalType, "なし")
+      : calcMultiplier(op.type2, myPoke.type1, myPoke.type2),
     )
   );
 
@@ -592,9 +693,9 @@ export const selectNextOpPokeLogic = (mypoke, opPokes) => {
     else
       nextOpPoke = (opPokes[0].s > opPokes[1].s ? opPokes[0] : opPokes[1]).name;
 
-    console.log(`自分のポケモンの${mypoke.name}に対しての受け相性はどちらも同じ
-      ${opToMy[0] === opToMy[1] ? mypoke.name + "への攻め相性も同じため、より速い" + nextOpPoke + "を選択する" :
-        mypoke.name + "への攻め相性がより良い" + nextOpPoke + "を選択する"
+    console.log(`自分のポケモンの${myPoke.name}に対しての受け相性はどちらも同じ
+      ${opToMy[0] === opToMy[1] ? myPoke.name + "への攻め相性も同じため、より速い" + nextOpPoke + "を選択する" :
+        myPoke.name + "への攻め相性がより良い" + nextOpPoke + "を選択する"
       }`
     );
   }
@@ -605,15 +706,15 @@ export const selectNextOpPokeLogic = (mypoke, opPokes) => {
   else {
     const worse = myToOp[0] > myToOp[1] ? 0 : 1;
     const better = 1 - worse;
-    console.log(`自分のポケモンの${mypoke.name}に対しての受け相性は${opPokes[better].name}の方が良い`);
+    console.log(`自分のポケモンの${myPoke.name}に対しての受け相性は${opPokes[better].name}の方が良い`);
 
-    if (opPokes[worse].s > mypoke.s && opToMy[worse] >= 2)
-      nextOpPoke = (opPokes[better].s > mypoke.s && opToMy[better] >= 2 ? opPokes[better] : opPokes[worse]).name;
+    if (opPokes[worse].s > myPoke.s && opToMy[worse] >= 2)
+      nextOpPoke = (opPokes[better].s > myPoke.s && opToMy[better] >= 2 ? opPokes[better] : opPokes[worse]).name;
     else nextOpPoke = opPokes[better].name;
 
     console.log(`${nextOpPoke === opPokes[better].name ?
-      opPokes[worse].name + "は" + mypoke.name + "よりも遅くて弱点をつけないため、" + opPokes[better].name + "を選択する" :
-      opPokes[worse].name + "は受け相性は悪いが、" + mypoke.name + "よりも速くて弱点を突けるため、" + opPokes[worse].name + "を選択する"}`);
+      opPokes[worse].name + "は" + myPoke.name + "よりも遅くて弱点をつけないため、" + opPokes[better].name + "を選択する" :
+      opPokes[worse].name + "は受け相性は悪いが、" + myPoke.name + "よりも速くて弱点を突けるため、" + opPokes[worse].name + "を選択する"}`);
   }
   return nextOpPoke;
 };
@@ -644,4 +745,14 @@ export const calcPureDamage = (weaponInfo, attackerInfo, defenderInfo) => {
   pureDamage = Math.floor(pureDamage * multiplier);   //相性補正
 
   return { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier };
+}
+
+//相手がテラスした後に自分のポケモンからの相性を取得して返す
+export const getCompati = (atcType1, atcType2, defType1, defType2) => {
+  const [val1, val2] = atcType1
+    ? [
+      calcMultiplier(atcType1, defType1, defType2),
+      calcMultiplier((atcType2 ? atcType2 : atcType1), defType1, defType2)
+    ] : [null, null];
+  return [val1, val2];
 }

@@ -13,6 +13,7 @@ import {
   selectNextOpPokeLogic, delay,
   getTerastalText,
   calcPureDamage,
+  getCompati,
 } from "../model/model";
 
 export function useBattleHandlers(battleState) {
@@ -426,18 +427,18 @@ export function useBattleHandlers(battleState) {
   const decideOpAction = async () => {
 
     // 相手のポケモンが、自分のポケモンのタイプ一致技で抜群をとられるかチェックする
-    const { isDangerous, dangerousType, safeType } = checkDangerous();
+    const { dangerousType, safeType, IsDangerousTerastal, myTerastalType: terastalType } = checkDangerous();
 
     //交換すべき時はrefに交換ポケモンをセット
-    if (isDangerous)
-      await setOpChangePoke(dangerousType, safeType);
+    if (dangerousType.length > 0 || IsDangerousTerastal)
+      await setOpChangePoke(dangerousType, safeType, IsDangerousTerastal, terastalType);
     else
       console.log("相手は相性が悪くないので交代しない");
 
     //控えに交代できない(しない)場合、テラス判断と技選択
     if (!opChangeTurn.current) {
       if (opPokeState.canTerastal)
-        await checkOpTerastal(isDangerous, dangerousType, safeType);
+        await checkOpTerastal(dangerousType.length > 0 || IsDangerousTerastal, dangerousType, safeType);
       await setOpWeapon();
     }
   }
@@ -644,7 +645,7 @@ export function useBattleHandlers(battleState) {
           }
           //テラスすると、自分の控えから抜群を取られる場合 && テラスせずとも抜群とられる場合、テラスタルフラグを立てる
           else {
-            const [compati21, compati22] = getCompati(aliveMyBenchPokes[0].type1, aliveMyBenchPokes[0].type2, opPokeState.type1, opPokeState.type2); 
+            const [compati21, compati22] = getCompati(aliveMyBenchPokes[0].type1, aliveMyBenchPokes[0].type2, opPokeState.type1, opPokeState.type2);
             const [compati31, compati32] = aliveMyBenchPokes.length === 2
               ? getCompati(aliveMyBenchPokes[1].type1, aliveMyBenchPokes[1].type2, opPokeState.type1, opPokeState.type2)
               : [null, null];
@@ -679,31 +680,26 @@ export function useBattleHandlers(battleState) {
     return { strongType, anotherType };
   }
 
-  //相手がテラスした後に自分のポケモンからの相性を取得して返す
-  const getCompati = (atcType1, atcType2, defType1, defType2) => {
-    const [val1, val2] = atcType1
-      ? [
-        calcMultiplier(atcType1, defType1, defType2),
-        calcMultiplier((atcType2 ? atcType2 : atcType1), defType1, defType2)
-      ] : [null, null];
-    return [val1, val2];
-  }
-
   // 相手が、自分のタイプ一致技で抜群をとられるかの真偽と危険/安全タイプを返す
   const checkDangerous = () => {
     // 抜群を取られるかチェック
-    const [val11, val12] = [
-      calcMultiplier(myPokeState.type1, opPokeState.type1, opPokeState.type2),
-      calcMultiplier(myPokeState.type2, opPokeState.type1, opPokeState.type2)
-    ];
-    const isDangerous = Math.max(val11, val12) >= 2;
+    const myTerastalFlg = myPokeState.terastalPokeNum === getPokeNum(myPokeState);
+    const opTerastalFlg = opPokeState.terastalPokeNum === getPokeNum(opPokeState);
+    const [val11, val12] = opTerastalFlg
+    ? getCompati(myPokeState.type1, myPokeState.type2, opPokeState.terastal, "なし")
+    : getCompati(myPokeState.type1, myPokeState.type2, opPokeState.type1, opPokeState.type2);
+    const myTerastalType = myTerastalFlg ? myPokeState.terastal : null;
+    const val13 = myTerastalFlg
+      ? calcMultiplier(myTerastalType, opPokeState.type1, opPokeState.type2)
+      : null;
 
     // 自分のポケモンのタイプを相手目線で危険と安全に仕分け
     const [dangerousType, safeType] = [[], []];
     val11 >= 2 ? dangerousType.push(myPokeState.type1) : safeType.push(myPokeState.type1);
     val12 >= 2 ? dangerousType.push(myPokeState.type2) : safeType.push(myPokeState.type2);
+    const IsDangerousTerastal = val13 >= 2;
 
-    return { isDangerous, dangerousType, safeType };
+    return { dangerousType, safeType, IsDangerousTerastal, myTerastalType };
   };
 
   //相手目線で合理的な技を選択して返す
@@ -843,19 +839,16 @@ export function useBattleHandlers(battleState) {
   const selectNextOpPoke = async (life) => {
     let nextOpPoke = "";
     if (life === 2) {
-      const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, s: myPokeState.s };
-      const deadOpPokeIndex = getPokeNum(opPokeState) - 1;
-      const opPokesInfo = await Promise.all(
-        [1, 2, 3].map(i => getPokeInfo(opPokeState[`poke${i}Name`]))
-      );
-      opPokesInfo.splice(deadOpPokeIndex, 1);
-      nextOpPoke = selectNextOpPokeLogic(myPokeInfo, opPokesInfo);
+      const terastalType = myPokeState.terastalPokeNum === getPokeNum(myPokeState) ? myPokeState.terastal : null;
+      const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, terastalType, s: myPokeState.s };
+      const aliveOpBenchPokes = await getAliveBenchPokes(opPokeState);
+      nextOpPoke = selectNextOpPokeLogic(myPokeInfo, aliveOpBenchPokes);
     }
     else {
-      nextOpPoke =
-        opPokeState.poke1Hp ? opPokeState.poke1Name :
-          opPokeState.poke2Hp ? opPokeState.poke2Name :
-            opPokeState.poke3Hp ? opPokeState.poke3Name : null;
+      nextOpPoke = opPokeState.poke1Hp
+        ? opPokeState.poke1Name : opPokeState.poke2Hp
+          ? opPokeState.poke2Name : opPokeState.poke3Hp
+            ? opPokeState.poke3Name : null;
     }
     return nextOpPoke;
   };
@@ -890,13 +883,13 @@ export function useBattleHandlers(battleState) {
   }
 
   //相手はバトルポケモンを交換すべき時は、refにセットする
-  const setOpChangePoke = async (dangerousType, safeType) => {
+  const setOpChangePoke = async (dangerousType, safeType, IsDangerousTerastal, terastalType) => {
 
     //生存している相手の控えポケモン情報を取得する
     const aliveOpBenchPokes = await getAliveBenchPokes(opPokeState);
 
-    opChangePokeName.current =
-      aliveOpBenchPokes.length > 0 ? getOpChangePoke(aliveOpBenchPokes, dangerousType, safeType) : null;
+    opChangePokeName.current = aliveOpBenchPokes.length > 0
+      ? getOpChangePoke(aliveOpBenchPokes, dangerousType, safeType, IsDangerousTerastal, terastalType) : null;
     opChangeTurn.current = opChangePokeName.current ? true : false;
     console.log(`相手は相性が悪い${opChangePokeName.current ? "ため" + opChangePokeName.current + "に交代する" : "が交代できるポケモンがいない"}`);
   }
