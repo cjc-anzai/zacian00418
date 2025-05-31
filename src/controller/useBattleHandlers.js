@@ -882,9 +882,9 @@ export function useBattleHandlers(battleState) {
       const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, terastalType, s: myPokeState.s };
       const aliveOpBenchPokes = await getAliveBenchPokes(opPokeState);
       //相手の控えポケモンが、自分のポケモンから上からワンパンされないか
-      const [opPoke1Hp, opPoke2Hp] = [getPokeNumHp(opPokeState, aliveOpBenchPokes[0].name), getPokeNumHp(opPokeState, aliveOpBenchPokes[1].name)];
-      const { cnt1 } = await calcDefinitelyEndureHits(opPokeState);
-      const cantWin = myPokeState.s > opPokeState.s && (cnt4 === 0 || cnt2 !== 1 && cnt4 <= 2);
+      // const [opPoke1Hp, opPoke2Hp] = [getPokeNumHp(opPokeState, aliveOpBenchPokes[0].name), getPokeNumHp(opPokeState, aliveOpBenchPokes[1].name)];
+      // const { cnt1 } = await calcDefinitelyEndureHits(opPokeState);
+      // const cantWin = myPokeState.s > opPokeState.s && (cnt4 === 0 || cnt2 !== 1 && cnt4 <= 2);
       nextOpPoke = selectNextOpPokeLogic(myPokeInfo, aliveOpBenchPokes);
     }
     else {
