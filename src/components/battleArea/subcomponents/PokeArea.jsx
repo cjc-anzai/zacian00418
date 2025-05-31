@@ -14,7 +14,7 @@ const PokeArea = ({
     const isMy = who === "my";
     const areaVisible = isMy ? myAreaVisible : opAreaVisible;
     const pokeState = isMy ? myPokeState : opPokeState;
-    const isTerastal = pokeState.terastalPokeNum === getPokeNum(pokeState);
+    const isTerastal = pokeState.terastalPokeNum === getPokeNum(pokeState, pokeState.name);
 
     return (
         <div className={`${who}-poke-area`}>

@@ -302,127 +302,51 @@ export const getOpChangePoke = (aliveOpBenchPokes, dangerousType, safeType, IsDa
   let opChangePokeName = null
 
   //相手の控えが自分のバトルポケモンから受けるダメージをまとめる
-  const [val21, val22] = getCompati(dangerousType[0], (dangerousType[1] ? dangerousType[1] : safeType[0]), aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2);
+  const [val21, val22] = dangerousType.length > 0
+    ? getCompati(dangerousType[0], (dangerousType[1] ? dangerousType[1] : safeType[0]), aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2)
+    : getCompati(safeType[0], (safeType[1] ? safeType[1] : safeType[0]), aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2);
   const val23 = terastalType
     ? calcMultiplier(terastalType, aliveOpBenchPokes[0].type1, aliveOpBenchPokes[0].type2)
     : null;
-  const [val31, val32] = aliveOpBenchPokes.length === 2
-    ? getCompati(dangerousType[0], (dangerousType[1] ? dangerousType[1] : safeType[0]), aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2)
-    : [null, null];
-  const val33 = aliveOpBenchPokes.length === 2 && terastalType
-    ? calcMultiplier(terastalType, aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2)
-    : null;
+
+  let [val31, val32, val33] = [null, null];
+  if (aliveOpBenchPokes.length === 2) {
+    [val31, val32] = dangerousType.length > 0
+      ? getCompati(dangerousType[0], (dangerousType[1] ? dangerousType[1] : safeType[0]), aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2)
+      : getCompati(safeType[0], (safeType[1] ? safeType[1] : safeType[0]), aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2);
+    val33 = terastalType
+      ? calcMultiplier(terastalType, aliveOpBenchPokes[1].type1, aliveOpBenchPokes[1].type2)
+      : null;
+  }
 
   if (dangerousType.length === 2) {
     if (IsDangerousTerastal) {
       if ((val21 + val22 + val23) <= 1.5) {
-        if (aliveOpBenchPokes.length === 2) {
-          if ((val31 + val32 + val33) <= 1.5) {
-            if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
-              opChangePokeName =
-                (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
-            else {
-              opChangePokeName =
-                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
+        if (val31 && (val31 + val32 + val33) <= 1.5) {
+          if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+            opChangePokeName =
+              (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
           }
           else {
-            opChangePokeName = aliveOpBenchPokes[0].name;
+            opChangePokeName =
+              aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
           }
         }
         else {
           opChangePokeName = aliveOpBenchPokes[0].name;
         }
+
       }
-      else if (aliveOpBenchPokes.length === 2 && (val31 + val32 + val33) <= 1.5) {
+      else if (val31 && (val31 + val32 + val33) <= 1.5) {
         opChangePokeName = aliveOpBenchPokes[1].name;
       }
     }
     else {
       if ((val21 + val22) <= 1) {
-        if (aliveOpBenchPokes.length === 2) {
-          if ((val31 + val32) <= 1) {
-            if ((val21 + val22) !== (val31 + val32)) {
-              opChangePokeName =
-                (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
-            else {
-              opChangePokeName =
-                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
-          }
-          else {
-            opChangePokeName = aliveOpBenchPokes[0].name;
-          }
-        }
-        else {
-          opChangePokeName = aliveOpBenchPokes[0].name;
-        }
-      }
-      else if (aliveOpBenchPokes.length === 2 && (val31 + val32) <= 1) {
-        opChangePokeName = aliveOpBenchPokes[1].name;
-      }
-    }
-  }
-  else if (dangerousType.length === 1) {
-    if (IsDangerousTerastal) {
-      if (val21 <= 0.5 && val22 <= 1 && val23 <= 0.5) {
-        if (aliveOpBenchPokes.length === 2) {
-          if (val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
-            if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
-              opChangePokeName =
-                (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
-            else {
-              opChangePokeName =
-                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
-          }
-          else {
-            opChangePokeName = aliveOpBenchPokes[0].name;
-          }
-        }
-        else {
-          opChangePokeName = aliveOpBenchPokes[0].name;
-        }
-      }
-      else if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
-        opChangePokeName = aliveOpBenchPokes[1].name;
-      }
-    }
-    else {
-      if (val21 <= 0.5 && val22 <= 1) {
-        if (aliveOpBenchPokes.length === 2) {
-          if (val31 <= 0.5 && val32 <= 1) {
-            if ((val21 + val22) !== (val31 + val32)) {
-              opChangePokeName =
-                (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
-            else {
-              opChangePokeName =
-                aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-            }
-          }
-          else {
-            opChangePokeName = aliveOpBenchPokes[0].name;
-          }
-        }
-        else {
-          opChangePokeName = aliveOpBenchPokes[0].name;
-        }
-      }
-      else if (aliveOpBenchPokes.length === 2 && val31 <= 0.5 && val32 <= 1) {
-        opChangePokeName = aliveOpBenchPokes[1].name;
-      }
-    }
-  }
-  else {
-    if (val23 <= 0.5) {
-      if (aliveOpBenchPokes.length === 2) {
-        if (val33 <= 0.5) {
-          if (val23 !== val33) {
-            opChangePokeName = val23 < val33 ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+        if (val31 && (val31 + val32) <= 1) {
+          if ((val21 + val22) !== (val31 + val32)) {
+            opChangePokeName =
+              (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
           }
           else {
             opChangePokeName =
@@ -433,11 +357,69 @@ export const getOpChangePoke = (aliveOpBenchPokes, dangerousType, safeType, IsDa
           opChangePokeName = aliveOpBenchPokes[0].name;
         }
       }
+      else if (val31 && (val31 + val32) <= 1) {
+        opChangePokeName = aliveOpBenchPokes[1].name;
+      }
+    }
+  }
+  else if (dangerousType.length === 1) {
+    if (IsDangerousTerastal) {
+      if (val21 <= 0.5 && val22 <= 1 && val23 <= 0.5) {
+        if (val31 && val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
+          if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+            opChangePokeName =
+              (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+          }
+          else {
+            opChangePokeName =
+              aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+          }
+        }
+        else {
+          opChangePokeName = aliveOpBenchPokes[0].name;
+        }
+      }
+      else if (val31 && val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
+        opChangePokeName = aliveOpBenchPokes[1].name;
+      }
+    }
+    else {
+      if (val21 <= 0.5 && val22 <= 1 && (val23 ? val23 <= 1 : true)) {
+        if (val31 && val31 <= 0.5 && val32 <= 1 && (val33 ? val33 <= 1 : true)) {
+          if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+            opChangePokeName =
+              (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+          }
+          else {
+            opChangePokeName =
+              aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+          }
+        }
+        else {
+          opChangePokeName = aliveOpBenchPokes[0].name;
+        }
+      }
+      else if (val31 && val31 <= 0.5 && val32 <= 1 && (val33 ? val33 <= 1 : true)) {
+        opChangePokeName = aliveOpBenchPokes[1].name;
+      }
+    }
+  }
+  else {
+    if (val21 <= 1 && val22 <= 1 && val23 <= 0.5) {
+      if (val31 && val31 <= 1 && val32 <= 1 && val33 <= 0.5) {
+        if (val23 !== val33) {
+          opChangePokeName = val23 < val33 ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+        }
+        else {
+          opChangePokeName =
+            aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
+        }
+      }
       else {
         opChangePokeName = aliveOpBenchPokes[0].name;
       }
     }
-    else if (aliveOpBenchPokes.length === 2 && val33 <= 0.5) {
+    else if (val31 && val31 <= 1 && val32 <= 1 && val33 <= 0.5) {
       opChangePokeName = aliveOpBenchPokes[1].name;
     }
   }
@@ -673,12 +655,12 @@ export const selectNextOpPokeLogic = (myPoke, opPokes) => {
   );
   const opToMy = opPokes.map(op =>
     Math.max(
-      myPoke.terastalType 
-      ? calcMultiplier(op.type1, myPoke.terastalType, "なし")
-      : calcMultiplier(op.type1, myPoke.type1, myPoke.type2),
       myPoke.terastalType
-      ? calcMultiplier(op.type2, myPoke.terastalType, "なし")
-      : calcMultiplier(op.type2, myPoke.type1, myPoke.type2),
+        ? calcMultiplier(op.type1, myPoke.terastalType, "なし")
+        : calcMultiplier(op.type1, myPoke.type1, myPoke.type2),
+      myPoke.terastalType
+        ? calcMultiplier(op.type2, myPoke.terastalType, "なし")
+        : calcMultiplier(op.type2, myPoke.type1, myPoke.type2),
     )
   );
 
@@ -688,8 +670,9 @@ export const selectNextOpPokeLogic = (myPoke, opPokes) => {
   //自分から相手への相性が2体目も３体目も同じなら、
   // 相手から自分への相性が良い方を選択する　相手から自分への相性がどちらも同じなら速い方を選択する
   if (myToOp[0] === myToOp[1]) {
-    if (opToMy[0] !== opToMy[1])
+    if (opToMy[0] !== opToMy[1]) {
       nextOpPoke = (opToMy[0] > opToMy[1] ? opPokes[0] : opPokes[1]).name;
+    }
     else
       nextOpPoke = (opPokes[0].s > opPokes[1].s ? opPokes[0] : opPokes[1]).name;
 

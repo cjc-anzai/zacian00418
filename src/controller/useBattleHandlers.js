@@ -1,3 +1,4 @@
+import { defs } from "framer-motion/client";
 import {
   soundList,
   compatiTexts,
@@ -69,7 +70,7 @@ export function useBattleHandlers(battleState) {
   //ポケモン登場時のHPセット
   const setHpOnEntry = (isMe, pokeState) => {
     //HPバーの制御
-    const currentHp = getPokeNumHp(pokeState);
+    const currentHp = getPokeNumHp(pokeState, pokeState.name);
     adjustHpBar(isMe, pokeState, currentHp);
     //HPのセット
     const setPokeState = isMe ? setMyPokeState : setOpPokeState;
@@ -82,7 +83,7 @@ export function useBattleHandlers(battleState) {
   //攻撃を受けた後のHPセット
   const setHpOnDamage = (isMe, pokeState, damage) => {
     //HPバーの制御
-    const currentHp = getPokeNumHp(pokeState);
+    const currentHp = getPokeNumHp(pokeState, pokeState.name);
     const newHp = calcNewHp(currentHp, damage);
     //HPのセット
     const [setPokeState, setPokeStateTrigger] = isMe ?
@@ -95,14 +96,14 @@ export function useBattleHandlers(battleState) {
   //poke1Hp等のHpをバトル場のポケモンのHpと同じ値に更新する
   const setPokeNumHp = (isMe, pokeState) => {
     const setPokeState = isMe ? setMyPokeState : setOpPokeState;
-    const pokeNum = getPokeNum(pokeState);
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
     setPokeState(prev => ({ ...prev, [`poke${pokeNum}Hp`]: pokeState.hp, }));
   }
 
   //テラスタルするポケモンNoをセットする
   const setTerastalPokeNum = (isMe) => {
     const [setPokeState, pokeState] = isMe ? [setMyPokeState, myPokeState] : [setOpPokeState, opPokeState];
-    delay(() => setPokeState(prev => ({ ...prev, canTerastal: false, terastalPokeNum: getPokeNum(pokeState) })), 2000);
+    delay(() => setPokeState(prev => ({ ...prev, canTerastal: false, terastalPokeNum: getPokeNum(pokeState, pokeState.name) })), 2000);
   }
 
   //Goテキストをセットする
@@ -261,7 +262,7 @@ export function useBattleHandlers(battleState) {
             setOtherText({ kind: "general", content: "急所にあたった" });
 
           //HPバー調整とダメージエフェクト
-          const currentHp = getPokeNumHp(defState);
+          const currentHp = getPokeNumHp(defState, defState.name);
           const newHp = calcNewHp(currentHp, damage);
           adjustHpBar(!attackerIsMe, defState, newHp);
           await damageEffect(attackerIsMe, defState);
@@ -276,7 +277,7 @@ export function useBattleHandlers(battleState) {
       setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
       setOtherText({ kind: "", content: "" });
     }
-    else if(isIncident){
+    else if (isIncident) {
       const [atcState, setPokeState] = attackerIsMe ? [myPokeState, setMyPokeState] : [opPokeState, setOpPokeState];
       const newState = atcState.a * 2;
       setPokeState(prev => ({ ...prev, a: newState }));
@@ -373,15 +374,15 @@ export function useBattleHandlers(battleState) {
   };
 
   //現在のstateのポケモンが何番目のポケモンかを取得して返す。
-  const getPokeNum = (pokeState) => {
+  const getPokeNum = (pokeState, pokeName) => {
     const pokeNum = [pokeState.poke1Name, pokeState.poke2Name, pokeState.poke3Name]
-      .findIndex(name => name === pokeState.name) + 1;
+      .findIndex(name => name === pokeName) + 1;
     return pokeNum;
   }
 
   //指定したポケモンの最大HPを取得する
   const getMaxHp = (pokeState) => {
-    const pokeNum = getPokeNum(pokeState);
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
     const MaxHp = pokeState[`poke${pokeNum}MaxHp`];
     return MaxHp;
   }
@@ -595,8 +596,8 @@ export function useBattleHandlers(battleState) {
   };
 
   //poke1Hp等を取得する
-  const getPokeNumHp = (pokeState) => {
-    const pokeNum = getPokeNum(pokeState);
+  const getPokeNumHp = (pokeState, pokeName) => {
+    const pokeNum = getPokeNum(pokeState, pokeName);
     const pokeNumHp = pokeState[`poke${pokeNum}Hp`];
     return pokeNumHp;
   }
@@ -608,14 +609,14 @@ export function useBattleHandlers(battleState) {
     const { weaponsInfo, atcInfos, defInfos } = await getUseInCalcDamageInfos(false, opPokeState, true);
     const { strongestWeaponDamage: maxDamage2 } = getMostEffectiveWeaponLogic(weaponsInfo, atcInfos, defInfos);
     //テラス前後の確定数
-    const cnt1 = Math.floor(defState.hp / maxDamage1);
-    const cnt2 = Math.floor(defState.hp / maxDamage2);
+    const cnt1 = Math.floor(defState.hp / maxDamage1) + 1;
+    const cnt2 = Math.floor(defState.hp / maxDamage2) + 1;
 
     return { cnt1, cnt2 };
   }
 
   //テラス前後の確定耐え数を計算する
-  const calcDefinitelyEndureHits = async (defState) => {
+  const calcDefinitelyEndureHits = async (defPokeHp) => {
     //未テラス状態で自分からの最大打点の技名とダメージ数を取得
     const { myStrongestWeapon, myMaxDamage: maxDamage1 } = await predictMyAction(1);
     //テラス状態で、未テラス状態時の最大打点の技を受けた際の被ダメージを計算する
@@ -625,8 +626,8 @@ export function useBattleHandlers(battleState) {
     const { weaponsInfo, atcInfos, defInfos } = await getUseInCalcDamageInfos(true, myPokeState, true);
     const { myMaxDamage: damage2 } = predictMyActionLogic(weaponsInfo, atcInfos, defInfos, 1);
     //テラス前後の確定耐え数
-    const cnt1 = Math.floor(defState.hp / maxDamage1);
-    const cnt2 = defState.hp - damage1 > 0 ? Math.floor((defState.hp - damage1) / damage2) + 1 : 0;
+    const cnt1 = Math.floor(defPokeHp / maxDamage1);
+    const cnt2 = defPokeHp - damage1 > 0 ? Math.floor((defPokeHp - damage1) / damage2) + 1 : 0;
 
     return { cnt1, cnt2 };
   }
@@ -636,7 +637,7 @@ export function useBattleHandlers(battleState) {
     let debugText = "";
     //抜群をとられて、控えも受けられない場合　テラスすることで確定耐え数を増やせる場合、テラスタルフラグを立てる
     if (isDangerous && !opChangeTurn.current) {
-      const { cnt1, cnt2 } = await calcDefinitelyEndureHits(opPokeState);
+      const { cnt1, cnt2 } = await calcDefinitelyEndureHits(opPokeState.hp);
       if (cnt1 < cnt2) {
         opTerastalFlag.current = true;
         debugText = "相手は耐性を強めるためにテラスタルする";
@@ -654,7 +655,7 @@ export function useBattleHandlers(battleState) {
 
       //テラスすることで確定数を減らせる場合 || 自分の最大打点の技を無効化できる場合　テラスタルフラグを立てる
       if ((cnt1 > cnt2) || (compati11 === 0 && compati12 <= 1)) {
-        const aliveMyBenchPokes = getAliveBenchPokes(myPokeState);
+        const aliveMyBenchPokes = await getAliveBenchPokes(myPokeState);
         if (aliveMyBenchPokes.length > 0) {
           //テラス後に自分の控えポケモンからの相性を取得
           const [compati21Teras, compati22Teras] = getCompati(aliveMyBenchPokes[0].type1, aliveMyBenchPokes[0].type2, opPokeState.terastal, "なし");
@@ -662,8 +663,12 @@ export function useBattleHandlers(battleState) {
             ? getCompati(aliveMyBenchPokes[1].type1, aliveMyBenchPokes[1].type2, opPokeState.terastal, "なし")
             : [null, null];
 
-          //テラスしても、自分の控えから抜群を取られない場合、テラスタルフラグを立てる
-          if (Math.max(compati21Teras, compati22Teras) <= 1 && (compati31Teras ? (Math.max(compati31Teras, compati32Teras) <= 1) : true)) {
+          //テラス前後の確定耐え数を取得
+          const { cnt2: cnt4 } = await calcDefinitelyEndureHits(opPokeState.hp);
+          const cantWin = myPokeState.s > opPokeState.s && (cnt4 === 0 || cnt2 !== 1 && cnt4 <= 2);
+
+          //テラスしても、自分の控えから抜群を取られない場合で、自分の攻撃の前に倒される場合以外、テラスタルフラグを立てる
+          if (Math.max(compati21Teras, compati22Teras) <= 1 && (compati31Teras ? (Math.max(compati31Teras, compati32Teras) <= 1) : true) && !cantWin) {
             opTerastalFlag.current = true;
             debugText = (cnt1 > cnt2) ? "相手は攻撃力上昇のためにテラスタルする" : "相手は自分の攻撃を無効化するためにテラスタルする";
           }
@@ -707,8 +712,8 @@ export function useBattleHandlers(battleState) {
   // 相手が、自分のタイプ一致技で抜群をとられるかの真偽と危険/安全タイプを返す
   const checkDangerous = () => {
     // 抜群を取られるかチェック
-    const myTerastalFlg = myPokeState.terastalPokeNum === getPokeNum(myPokeState);
-    const opTerastalFlg = opPokeState.terastalPokeNum === getPokeNum(opPokeState);
+    const myTerastalFlg = myPokeState.terastalPokeNum === getPokeNum(myPokeState, myPokeState.name);
+    const opTerastalFlg = opPokeState.terastalPokeNum === getPokeNum(opPokeState, opPokeState.name);
     const [val11, val12] = opTerastalFlg
       ? getCompati(myPokeState.type1, myPokeState.type2, opPokeState.terastal, "なし")
       : getCompati(myPokeState.type1, myPokeState.type2, opPokeState.type1, opPokeState.type2);
@@ -781,8 +786,8 @@ export function useBattleHandlers(battleState) {
     let [atcPower, defPower] = weaponInfo.kind === "物理"
       ? [atcState.a, defState.b] : [atcState.c, defState.d];
     //テラスタルしているか
-    let isTerastalAtc = atcState.terastalPokeNum === getPokeNum(atcState) || (!attackerIsMe && opTerastalFlag.current);
-    let isTerastalDef = defState.terastalPokeNum === getPokeNum(defState);
+    let isTerastalAtc = atcState.terastalPokeNum === getPokeNum(atcState, atcState.name) || (!attackerIsMe && opTerastalFlag.current);
+    let isTerastalDef = defState.terastalPokeNum === getPokeNum(defState, defState.name);
 
     //相手のテラス判断のための値変更
     if (attackerIsMe && terastalCheckFlg)
@@ -830,11 +835,11 @@ export function useBattleHandlers(battleState) {
   const getCompatiText = async (attackerIsMe, atcState, defState) => {
     const weaponName = getWeaponName(attackerIsMe);
     let { type: weaponType } = await getWeaponInfo(weaponName);
-    if (atcState.terastalPokeNum === getPokeNum(atcState) && weaponName === "テラバースト") {
+    if (atcState.terastalPokeNum === getPokeNum(atcState, atcState.name) && weaponName === "テラバースト") {
       weaponType = atcState.terastal;
     }
 
-    const [defType1, defType2] = defState.terastalPokeNum === getPokeNum(defState)
+    const [defType1, defType2] = defState.terastalPokeNum === getPokeNum(defState, defState.name)
       ? [defState.terastal, "なし"] : [defState.type1, defState.type2];
     const multiplier = calcMultiplier(weaponType, defType1, defType2);
     const compatiText = getCompatiTextLogic(multiplier);
@@ -873,9 +878,13 @@ export function useBattleHandlers(battleState) {
   const selectNextOpPoke = async (life) => {
     let nextOpPoke = "";
     if (life === 2) {
-      const terastalType = myPokeState.terastalPokeNum === getPokeNum(myPokeState) ? myPokeState.terastal : null;
+      const terastalType = myPokeState.terastalPokeNum === getPokeNum(myPokeState, myPokeState.name) ? myPokeState.terastal : null;
       const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, terastalType, s: myPokeState.s };
       const aliveOpBenchPokes = await getAliveBenchPokes(opPokeState);
+      //相手の控えポケモンが、自分のポケモンから上からワンパンされないか
+      const [opPoke1Hp, opPoke2Hp] = [getPokeNumHp(opPokeState, aliveOpBenchPokes[0].name), getPokeNumHp(opPokeState, aliveOpBenchPokes[1].name)];
+      const { cnt1 } = await calcDefinitelyEndureHits(opPokeState);
+      const cantWin = myPokeState.s > opPokeState.s && (cnt4 === 0 || cnt2 !== 1 && cnt4 <= 2);
       nextOpPoke = selectNextOpPokeLogic(myPokeInfo, aliveOpBenchPokes);
     }
     else {

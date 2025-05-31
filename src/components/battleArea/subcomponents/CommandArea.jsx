@@ -37,7 +37,7 @@ const CommandArea = ({
 
   const [weaponInfoList, setWeaponInfoList] = useState(null);
 
-  const isTerastal = myPokeState.terastalPokeNum === getPokeNum(myPokeState);
+  const isTerastal = myPokeState.terastalPokeNum === getPokeNum(myPokeState, myPokeState.name);
 
   //たたかうボタン押下時、コマンド表示を切り替える
   const openBattleCmdArea = () => {
