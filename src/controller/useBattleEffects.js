@@ -1,11 +1,15 @@
 import { useEffect } from 'react';
 import { useToDoWhenFnc } from "./useToDoWhenFnc";
+import { useBattleHandlers } from "./useBattleHandlers";
 
 export function useBattleEffects(battleState) {
 
   const {
     myPokeState, opPokeState,
     myPokeStateTrigger, opPokeStateTrigger,
+    otherText, setOtherText,
+    iAmFirst,
+    setOtherAreaVisible
   } = battleState;
 
   const {
@@ -15,6 +19,11 @@ export function useBattleEffects(battleState) {
     toDoWhenSetText,
     toDoWhenSetTerastalPokeNum,
   } = useToDoWhenFnc(battleState);
+
+  const {
+    setWeaponText,
+    stopProcessing
+  } = useBattleHandlers(battleState);
 
   //name=============================================
   useEffect(() => {
@@ -111,6 +120,23 @@ export function useBattleEffects(battleState) {
     if (!opPokeState.terastalPokeNum) return;
     toDoWhenSetTerastalPokeNum(opPokeState);
   }, [opPokeState.terastalPokeNum]);
+
+  //===========================================
+  useEffect(() => {
+    if (!otherText.content) return;
+    if (otherText.kind === "buffDebuff") {
+      setTimeout(() => {
+        setOtherText({ kind: "", content: "" });
+        if (iAmFirst.current && myPokeState.text.kind === "weapon") {
+          const atcState = iAmFirst.current ? opPokeState : myPokeState;
+          setWeaponText(!iAmFirst.current, atcState);
+        }
+        else if (!iAmFirst.current && opPokeState.text.kind === "weapon") {
+          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+        }
+      }, 2000);
+    }
+  }, [otherText]);
 
   return {};
 }

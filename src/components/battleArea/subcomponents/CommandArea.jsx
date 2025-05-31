@@ -120,11 +120,11 @@ const CommandArea = ({
 
   return (
     <div className="cmd-text-area">
-      {(opAreaVisible.text || myAreaVisible.text || otherText) && (
+      {(opAreaVisible.text || myAreaVisible.text || otherText.content) && (
         <div className="text-area">
           {opAreaVisible.text && <p>{opPokeState.text.content}</p>}
           {myAreaVisible.text && <p>{myPokeState.text.content}</p>}
-          {otherText && <p>{otherText}</p>}
+          {otherText.content && <p>{otherText.content}</p>}
         </div>
       )}
 

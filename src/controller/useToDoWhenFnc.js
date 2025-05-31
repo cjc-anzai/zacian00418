@@ -23,12 +23,14 @@ export function useToDoWhenFnc(battleState) {
     setBackText,
     setTerastalPokeNum,
     setWeaponText,
+    setEffectivenessText,
     setDeadText,
     setAreaVisibleForApp,
     setAreaVisibleForChange,
-    setAreaVisibleForTerastal, 
+    setAreaVisibleForTerastal,
     setPokeName,
     setTerastalText,
+    checkIsAttackWeapon,
     setCompatiText,
     getDamage,
     playAttackingFlow,
@@ -38,6 +40,9 @@ export function useToDoWhenFnc(battleState) {
     setLife,
     setNextOpPokeName,
     setWinner,
+
+    getWeaponName,
+    getWeaponInfo,
   } = useBattleHandlers(battleState);
   //============================================================================
 
@@ -100,7 +105,7 @@ export function useToDoWhenFnc(battleState) {
         }
         else {
           const atcState = iAmFirst.current ? opPokeState : myPokeState;
-          delay(() => setWeaponText(!iAmFirst.current, atcState), 2000); 
+          delay(() => setWeaponText(!iAmFirst.current, atcState), 2000);
         }
       }
       //どちらも交代するとき
@@ -129,12 +134,26 @@ export function useToDoWhenFnc(battleState) {
       setTerastalPokeNum(isMe);
     }
     //weaponTextがセットされたら受けポケモンへの相性テキストをセット
-    else if (textKind === "weapon")
-      await setCompatiText(isMe);
+    else if (textKind === "weapon") {
+      //技が攻撃技か変化技か取得
+      const isAttackWeapon = await checkIsAttackWeapon(isMe);
+      if (isAttackWeapon)
+        await setCompatiText(isMe);
+      else {
+        const weaponName = getWeaponName(isMe);
+        const weaponInfo = await getWeaponInfo(weaponName);
+        const isHit = weaponInfo.hitrate ? (Math.random() * 100 < weaponInfo.hitrate) : true;
+        const isIncident = weaponInfo.incidencerate ? (Math.random() * 100 < weaponInfo.incidencerate) : true;
+        const defState = isMe ? opPokeState : myPokeState;
+        await playAttackingFlow(isMe, defState, isHit, false, 0, isAttackWeapon, isIncident) 
+
+        // setEffectivenessText(isMe);
+      }
+    }
     //compatiTextがセットされたら、攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
     else if (textKind === "compati") {
       const { damage, isHit, isCriticalHit } = await getDamage(!isMe);
-      await playAttackingFlow(!isMe, pokeState, isHit, isCriticalHit, damage);
+      await playAttackingFlow(!isMe, pokeState, isHit, isCriticalHit, damage, true, false);
       setHpOnDamage(isMe, pokeState, damage);
     }
     //deadTextがセットされたら、死亡エフェクトを入れて、ゲーム続行ORゲームセット

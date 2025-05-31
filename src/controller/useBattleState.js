@@ -21,7 +21,7 @@ export function useBattleState() {
     poke1MaxHp: 0, poke2MaxHp: 0, poke3MaxHp: 0,
     poke1Hp: 0, poke2Hp: 0, poke3Hp: 0,
     canTerastal: true, terastalPokeNum: null,
-    text: { content: "", kind: "" }
+    text: { kind: "", content: "" }
   };
   const [myPokeState, setMyPokeState] = useState({ ...defaultPokeState });
   const [opPokeState, setOpPokeState] = useState({ ...defaultPokeState });
@@ -33,7 +33,7 @@ export function useBattleState() {
 
   const [selectedOrder, setSelectedOrder] = useState([]);   //自分が選出するポケモン3体
   const [isTerastalActive, setIsTerastalActive] = useState(false);    //テラスタルボタン
-  const [otherText, setOtherText] = useState("");   //イレギュラーなテキスト
+  const [otherText, setOtherText] = useState({ kind: "", content: "" });   //イレギュラーなテキスト
 
   //useRef
   const [myLife, opLife] = [useRef(3), useRef(3)];
