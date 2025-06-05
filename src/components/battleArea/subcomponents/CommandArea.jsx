@@ -128,7 +128,7 @@ const CommandArea = ({
         </div>
       )}
 
-      {otherAreaVisible.actionCmd && (
+      {otherAreaVisible.actionCmd && !otherText.content &&(
         <div className="cmd-area">
           <button className="weapon-cmd-btn" onClick={openBattleCmdArea}>たたかう</button>
           {(myPokeState.poke1Hp !== 0 || myPokeState.poke2Hp !== 0 || myPokeState.poke3Hp !== 0) && (

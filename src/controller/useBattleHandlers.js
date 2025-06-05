@@ -51,6 +51,7 @@ export function useBattleHandlers(battleState) {
       ...prev,
       img: pokeInfo.img, voice: pokeInfo.voice, type1: pokeInfo.type1, type2: pokeInfo.type2, terastal: pokeInfo.terastal,
       a: pokeInfo.a, b: pokeInfo.b, c: pokeInfo.c, d: pokeInfo.d, s: pokeInfo.s,
+      aBuff: 0, bBuff: 0, cBuff: 0, dBuff: 0, sBuff: 0,
       weapon1: pokeInfo.weapon1, weapon2: pokeInfo.weapon2, weapon3: pokeInfo.weapon3, weapon4: pokeInfo.weapon4,
     }));
   }
@@ -146,13 +147,6 @@ export function useBattleHandlers(battleState) {
       setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
   }
 
-  //変化の効果セットする
-  // const setEffectivenessText = (isMe) => {
-  //   const effectivenessText = "";
-
-  //   setOtherText({ kind: "effectiveness", content: effectivenessText });
-  // }
-
   //相性テキストをセットする
   const setCompatiText = async (attackerIsMe) => {
     const [atcState, defState] = attackerIsMe
@@ -183,7 +177,10 @@ export function useBattleHandlers(battleState) {
   //お互いの素早さと優先度を比較して、先攻後攻をセットする
   const setMyTurn = async () => {
     //素早さを取得する
-    const [myPokeSpeed, opPokeSpeed] = [myPokeState.s, opPokeState.s];
+    const [mySBuff, opSBuff] = [myPokeState.sBuff, opPokeState.sBuff];
+    const [mySBuffMultiplier, opSBuffMultiplier] =
+      [mySBuff > 0 ? mySBuff * 0.5 + 1 : 2 / (2 - mySBuff), opSBuff > 0 ? opSBuff * 0.5 + 1 : 2 / (2 - opSBuff)];
+    const [myPokeSpeed, opPokeSpeed] = [myPokeState.s * mySBuffMultiplier, opPokeState.s * opSBuffMultiplier];
     console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${opPokeSpeed}\n`);
 
     //どちらも交換しない場合、優先度と素早さを比較して先攻後攻を決める
@@ -242,13 +239,15 @@ export function useBattleHandlers(battleState) {
   }
 
   //攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
-  const playAttackingFlow = async (attackerIsMe, defState, isHit, isCriticalHit, damage, isAttackWeapon, isIncident) => {
+  const playAttackingFlow = async (attackerIsMe, isHit, isCriticalHit, damage, isAttackWeapon, atcTarget, effTarget, effectiveness) => {
+
+    const defState = attackerIsMe ? opPokeState : myPokeState;
     const [setAreaVisible, setOtherTextInvisible] = attackerIsMe ?
       [setMyAreaVisible, setOpAreaVisible] : [setOpAreaVisible, setMyAreaVisible];
     setAreaVisible(prev => ({ ...prev, text: true }));     //技テキスト表示
 
     //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
-    await attackEffect(attackerIsMe, defState, isHit, isAttackWeapon);
+    await attackEffect(attackerIsMe, defState, isHit, atcTarget);
     setAreaVisible(prev => ({ ...prev, text: false }));    //技テキストを非表示
 
     if (isAttackWeapon) {
@@ -276,13 +275,118 @@ export function useBattleHandlers(battleState) {
       await stopProcessing(2000);
       setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
       setOtherText({ kind: "", content: "" });
+
+      //技の追加効果があるとき
+      if (effectiveness) {
+        //自分自分→自分　自分相手→相手　相手自分→相手　相手相手→自分
+        const myEffectiveness = attackerIsMe && effTarget === "自分" || !attackerIsMe && effTarget === "相手";
+        const [pokeState, setPokeState] = myEffectiveness ? [myPokeState, setMyPokeState] : [opPokeState, setOpPokeState];
+
+        if (effectiveness.includes("buff")) {
+
+          const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
+          let textArray = [`${pokeState.name}の`];
+
+          effectiveness = effectiveness.slice(5);
+          for (let i = 0; i < effectiveness.length; i += 3) {
+            const status = effectiveness[i];
+            const buff = Number(effectiveness.slice(i + 1, i + 3));
+            const key = `${status}Buff`;
+            const currentBuff = pokeState[key] ?? 0;
+
+            const clampedBuff = Math.max(-6, Math.min(6, currentBuff + buff));
+            const actualChange = clampedBuff - currentBuff;
+
+            let text1 = statusTextMap[status] || "不明";
+            let text2 = "";
+
+            if (actualChange !== 0) {
+              // 実際に変化があった場合のみ state 更新
+              setPokeState(prev => ({
+                ...prev,
+                [key]: clampedBuff
+              }));
+
+              if (actualChange > 0) {
+                text2 = actualChange >= 2 ? "がぐーんと上がった" : "が上がった";
+              } else {
+                text2 = actualChange <= -2 ? "ががくっと下がった" : "が下がった";
+              }
+
+            } else {
+              // 変化しなかった場合（すでに限界値）
+              text2 = buff > 0
+                ? "はこれ以上上がらない"
+                : "はこれ以上下がらない";
+            }
+
+            textArray.push(`${text1}${text2}`);
+          }
+
+          const buffText = textArray.join("\n");
+          setOtherText({ kind: "buff", content: buffText });
+          if (buffText.includes("上がった")) {
+            soundList.general.statusUp.play();
+          }
+          if (buffText.includes("下がった")) {
+            soundList.general.statusDown.play();
+          }
+        }
+      }
     }
-    else if (isIncident) {
-      const [atcState, setPokeState] = attackerIsMe ? [myPokeState, setMyPokeState] : [opPokeState, setOpPokeState];
-      const newState = atcState.a * 2;
-      setPokeState(prev => ({ ...prev, a: newState }));
-      const text = "攻撃がぐーんと上がった";
-      setOtherText({ kind: "buffDebuff", content: text });
+    else if (effectiveness) {
+      const [pokeState, setPokeState] = effTarget === "自分" ? [myPokeState, setMyPokeState] : [opPokeState, setOpPokeState];
+
+      if (effectiveness.includes("buff")) {
+
+        const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
+        let textArray = [`${pokeState.name}の`];
+
+        effectiveness = effectiveness.slice(5);
+        for (let i = 0; i < effectiveness.length; i += 3) {
+          const status = effectiveness[i];
+          const buff = Number(effectiveness.slice(i + 1, i + 3));
+          const key = `${status}Buff`;
+          const currentBuff = pokeState[key] ?? 0;
+
+          const clampedBuff = Math.max(-6, Math.min(6, currentBuff + buff));
+          const actualChange = clampedBuff - currentBuff;
+
+          let text1 = statusTextMap[status] || "不明";
+          let text2 = "";
+
+          if (actualChange !== 0) {
+            // 実際に変化があった場合のみ state 更新
+            setPokeState(prev => ({
+              ...prev,
+              [key]: clampedBuff
+            }));
+
+            if (actualChange > 0) {
+              text2 = actualChange >= 2 ? "がぐーんと上がった" : "が上がった";
+            } else {
+              text2 = actualChange <= -2 ? "ががくっと下がった" : "が下がった";
+            }
+
+          } else {
+            // 変化しなかった場合（すでに限界値）
+            text2 = buff > 0
+              ? "はこれ以上上がらない"
+              : "はこれ以上下がらない";
+          }
+
+          textArray.push(`${text1}${text2}`);
+        }
+
+        const buffText = textArray.join("\n");
+        setOtherText({ kind: "buff", content: buffText });
+        if (buffText.includes("上がった")) {
+          soundList.general.statusUp.play();
+        }
+        if (buffText.includes("下がった")) {
+          soundList.general.statusDown.play();
+        }
+      }
     }
   }
 
@@ -320,7 +424,12 @@ export function useBattleHandlers(battleState) {
     const weaponName = getWeaponName(attackerIsMe);
     const { weaponInfo, attackerInfo, defenderInfo } = await getUseInCalcDamageInfo(attackerIsMe, weaponName);
     const { trueDamage, isHit, isCriticalHit } = calcTrueDamage(weaponInfo, attackerInfo, defenderInfo);
-    return { damage: trueDamage, isHit, isCriticalHit };
+
+    const isIncident = weaponInfo.incidencerate ? (Math.random() * 100 < weaponInfo.incidencerate) : true;
+    const atcTarget = weaponInfo.atctarget;
+    const effTarget = weaponInfo.efftarget;
+    const effectiveness = isIncident ? weaponInfo.effectiveness : null;
+    return { damage: trueDamage, isHit, isCriticalHit, atcTarget, effTarget, effectiveness };
   }
 
   //引数のstateがmyPokeStateか評価し真偽を返す
@@ -360,7 +469,7 @@ export function useBattleHandlers(battleState) {
       if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
       const result = await res.json();
 
-      const keys = ["Type", "Kind", "Power", "HitRate", "Priority", "Sound", "Target", "IncidenceRate", "Effectiveness"];
+      const keys = ["Type", "Kind", "Power", "HitRate", "Priority", "Sound", "AtcTarget", "EffTarget", "IncidenceRate", "Effectiveness"];
       const weaponInfo = { name: weaponName };
       keys.forEach(k => {
         weaponInfo[k.toLowerCase()] = result.data?.[k] ?? null;
@@ -445,6 +554,8 @@ export function useBattleHandlers(battleState) {
   //ターン数を更新してコンソールに表示する。（デバッグ用）
   const updateTurnCnt = () => {
     console.log(turnCnt.current + "ターン目================================================");
+    console.log(`自分 aBuff:${myPokeState.aBuff},bBuff:${myPokeState.bBuff},cBuff:${myPokeState.cBuff},dBuff:${myPokeState.dBuff},sBuff:${myPokeState.sBuff},`);
+    console.log(`相手 aBuff:${opPokeState.aBuff},bBuff:${opPokeState.bBuff},cBuff:${opPokeState.cBuff},dBuff:${opPokeState.dBuff},sBuff:${opPokeState.sBuff},`);
     turnCnt.current++;
   }
 
@@ -801,8 +912,16 @@ export function useBattleHandlers(battleState) {
         ? [atcState.a, defState.b] : [atcState.c, defState.d];
     }
 
-    const attackerInfo = { name: atcState.name, type1: atcState.type1, type2: atcState.type2, terastal: atcState.terastal, isTerastalAtc, power: atcPower };
-    const defenderInfo = { name: defState.name, type1: defState.type1, type2: defState.type2, terastal: defState.terastal, isTerastalDef, power: defPower };
+    const atcBuff = weaponInfo.name !== "テラバースト"
+      ? (weaponInfo.kind === "物理" ? atcState.aBuff : atcState.cBuff)
+      : (atcState.a > atcState.c ? atcState.aBuff : atcState.cBuff);
+
+    const defBuff = weaponInfo.name !== "テラバースト"
+      ? (weaponInfo.kind === "物理" ? defState.bBuff : defState.dBuff)
+      : (atcState.a > atcState.c ? defState.bBuff : defState.dBuff);
+
+    const attackerInfo = { name: atcState.name, type1: atcState.type1, type2: atcState.type2, terastal: atcState.terastal, isTerastalAtc, power: atcPower, buff: atcBuff };
+    const defenderInfo = { name: defState.name, type1: defState.type1, type2: defState.type2, terastal: defState.terastal, isTerastalDef, power: defPower, buff: defBuff };
     return { weaponInfo, attackerInfo, defenderInfo };
   }
 
@@ -847,18 +966,25 @@ export function useBattleHandlers(battleState) {
   }
 
   //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
-  const attackEffect = async (attackerIsMe, defState, isHit, isAttackWeapon) => {
+  const attackEffect = async (attackerIsMe, defState, isHit, atcTarget) => {
     const atcImgElem = getAttackEffectElem(attackerIsMe);
     const atcName = attackerIsMe ? myPokeState.name : opPokeState.name;
+    const weaponName = getWeaponName(attackerIsMe);
+
     jumpEffect(atcImgElem);
     await new Promise((resolve) => {
       playPokeVoice(atcName, () => resolve());
     });
 
     //技が命中してて、相性が無効ではない場合に攻撃エフェクトを入れる
-    if (isHit && defState.text.content !== compatiTexts.mukou && isAttackWeapon) {
+    if (isHit && defState.text.content !== compatiTexts.mukou && atcTarget === "相手") {
       attackEffectLogic(attackerIsMe, atcImgElem);
-      const weaponName = getWeaponName(attackerIsMe);
+      await new Promise((resolve) => {
+        playWeaponSound(weaponName, () => resolve());
+      });
+    }
+    if (isHit && atcTarget === "自分") {
+      jumpEffect(atcImgElem);
       await new Promise((resolve) => {
         playWeaponSound(weaponName, () => resolve());
       });
@@ -948,7 +1074,6 @@ export function useBattleHandlers(battleState) {
     setBackText,
     setTerastalText,
     setWeaponText,
-    // setEffectivenessText,
     setDeadText,
     setMyTurn,
     setAreaVisibleForApp,

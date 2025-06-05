@@ -9,6 +9,7 @@ export function useToDoWhenFnc(battleState) {
     setOtherAreaVisible,
     myPokeState, opPokeState,
     isTerastalActive, setIsTerastalActive,
+    otherText, setOtherText,
     myLife, opLife, opTerastalFlag,
     myChangePokeName, opChangePokeName,
     iAmFirst, myChangeTurn, opChangeTurn,
@@ -144,16 +145,16 @@ export function useToDoWhenFnc(battleState) {
         const weaponInfo = await getWeaponInfo(weaponName);
         const isHit = weaponInfo.hitrate ? (Math.random() * 100 < weaponInfo.hitrate) : true;
         const isIncident = weaponInfo.incidencerate ? (Math.random() * 100 < weaponInfo.incidencerate) : true;
-        const defState = isMe ? opPokeState : myPokeState;
-        await playAttackingFlow(isMe, defState, isHit, false, 0, isAttackWeapon, isIncident) 
-
-        // setEffectivenessText(isMe);
+        const atcTarget = weaponInfo.atctarget;
+        const effTarget = weaponInfo.efftarget;
+        const effectiveness = isIncident ? weaponInfo.effectiveness : null;
+        await playAttackingFlow(isMe, isHit, false, 0, isAttackWeapon, atcTarget, effTarget, effectiveness);
       }
     }
     //compatiTextがセットされたら、攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
     else if (textKind === "compati") {
-      const { damage, isHit, isCriticalHit } = await getDamage(!isMe);
-      await playAttackingFlow(!isMe, pokeState, isHit, isCriticalHit, damage, true, false);
+      const { damage, isHit, isCriticalHit, atcTarget, effTarget, effectiveness } = await getDamage(!isMe);
+      await playAttackingFlow(!isMe, isHit, isCriticalHit, damage, true, atcTarget, effTarget, effectiveness);
       setHpOnDamage(isMe, pokeState, damage);
     }
     //deadTextがセットされたら、死亡エフェクトを入れて、ゲーム続行ORゲームセット
@@ -199,11 +200,31 @@ export function useToDoWhenFnc(battleState) {
     }, 1000);
   }
 
+
+  const toDoWhenSetOtherText = () => {
+    if (otherText.kind === "buff") {
+      setTimeout(() => {
+        setOtherText({ kind: "", content: "" });
+
+        //先攻で自分の技効果の場合と、後攻で相手の技効果の場合は後攻の技テキストセット
+        if (iAmFirst.current && myPokeState.text.kind === "weapon" || !iAmFirst.current && opPokeState.text.kind === "weapon") {
+          const atcState = iAmFirst.current ? opPokeState : myPokeState;
+          setWeaponText(!iAmFirst.current, atcState);
+        }
+        //先攻で相手の技効果の場合と、後攻で自分の技効果の場合はターン終了
+        else if (iAmFirst.current && opPokeState.text.kind === "weapon" || !iAmFirst.current && myPokeState.text.kind === "weapon") {
+          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+        }
+      }, 2000);
+    }
+  }
+
   return {
     toDoWhenSetPokeName,
     toDoWhenSetImg,
     toDoWhenSetHp,
     toDoWhenSetText,
     toDoWhenSetTerastalPokeNum,
+    toDoWhenSetOtherText,
   };
 }

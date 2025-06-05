@@ -16,6 +16,7 @@ export function useBattleState() {
     name: "", img: null, voice: null,
     type1: "", type2: "", terastal: "",
     hp: 0, a: 0, b: 0, c: 0, d: 0, s: 0,
+    aBuff: 0, bBuff: 0, cBuff: 0, dBuff: 0, sBuff: 0,
     weapon1: "", weapon2: "", weapon3: "", weapon4: "",
     poke1Name: "", poke2Name: "", poke3Name: "",
     poke1MaxHp: 0, poke2MaxHp: 0, poke3MaxHp: 0,
@@ -43,7 +44,7 @@ export function useBattleState() {
   const opTerastalFlag = useRef(false);
   const iAmFirst = useRef(false);
   const resultText = useRef("");        //勝敗
-  const turnCnt = useRef(1);            //現在のターン数(デバッグ用)
+  const turnCnt = useRef(1);            
   const loopAudioRef = useRef(null);    //再生中のBGM
 
   return {

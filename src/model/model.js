@@ -39,6 +39,18 @@ export const soundList = {
       a.load();
       return a;
     })(),
+    statusUp: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/statusUp.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    statusDown: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/statusDown.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
     win: (() => {
       const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/winSe.mp3');
       a.preload = 'auto';
@@ -601,10 +613,17 @@ export const calcTrueDamage = (weaponInfo, attackerInfo, defenderInfo) => {
 
   //命中時のみダメージ計算する
   if (isHit) {
-    const { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier } = calcPureDamage(weaponInfo, attackerInfo, defenderInfo);
+    let { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier } = calcPureDamage(weaponInfo, attackerInfo, defenderInfo);
     const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
     isCriticalHit = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
     // isCriticalHit = true;   //テスト用
+
+    //急所に当たった際には攻撃系のデバフと防御系のバフを無視する
+    if (isCriticalHit) {
+      atcBuffMultiplier = atcBuffMultiplier >= 1 ? 1 : atcBuffMultiplier;
+      defBuffMultiplier = defBuffMultiplier <= 1 ? 1 : defBuffMultiplier
+      pureDamage = (pureDamage - 2) / atcBuffMultiplier * defBuffMultiplier + 2;
+    }
 
     trueDamage = Math.floor(pureDamage * randomMultiplier);    // 乱数
     trueDamage = Math.floor(trueDamage * (isCriticalHit ? 1.5 : 1));   //急所
@@ -719,15 +738,19 @@ export const calcPureDamage = (weaponInfo, attackerInfo, defenderInfo) => {
     ? [defenderInfo.terastal, "なし"]
     : [defenderInfo.type1, defenderInfo.type2];
   const multiplier = calcMultiplier(weaponInfo.type, defType1, defType2);
+  const atcBuffMultiplier = attackerInfo.buff > 0
+    ? attackerInfo.buff * 0.5 + 1 : 2 / (2 - attackerInfo.buff);
+  const defBuffMultiplier = defenderInfo.buff > 0
+    ? defenderInfo.buff * 0.5 + 1 : 2 / (2 - defenderInfo.buff);
 
   //ダメージ計算　22 * 技威力 * (AorC / BorD) / 50 + 2 * ダメージ補正(* 乱数　* タイプ一致 * 相性 * 急所)
-  let pureDamage = Math.floor(22 * weaponInfo.power * (attackerInfo.power / defenderInfo.power));
+  let pureDamage = Math.floor(22 * weaponInfo.power * ((attackerInfo.power * atcBuffMultiplier) / (defenderInfo.power * defBuffMultiplier)));
   pureDamage = Math.floor(pureDamage / 50 + 2);   //基礎ダメージ
   const basicDamage = pureDamage;   //デバッグ用
   pureDamage = Math.floor(pureDamage * (isSameTerastal ? 2 : (isSameType ? 1.5 : 1)));    // タイプ一致補正
   pureDamage = Math.floor(pureDamage * multiplier);   //相性補正
 
-  return { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier };
+  return { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier };
 }
 
 //相手がテラスした後に自分のポケモンからの相性を取得して返す
