@@ -1,4 +1,4 @@
-import { defs } from "framer-motion/client";
+import { defs, tr } from "framer-motion/client";
 import {
   soundList,
   compatiTexts,
@@ -7,8 +7,8 @@ import {
   calcNewHp,
   getGoText, getWeaponText, getCompatiTextLogic, getDeadText,
   getOpChangePoke, checkIsFirst, calcMultiplier,
-  getMostEffectiveWeaponLogic, predictMyActionLogic, choiseBetterWeaponLogic,
-  getAttackEffectElem, getDamageEffectElem,
+  getMostEffectiveWeaponLogic, predictMyActionLogic, choiseBetterWeapon,
+  getDamageEffectElem,
   jumpEffect, attackEffectLogic, damageEffectLogic,
   calcTrueDamage, adjustHpBarLogic,
   selectNextOpPokeLogic, delay,
@@ -29,7 +29,7 @@ export function useBattleHandlers(battleState) {
     opPokeState, setOpPokeState,
     setMyPokeStateTrigger,
     setOpPokeStateTrigger,
-    setOtherText,
+    otherText, setOtherText,
     setSelectedOrder,
     isTerastalActive,
     myLife, opLife,
@@ -44,9 +44,9 @@ export function useBattleHandlers(battleState) {
   //useToDoWhenFnc()のパーツとなる関数=============================================================================================
 
   //DBから取得したポケモンのデータをstateにセットする(HP以外)
-  const setPokeInfo = async (isMe, pokeState) => {
+  const setPokeInfo = async (isMe) => {
+    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
     const pokeInfo = await getPokeInfo(pokeState.name);
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
     setPokeState(prev => ({
       ...prev,
       img: pokeInfo.img, voice: pokeInfo.voice, type1: pokeInfo.type1, type2: pokeInfo.type2, terastal: pokeInfo.terastal,
@@ -58,112 +58,111 @@ export function useBattleHandlers(battleState) {
 
   //ポケモン名をセットする
   const setPokeName = (isMe, pokeName) => {
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
+    const setPokeState = getSetPokeState(isMe, true);
     setPokeState(prev => ({ ...prev, name: pokeName }));
   }
 
   //相手が2,3体目に出すポケモンをセットする
-  const setNextOpPokeName = async (life) => {
-    const nextOpPoke = await selectNextOpPoke(life);
+  const setNextOpPokeName = async () => {
+    const nextOpPoke = await selectNextOpPoke();
     setPokeName(false, nextOpPoke);
   }
 
   //ポケモン登場時のHPセット
-  const setHpOnEntry = (isMe, pokeState) => {
+  const setHpOnEntry = (isMe) => {
+    const [pokeState, setPokeState, setPokeStateTrigger] =
+      [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
+
     //HPバーの制御
     const currentHp = getPokeNumHp(pokeState, pokeState.name);
-    adjustHpBar(isMe, pokeState, currentHp);
+    adjustHpBar(isMe, currentHp);
     //HPのセット
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
-    const setPokeStateTrigger = isMe ? setMyPokeStateTrigger : setOpPokeStateTrigger;
-    pokeState.hp !== currentHp ?
-      setPokeState(prev => ({ ...prev, hp: currentHp })) :
-      setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
+    pokeState.hp !== currentHp
+      ? setPokeState(prev => ({ ...prev, hp: currentHp }))
+      : setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
   }
 
   //攻撃を受けた後のHPセット
-  const setHpOnDamage = (isMe, pokeState, damage) => {
+  const setHpOnDamage = (isMe, damage) => {
+    const [pokeState, setPokeState, setPokeStateTrigger] =
+      [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
+
     //HPバーの制御
     const currentHp = getPokeNumHp(pokeState, pokeState.name);
     const newHp = calcNewHp(currentHp, damage);
     //HPのセット
-    const [setPokeState, setPokeStateTrigger] = isMe ?
-      [setMyPokeState, setMyPokeStateTrigger] : [setOpPokeState, setOpPokeStateTrigger];
-    !checkIsSameHp(pokeState.hp, currentHp, newHp) ?
-      setPokeState(prev => ({ ...prev, hp: newHp })) :
-      setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
+
+    !checkIsSameHp(pokeState.hp, currentHp, newHp)
+      ? setPokeState(prev => ({ ...prev, hp: newHp }))
+      : setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
   }
 
   //poke1Hp等のHpをバトル場のポケモンのHpと同じ値に更新する
-  const setPokeNumHp = (isMe, pokeState) => {
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
+  const setPokeNumHp = (isMe) => {
+    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
     const pokeNum = getPokeNum(pokeState, pokeState.name);
     setPokeState(prev => ({ ...prev, [`poke${pokeNum}Hp`]: pokeState.hp, }));
   }
 
   //テラスタルするポケモンNoをセットする
   const setTerastalPokeNum = (isMe) => {
-    const [setPokeState, pokeState] = isMe ? [setMyPokeState, myPokeState] : [setOpPokeState, opPokeState];
+    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
     delay(() => setPokeState(prev => ({ ...prev, canTerastal: false, terastalPokeNum: getPokeNum(pokeState, pokeState.name) })), 2000);
   }
 
   //Goテキストをセットする
-  const setGoText = (isMe, pokeState) => {
+  const setGoText = (isMe) => {
+    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
     const goText = getGoText(isMe, pokeState.name);
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
     setPokeState(prev => ({ ...prev, text: { kind: "go", content: goText } }));
   }
 
   //backテキストをセットする
-  const setBackText = () => {
-    //一方が交代の場合と両者とも交代する場合の交代ポケモン名をセット
-    const backPokeName = !!myChangePokeName.current !== !!opChangePokeName.current
-      ? (myChangePokeName.current ? myPokeState.name : opPokeState.name)
-      : (iAmFirst.current ? myPokeState.name : opPokeState.name);
-
-    const backText = `戻れ！${backPokeName}`;
-    const setPokeState = backPokeName === myPokeState.name ? setMyPokeState : setOpPokeState;
+  const setBackText = (isMe) => {
+    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    const backText = `戻れ！${pokeState.name}！`;
     setPokeState(prev => ({ ...prev, text: { kind: "back", content: backText } }));
   }
 
   //テラスタルテキストをセットする
-  const setTerastalText = (pokeState) => {
-    const isMe = checkIsMe(pokeState)
-    const terastalPokeName = pokeState.name;
-    const terastalText = getTerastalText(isMe, terastalPokeName);
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
+  const setTerastalText = (isMe) => {
+    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    const terastalText = getTerastalText(isMe, pokeState.name);
+
     setPokeState(prev => ({ ...prev, text: { kind: "terastal", content: terastalText } }));
   }
 
   //Weaponテキストをセットする
-  const setWeaponText = (attackerIsMe, pokeState) => {
-    const weaponName = getWeaponName(attackerIsMe);
-    const weaponText = getWeaponText(attackerIsMe, pokeState.name, weaponName);
+  const setWeaponText = (isMe) => {
+    const [pokeState, setPokeState, setPokeStateTrigger] =
+      [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
 
-    const setPokeState = attackerIsMe ? setMyPokeState : setOpPokeState;
-    const setPokeStateTrigger = attackerIsMe ? setMyPokeStateTrigger : setOpPokeStateTrigger;
-    pokeState.text.content !== weaponText ?
-      setPokeState(prev => ({ ...prev, text: { kind: "weapon", content: weaponText } })) :
-      setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
+    const weaponName = getWeaponName(isMe);
+    const weaponText = getWeaponText(isMe, pokeState.name, weaponName);
+
+    pokeState.text.content !== weaponText
+      ? setPokeState(prev => ({ ...prev, text: { kind: "weapon", content: weaponText } }))
+      : setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
   }
 
   //相性テキストをセットする
-  const setCompatiText = async (attackerIsMe) => {
-    const [atcState, defState] = attackerIsMe
-      ? [myPokeState, opPokeState] : [opPokeState, myPokeState];
-    const [setPokeState, setPokeStateTrigger] = attackerIsMe ?
-      [setOpPokeState, setOpPokeStateTrigger] : [setMyPokeState, setMyPokeStateTrigger];
+  const setCompatiText = async (atcIsMe) => {
+    const defState = getPokeState(atcIsMe, false);
+    const [setPokeState, setPokeStateTrigger] =
+      [getSetPokeState(atcIsMe, false), getSetPokeStateTrigger(atcIsMe, false)];
 
-    const conpatiText = await getCompatiText(attackerIsMe, atcState, defState);
+    const conpatiText = await getCompatiText(atcIsMe);
     defState.text.content !== conpatiText ?
       setPokeState(prev => ({ ...prev, text: { kind: "compati", content: conpatiText } })) :
       setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
   }
 
   //deadテキストをセットする
-  const setDeadText = (isMe, pokeState) => {
+  const setDeadText = async (isMe) => {
+    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
     const deadText = getDeadText(isMe, pokeState.name);
-    const setPokeState = isMe ? setMyPokeState : setOpPokeState;
+
+    if(otherText.content) await stopProcessing(2000);
     setPokeState(prev => ({ ...prev, text: { kind: "dead", content: deadText } }));
   }
 
@@ -177,10 +176,7 @@ export function useBattleHandlers(battleState) {
   //お互いの素早さと優先度を比較して、先攻後攻をセットする
   const setMyTurn = async () => {
     //素早さを取得する
-    const [mySBuff, opSBuff] = [myPokeState.sBuff, opPokeState.sBuff];
-    const [mySBuffMultiplier, opSBuffMultiplier] =
-      [mySBuff > 0 ? mySBuff * 0.5 + 1 : 2 / (2 - mySBuff), opSBuff > 0 ? opSBuff * 0.5 + 1 : 2 / (2 - opSBuff)];
-    const [myPokeSpeed, opPokeSpeed] = [myPokeState.s * mySBuffMultiplier, opPokeState.s * opSBuffMultiplier];
+    const [myPokeSpeed, opPokeSpeed] = [calcActualStatus(true, "s"), calcActualStatus(false, "s")];
     console.log(`${myPokeState.name}の素早さ：${myPokeSpeed}\n${opPokeState.name}の素早さ：${opPokeSpeed}\n`);
 
     //どちらも交換しない場合、優先度と素早さを比較して先攻後攻を決める
@@ -197,9 +193,9 @@ export function useBattleHandlers(battleState) {
   }
 
   //ゲーム結果画面を表示
-  const setWinner = (winnerIsMe) => {
+  const setWinner = (isMe) => {
     stopBgm();
-    resultText.current = winnerIsMe ? "WIN" : "LOSE";
+    resultText.current = isMe ? "WIN" : "LOSE";
     setOtherAreaVisible(prev => ({ ...prev, battle: false }));
     soundList.general[resultText.current.toLowerCase()].play();
   };
@@ -218,36 +214,38 @@ export function useBattleHandlers(battleState) {
       const changeTurn = (myAreaVisible.poke ? opChangeTurn : myChangeTurn).current;
       await controllAreaVisibleForApp(isMe);
       //死亡後の交代の場合はコマンドボタンを表示
-      if (!changeTurn)
+      if (!changeTurn) {
         setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+        consoleWhenTurnEnd();
+      }
     }
   }
 
   //ポケモン交換時の表示制御
   const setAreaVisibleForChange = (isMe) => {
     soundList.general.back.cloneNode().play();
-    const setAreaVisible = isMe ? setMyAreaVisible : setOpAreaVisible;
+    const setAreaVisible = getSetAreaVisible(isMe, true);
     setAreaVisible(prev => ({ ...prev, text: true }));    //backテキストを表示
     delay(() => setAreaVisible(p => ({ ...p, poke: false })), 1000);
   }
 
   //テラスタルテキスト表示の制御
   const setAreaVisibleForTerastal = (isMe) => {
-    const setAreaVisible = isMe ? setMyAreaVisible : setOpAreaVisible;
+    const setAreaVisible = getSetAreaVisible(isMe, true);
     setAreaVisible(prev => ({ ...prev, text: true }));
     delay(() => setAreaVisible(prev => ({ ...prev, text: false })), 2000);
   }
 
   //攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
-  const playAttackingFlow = async (attackerIsMe, isHit, isCriticalHit, damage, isAttackWeapon, atcTarget, effTarget, effectiveness) => {
+  const playAttackingFlow = async (atcIsMe, isHit, isCritical, damage, isAttackWeapon, atcTarget, effTarget, effectiveness) => {
+    const defState = getPokeState(atcIsMe, false);
+    const [setAreaVisible, setOtherTextInvisible] =
+      [getSetAreaVisible(atcIsMe, true), getSetAreaVisible(atcIsMe, false)];
 
-    const defState = attackerIsMe ? opPokeState : myPokeState;
-    const [setAreaVisible, setOtherTextInvisible] = attackerIsMe ?
-      [setMyAreaVisible, setOpAreaVisible] : [setOpAreaVisible, setMyAreaVisible];
     setAreaVisible(prev => ({ ...prev, text: true }));     //技テキスト表示
 
     //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
-    await attackEffect(attackerIsMe, defState, isHit, atcTarget);
+    await attackEffect(atcIsMe, isHit, atcTarget);
     setAreaVisible(prev => ({ ...prev, text: false }));    //技テキストを非表示
 
     if (isAttackWeapon) {
@@ -256,15 +254,14 @@ export function useBattleHandlers(battleState) {
         if (isHit) {
           if (defState.text.content !== compatiTexts.toubai)
             setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
-          //急所テキストの表示
-          if (isCriticalHit)
+          if (isCritical)
             setOtherText({ kind: "general", content: "急所にあたった" });
 
           //HPバー調整とダメージエフェクト
           const currentHp = getPokeNumHp(defState, defState.name);
           const newHp = calcNewHp(currentHp, damage);
-          adjustHpBar(!attackerIsMe, defState, newHp);
-          await damageEffect(attackerIsMe, defState);
+          adjustHpBar(!atcIsMe, newHp);
+          await damageEffect(!atcIsMe);
         }
         else
           setOtherText({ kind: "general", content: `${defState.name}にはあたらなかった` });
@@ -275,126 +272,16 @@ export function useBattleHandlers(battleState) {
       await stopProcessing(2000);
       setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
       setOtherText({ kind: "", content: "" });
-
-      //技の追加効果があるとき
-      if (effectiveness) {
-        //自分自分→自分　自分相手→相手　相手自分→相手　相手相手→自分
-        const myEffectiveness = attackerIsMe && effTarget === "自分" || !attackerIsMe && effTarget === "相手";
-        const [pokeState, setPokeState] = myEffectiveness ? [myPokeState, setMyPokeState] : [opPokeState, setOpPokeState];
-
-        if (effectiveness.includes("buff")) {
-
-          const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
-          let textArray = [`${pokeState.name}の`];
-
-          effectiveness = effectiveness.slice(5);
-          for (let i = 0; i < effectiveness.length; i += 3) {
-            const status = effectiveness[i];
-            const buff = Number(effectiveness.slice(i + 1, i + 3));
-            const key = `${status}Buff`;
-            const currentBuff = pokeState[key] ?? 0;
-
-            const clampedBuff = Math.max(-6, Math.min(6, currentBuff + buff));
-            const actualChange = clampedBuff - currentBuff;
-
-            let text1 = statusTextMap[status] || "不明";
-            let text2 = "";
-
-            if (actualChange !== 0) {
-              // 実際に変化があった場合のみ state 更新
-              setPokeState(prev => ({
-                ...prev,
-                [key]: clampedBuff
-              }));
-
-              if (actualChange > 0) {
-                text2 = actualChange >= 2 ? "がぐーんと上がった" : "が上がった";
-              } else {
-                text2 = actualChange <= -2 ? "ががくっと下がった" : "が下がった";
-              }
-
-            } else {
-              // 変化しなかった場合（すでに限界値）
-              text2 = buff > 0
-                ? "はこれ以上上がらない"
-                : "はこれ以上下がらない";
-            }
-
-            textArray.push(`${text1}${text2}`);
-          }
-
-          const buffText = textArray.join("\n");
-          setOtherText({ kind: "buff", content: buffText });
-          if (buffText.includes("上がった")) {
-            soundList.general.statusUp.play();
-          }
-          if (buffText.includes("下がった")) {
-            soundList.general.statusDown.play();
-          }
-        }
-      }
     }
-    else if (effectiveness) {
-      const [pokeState, setPokeState] = effTarget === "自分" ? [myPokeState, setMyPokeState] : [opPokeState, setOpPokeState];
-
-      if (effectiveness.includes("buff")) {
-
-        const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
-        let textArray = [`${pokeState.name}の`];
-
-        effectiveness = effectiveness.slice(5);
-        for (let i = 0; i < effectiveness.length; i += 3) {
-          const status = effectiveness[i];
-          const buff = Number(effectiveness.slice(i + 1, i + 3));
-          const key = `${status}Buff`;
-          const currentBuff = pokeState[key] ?? 0;
-
-          const clampedBuff = Math.max(-6, Math.min(6, currentBuff + buff));
-          const actualChange = clampedBuff - currentBuff;
-
-          let text1 = statusTextMap[status] || "不明";
-          let text2 = "";
-
-          if (actualChange !== 0) {
-            // 実際に変化があった場合のみ state 更新
-            setPokeState(prev => ({
-              ...prev,
-              [key]: clampedBuff
-            }));
-
-            if (actualChange > 0) {
-              text2 = actualChange >= 2 ? "がぐーんと上がった" : "が上がった";
-            } else {
-              text2 = actualChange <= -2 ? "ががくっと下がった" : "が下がった";
-            }
-
-          } else {
-            // 変化しなかった場合（すでに限界値）
-            text2 = buff > 0
-              ? "はこれ以上上がらない"
-              : "はこれ以上下がらない";
-          }
-
-          textArray.push(`${text1}${text2}`);
-        }
-
-        const buffText = textArray.join("\n");
-        setOtherText({ kind: "buff", content: buffText });
-        if (buffText.includes("上がった")) {
-          soundList.general.statusUp.play();
-        }
-        if (buffText.includes("下がった")) {
-          soundList.general.statusDown.play();
-        }
-      }
-    }
+    if (isHit)
+      doSecondaryEffect(atcIsMe, effTarget, effectiveness);   //追加効果があるなら発動(変化技も)
   }
 
   //倒れたポケモンに死亡エフェクトを入れる
-  const playDeathEffect = (isMe, pokeState) => {
+  const playDeathEffect = (isMe) => {
     return new Promise(async (resolve) => {
-      const setAreaVisible = isMe ? setMyAreaVisible : setOpAreaVisible;
-      const pokeIMGElm = getDamageEffectElem(!isMe);
+      const [pokeState, setAreaVisible] = [getPokeState(isMe, true), getSetAreaVisible(isMe, true)];
+      const pokeIMGElm = getDamageEffectElem(isMe);
 
       // 1秒後に死亡演出を開始
       setTimeout(async () => {
@@ -411,6 +298,7 @@ export function useBattleHandlers(battleState) {
     });
   };
 
+  //攻撃技か否か返す
   const checkIsAttackWeapon = async (isMe) => {
     const weaponName = getWeaponName(isMe);
     const { kind: weaponKind } = await getWeaponInfo(weaponName);
@@ -418,24 +306,13 @@ export function useBattleHandlers(battleState) {
     return isAttackWeapon;
   }
 
-
   //ダメ計に必要な情報を取得して、モデル側の関数に渡す
-  const getDamage = async (attackerIsMe) => {
-    const weaponName = getWeaponName(attackerIsMe);
-    const { weaponInfo, attackerInfo, defenderInfo } = await getUseInCalcDamageInfo(attackerIsMe, weaponName);
-    const { trueDamage, isHit, isCriticalHit } = calcTrueDamage(weaponInfo, attackerInfo, defenderInfo);
-
-    const isIncident = weaponInfo.incidencerate ? (Math.random() * 100 < weaponInfo.incidencerate) : true;
-    const atcTarget = weaponInfo.atctarget;
-    const effTarget = weaponInfo.efftarget;
-    const effectiveness = isIncident ? weaponInfo.effectiveness : null;
+  const getDamage = async (atcIsMe) => {
+    const weaponName = getWeaponName(atcIsMe);
+    const { weaponInfo, atcInfo, defInfo } = await getUseInCalcDamageInfo(atcIsMe, weaponName);
+    const { trueDamage, isHit, isCriticalHit } = calcTrueDamage(weaponInfo, atcInfo, defInfo);
+    const { atcTarget, effTarget, effectiveness } = await getEffectiveness(atcIsMe);
     return { damage: trueDamage, isHit, isCriticalHit, atcTarget, effTarget, effectiveness };
-  }
-
-  //引数のstateがmyPokeStateか評価し真偽を返す
-  const checkIsMe = (pokeState) => {
-    const isMe = pokeState.name === myPokeState.name;
-    return isMe;
   }
 
   //jsx, jsファイルから呼び出し=================================================================================================
@@ -490,8 +367,8 @@ export function useBattleHandlers(battleState) {
   }
 
   //指定したポケモンの最大HPを取得する
-  const getMaxHp = (pokeState) => {
-    const pokeNum = getPokeNum(pokeState, pokeState.name);
+  const getMaxHp = (pokeState, pokeName) => {
+    const pokeNum = getPokeNum(pokeState, pokeName);
     const MaxHp = pokeState[`poke${pokeNum}MaxHp`];
     return MaxHp;
   }
@@ -528,9 +405,13 @@ export function useBattleHandlers(battleState) {
 
   //相手は自分のポケモン６体に対して相性がより良い３体を選出する
   const selectBetterOpPokes = async (mySelectedOrder, opPokesName) => {
-    const { myPokesInfo, opPokesInfo } = await getAllPokeInfos(mySelectedOrder, opPokesName);
-    const resistanceMap = calcResistanceForAllOpPokes(myPokesInfo, opPokesInfo);
-    const betterOpPokes = selectBetterOpPokesLogic(resistanceMap, myPokesInfo[0])
+    const [myPokeInfos, opPokeInfos] = await Promise.all([
+      getPokeInfos(mySelectedOrder),
+      getPokeInfos(opPokesName)
+    ]);
+
+    const resistanceMap = calcResistanceForAllOpPokes(myPokeInfos, opPokeInfos);
+    const betterOpPokes = selectBetterOpPokesLogic(resistanceMap, myPokeInfos[0])
     return betterOpPokes;
   }
 
@@ -554,8 +435,6 @@ export function useBattleHandlers(battleState) {
   //ターン数を更新してコンソールに表示する。（デバッグ用）
   const updateTurnCnt = () => {
     console.log(turnCnt.current + "ターン目================================================");
-    console.log(`自分 aBuff:${myPokeState.aBuff},bBuff:${myPokeState.bBuff},cBuff:${myPokeState.cBuff},dBuff:${myPokeState.dBuff},sBuff:${myPokeState.sBuff},`);
-    console.log(`相手 aBuff:${opPokeState.aBuff},bBuff:${opPokeState.bBuff},cBuff:${opPokeState.cBuff},dBuff:${opPokeState.dBuff},sBuff:${opPokeState.sBuff},`);
     turnCnt.current++;
   }
 
@@ -583,18 +462,18 @@ export function useBattleHandlers(battleState) {
   const setTextWhenClickWeaponBtn = () => {
     //相手が交代するなら、相手のbackテキストをセット
     if (opChangeTurn.current)
-      setBackText();
+      setBackText(false);
     else {
       //どちらかがテラスタルする場合、先攻のテラスタルテキストセット
       if (isTerastalActive || opTerastalFlag.current) {
-        const pokeState = isTerastalActive && opTerastalFlag.current
-          ? (myPokeState.s >= opPokeState.s ? myPokeState : opPokeState)
-          : (isTerastalActive ? myPokeState : opPokeState);
-        setTerastalText(pokeState);
+        const isMe = isTerastalActive && opTerastalFlag.current
+          ? calcActualStatus(true, "s") >= calcActualStatus(false, "s")
+          : isTerastalActive;
+        setTerastalText(isMe);
       }
       //どちらもテラスタルしない場合、先攻の技テキストをセット
       else
-        setWeaponText(iAmFirst.current, iAmFirst.current ? myPokeState : opPokeState);
+        setWeaponText(iAmFirst.current);
     }
   }
 
@@ -630,11 +509,6 @@ export function useBattleHandlers(battleState) {
     opLife.current = 3;
     mySelectedWeapon.current = "";
     opSelectedWeapon.current = "";
-    iAmFirst.current = false;
-    myChangeTurn.current = false;
-    opChangeTurn.current = false;
-    myChangePokeName.current = null;
-    opChangePokeName.current = null;
     resultText.current = "";
     turnCnt.current = 1;
     loopAudioRef.current = null;
@@ -691,19 +565,11 @@ export function useBattleHandlers(battleState) {
   };
 
   //お互いの６体のポケモンの情報を取得する。
-  const getAllPokeInfos = async (myPokesName, opPokesName) => {
-    const mypokesInfo = await Promise.all(
-      myPokesName.map(name => getPokeInfo(name))
+  const getPokeInfos = async (pokeNames) => {
+    const pokeInfos = await Promise.all(
+      pokeNames.map(name => getPokeInfo(name))
     );
-    const opPokesInfo = await Promise.all(
-      opPokesName.map(name => getPokeInfo(name))
-    );
-
-    // null を除外（fetch失敗を除外）
-    return {
-      myPokesInfo: mypokesInfo.filter(info => info !== null),
-      opPokesInfo: opPokesInfo.filter(info => info !== null)
-    };
+    return pokeInfos.filter(info => info !== null);
   };
 
   //poke1Hp等を取得する
@@ -713,32 +579,33 @@ export function useBattleHandlers(battleState) {
     return pokeNumHp;
   }
 
-  //テラス前後の確定数を計算する
-  const calcDefinitelyDefeatHits = async (defState) => {
+  //テラス前後の確定数を計算する(相手目線)
+  const calcDefinitelyDefeatHits = async () => {
     //テラス前後の相手からの最大与ダメージ
     const { strongestWeaponDamage: maxDamage1 } = await getMostEffectiveWeapon();
-    const { weaponsInfo, atcInfos, defInfos } = await getUseInCalcDamageInfos(false, opPokeState, true);
-    const { strongestWeaponDamage: maxDamage2 } = getMostEffectiveWeaponLogic(weaponsInfo, atcInfos, defInfos);
+    const { weaponInfos, atcInfos, defInfos } = await getUseInCalcDamageInfos(false, true);
+    const { strongestWeaponDamage: maxDamage2 } = getMostEffectiveWeaponLogic(weaponInfos, atcInfos, defInfos);
     //テラス前後の確定数
-    const cnt1 = Math.floor(defState.hp / maxDamage1) + 1;
-    const cnt2 = Math.floor(defState.hp / maxDamage2) + 1;
+    const cnt1 = Math.floor(myPokeState.hp / maxDamage1) + 1;
+    const cnt2 = Math.floor(myPokeState.hp / maxDamage2) + 1;
 
     return { cnt1, cnt2 };
   }
 
-  //テラス前後の確定耐え数を計算する
-  const calcDefinitelyEndureHits = async (defPokeHp) => {
+  //テラス前後の確定耐え数を計算する(相手目線)
+  const calcDefinitelyEndureHits = async () => {
     //未テラス状態で自分からの最大打点の技名とダメージ数を取得
     const { myStrongestWeapon, myMaxDamage: maxDamage1 } = await predictMyAction(1);
     //テラス状態で、未テラス状態時の最大打点の技を受けた際の被ダメージを計算する
-    const { weaponInfo, attackerInfo, defenderInfo } = await getUseInCalcDamageInfo(true, myStrongestWeapon, true);
-    const { pureDamage: damage1 } = calcPureDamage(weaponInfo, attackerInfo, defenderInfo);
-    //自分がテラス状態の相手への最大打点のダメージを計算する。
-    const { weaponsInfo, atcInfos, defInfos } = await getUseInCalcDamageInfos(true, myPokeState, true);
-    const { myMaxDamage: damage2 } = predictMyActionLogic(weaponsInfo, atcInfos, defInfos, 1);
+    const { weaponInfo, atcInfo, defInfo } = await getUseInCalcDamageInfo(true, myStrongestWeapon, true);
+    const { pureDamage: damage1 } = calcPureDamage(weaponInfo, atcInfo, defInfo);
+    //テラス状態の相手への自分の最大打点のダメージを計算する。
+    const { weaponInfos, atcInfos, defInfos } = await getUseInCalcDamageInfos(true, true);
+    const { myMaxDamage: damage2 } = predictMyActionLogic(weaponInfos, atcInfos, defInfos, 1);
     //テラス前後の確定耐え数
-    const cnt1 = Math.floor(defPokeHp / maxDamage1);
-    const cnt2 = defPokeHp - damage1 > 0 ? Math.floor((defPokeHp - damage1) / damage2) + 1 : 0;
+    const cnt1 = Math.floor(opPokeState.hp / maxDamage1);
+    const cnt2 = opPokeState.hp - damage1 > 0
+      ? Math.floor((opPokeState.hp - damage1) / damage2) + 1 : 0;
 
     return { cnt1, cnt2 };
   }
@@ -748,7 +615,7 @@ export function useBattleHandlers(battleState) {
     let debugText = "";
     //抜群をとられて、控えも受けられない場合　テラスすることで確定耐え数を増やせる場合、テラスタルフラグを立てる
     if (isDangerous && !opChangeTurn.current) {
-      const { cnt1, cnt2 } = await calcDefinitelyEndureHits(opPokeState.hp);
+      const { cnt1, cnt2 } = await calcDefinitelyEndureHits();
       if (cnt1 < cnt2) {
         opTerastalFlag.current = true;
         debugText = "相手は耐性を強めるためにテラスタルする";
@@ -758,7 +625,7 @@ export function useBattleHandlers(battleState) {
     else if (!isDangerous) {
 
       //テラス前後の確定数
-      const { cnt1, cnt2 } = await calcDefinitelyDefeatHits(myPokeState);
+      const { cnt1, cnt2 } = await calcDefinitelyDefeatHits();
 
       //相手がテラスタルしたときの、自分のポケモンのタイプ一致技を受けた時の相性を取得
       const { strongType, anotherType } = await getMyStrongType();
@@ -766,7 +633,7 @@ export function useBattleHandlers(battleState) {
 
       //テラスすることで確定数を減らせる場合 || 自分の最大打点の技を無効化できる場合　テラスタルフラグを立てる
       if ((cnt1 > cnt2) || (compati11 === 0 && compati12 <= 1)) {
-        const aliveMyBenchPokes = await getAliveBenchPokes(myPokeState);
+        const aliveMyBenchPokes = await getAliveBenchPokes(true);
         if (aliveMyBenchPokes.length > 0) {
           //テラス後に自分の控えポケモンからの相性を取得
           const [compati21Teras, compati22Teras] = getCompati(aliveMyBenchPokes[0].type1, aliveMyBenchPokes[0].type2, opPokeState.terastal, "なし");
@@ -775,7 +642,7 @@ export function useBattleHandlers(battleState) {
             : [null, null];
 
           //テラス前後の確定耐え数を取得
-          const { cnt2: cnt4 } = await calcDefinitelyEndureHits(opPokeState.hp);
+          const { cnt2: cnt4 } = await calcDefinitelyEndureHits();
           const cantWin = myPokeState.s > opPokeState.s && (cnt4 === 0 || cnt2 !== 1 && cnt4 <= 2);
 
           //テラスしても、自分の控えから抜群を取られない場合で、自分の攻撃の前に倒される場合以外、テラスタルフラグを立てる
@@ -822,16 +689,15 @@ export function useBattleHandlers(battleState) {
 
   // 相手が、自分のタイプ一致技で抜群をとられるかの真偽と危険/安全タイプを返す
   const checkDangerous = () => {
+
     // 抜群を取られるかチェック
-    const myTerastalFlg = myPokeState.terastalPokeNum === getPokeNum(myPokeState, myPokeState.name);
-    const opTerastalFlg = opPokeState.terastalPokeNum === getPokeNum(opPokeState, opPokeState.name);
+    const [myTerastalFlg, opTerastalFlg] = [checkIsTerastal(true), checkIsTerastal(false)];
     const [val11, val12] = opTerastalFlg
       ? getCompati(myPokeState.type1, myPokeState.type2, opPokeState.terastal, "なし")
       : getCompati(myPokeState.type1, myPokeState.type2, opPokeState.type1, opPokeState.type2);
     const myTerastalType = myTerastalFlg ? myPokeState.terastal : null;
     const val13 = myTerastalFlg
-      ? calcMultiplier(myTerastalType, opPokeState.type1, opPokeState.type2)
-      : null;
+      ? calcMultiplier(myTerastalType, opPokeState.type1, opPokeState.type2) : null;
 
     // 自分のポケモンのタイプを相手目線で危険と安全に仕分け
     const [dangerousType, safeType] = [[], []];
@@ -842,25 +708,20 @@ export function useBattleHandlers(battleState) {
     return { dangerousType, safeType, IsDangerousTerastal, myTerastalType };
   };
 
-  //相手目線で合理的な技を選択して返す
-  const choiseBetterWeapon = (strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage) => {
-    const betterWeapon =
-      choiseBetterWeaponLogic(strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeState.s, opPokeState.s, myPokeState.hp, opPokeState.hp);
-    return betterWeapon;
-  }
 
   //最も与えるダメージが大きい技・最も与えるダメージが大きい先制技・最も与えるダメージが大きい先制技の最低乱数ダメージ　を返す
   const getMostEffectiveWeapon = async () => {
-    const { weaponsInfo, atcInfos, defInfos } = await getUseInCalcDamageInfos(false, opPokeState);
-    const { strongestWeapon, strongestWeaponDamage, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage } = getMostEffectiveWeaponLogic(weaponsInfo, atcInfos, defInfos);
+    const { weaponInfos, atcInfos, defInfos } = await getUseInCalcDamageInfos(false);
+    const { strongestWeapon, strongestWeaponDamage, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage }
+      = getMostEffectiveWeaponLogic(weaponInfos, atcInfos, defInfos);
     return { strongestWeapon, strongestWeaponDamage, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage }
   }
 
   //自分が相手に最大ダメージを与えらられる技の中乱数ダメージを返す
   const predictMyAction = async (randomMultiplier) => {
-    const { weaponsInfo, atcInfos, defInfos } = await getUseInCalcDamageInfos(true, myPokeState);
-    const { myStrongestWeapon, myMaxDamage, myMaxDamageWeaponType } = predictMyActionLogic(weaponsInfo, atcInfos, defInfos, randomMultiplier);
-    return { myStrongestWeapon, myMaxDamage, myMaxDamageWeaponType };
+    const { weaponInfos, atcInfos, defInfos } = await getUseInCalcDamageInfos(true);
+    const { myStrongestWeapon, myMaxDamageWeaponType, myMaxDamage } = predictMyActionLogic(weaponInfos, atcInfos, defInfos, randomMultiplier);
+    return { myStrongestWeapon, myMaxDamageWeaponType, myMaxDamage };
   }
 
   //選択した技名を取得する
@@ -879,57 +740,49 @@ export function useBattleHandlers(battleState) {
   }
 
   //相手が次のポケモンを選択するために、お互いのポケモンや技情報を取得する。
-  const getUseInCalcDamageInfos = async (attackerIsMe, atcState, terastalCheckFlg) => {
+  const getUseInCalcDamageInfos = async (atcIsMe, terastalCheckFlg) => {
+    const atcState = getPokeState(atcIsMe, true);
     const weaponKeys = ['weapon1', 'weapon2', 'weapon3', 'weapon4'];
     const results = await Promise.all(
-      weaponKeys.map(key => getUseInCalcDamageInfo(attackerIsMe, atcState[key], terastalCheckFlg))
+      weaponKeys.map(key => getUseInCalcDamageInfo(atcIsMe, atcState[key], terastalCheckFlg))
     );
-    const weaponsInfo = results.map(r => r.weaponInfo);
-    const atcInfos = results.map(r => r.attackerInfo);
-    const defInfos = results.map(r => r.defenderInfo);
-    return { weaponsInfo, atcInfos, defInfos };
+    const weaponInfos = results.map(r => r.weaponInfo);
+    const atcInfos = results.map(r => r.atcInfo);
+    const defInfos = results.map(r => r.defInfo);
+    return { weaponInfos, atcInfos, defInfos };
   }
 
   //ダメ計に必要な情報を取得して返す
-  const getUseInCalcDamageInfo = async (attackerIsMe, weaponName, terastalCheckFlg) => {
+  const getUseInCalcDamageInfo = async (atcIsMe, weaponName, terastalCheckFlg) => {
     const weaponInfo = await getWeaponInfo(weaponName);
-    const [atcState, defState] = attackerIsMe ? [myPokeState, opPokeState] : [opPokeState, myPokeState];
-    let [atcPower, defPower] = weaponInfo.kind === "物理"
-      ? [atcState.a, defState.b] : [atcState.c, defState.d];
+    const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+    const { atcPower, defPower } = getAtcDefPower(atcIsMe, weaponInfo);
     //テラスタルしているか
-    let isTerastalAtc = atcState.terastalPokeNum === getPokeNum(atcState, atcState.name) || (!attackerIsMe && opTerastalFlag.current);
-    let isTerastalDef = defState.terastalPokeNum === getPokeNum(defState, defState.name);
+    let isTerastalAtc = checkIsTerastal(atcIsMe) || (!atcIsMe && opTerastalFlag.current);
+    let isTerastalDef = checkIsTerastal(!atcIsMe);
 
     //相手のテラス判断のための値変更
-    if (attackerIsMe && terastalCheckFlg)
+    if (atcIsMe && terastalCheckFlg)
       isTerastalDef = true;
-    else if (!attackerIsMe && terastalCheckFlg)
+    else if (!atcIsMe && terastalCheckFlg)
       isTerastalAtc = true;
 
-    if (weaponInfo.name === "テラバースト") {
-      weaponInfo.type = isTerastalAtc ? atcState.terastal : weaponInfo.type;
-      [atcPower, defPower] = atcState.a > atcState.c
-        ? [atcState.a, defState.b] : [atcState.c, defState.d];
-    }
+    weaponInfo.type = weaponInfo.name !== "テラバースト"
+      ? weaponInfo.type
+      : isTerastalAtc ? atcState.terastal : weaponInfo.type;
 
-    const atcBuff = weaponInfo.name !== "テラバースト"
-      ? (weaponInfo.kind === "物理" ? atcState.aBuff : atcState.cBuff)
-      : (atcState.a > atcState.c ? atcState.aBuff : atcState.cBuff);
+    const { atcBuff, defBuff } = getAtcDefBuff(atcIsMe, weaponInfo);
 
-    const defBuff = weaponInfo.name !== "テラバースト"
-      ? (weaponInfo.kind === "物理" ? defState.bBuff : defState.dBuff)
-      : (atcState.a > atcState.c ? defState.bBuff : defState.dBuff);
-
-    const attackerInfo = { name: atcState.name, type1: atcState.type1, type2: atcState.type2, terastal: atcState.terastal, isTerastalAtc, power: atcPower, buff: atcBuff };
-    const defenderInfo = { name: defState.name, type1: defState.type1, type2: defState.type2, terastal: defState.terastal, isTerastalDef, power: defPower, buff: defBuff };
-    return { weaponInfo, attackerInfo, defenderInfo };
+    const atcInfo = { name: atcState.name, type1: atcState.type1, type2: atcState.type2, terastal: atcState.terastal, isTerastalAtc, power: atcPower, buff: atcBuff };
+    const defInfo = { name: defState.name, type1: defState.type1, type2: defState.type2, terastal: defState.terastal, isTerastalDef, power: defPower, buff: defBuff };
+    return { weaponInfo, atcInfo, defInfo };
   }
 
   //HPバーの幅や色の制御をして現在HPを返す
-  const adjustHpBar = (isMe, pokeState, currentHp) => {
-    const MaxHp = getMaxHp(pokeState);
+  const adjustHpBar = (isMe, currentHp) => {
+    const pokeState = getPokeState(isMe, true);
+    const MaxHp = getMaxHp(pokeState, pokeState.name);
     adjustHpBarLogic(isMe, currentHp, MaxHp);
-    console.log(`${pokeState.name}\n最大HP：${MaxHp}\n残HP：${currentHp}`);
   }
 
   //stateのHpと新しくセットするHpが同じか確認する
@@ -940,25 +793,26 @@ export function useBattleHandlers(battleState) {
 
   //ポケモン登場の表示制御
   const controllAreaVisibleForApp = async (isMe) => {
-    const setAreaVisible = isMe ? setMyAreaVisible : setOpAreaVisible;
-    const pokeName = isMe ? myPokeState.name : opPokeState.name;
+    const [pokeState, setAreaVisible]
+      = [getPokeState(isMe, true), getSetAreaVisible(isMe, true)];
 
     setAreaVisible(prev => ({ ...prev, text: true }));    //Goテキストの表示
     delay(() => setAreaVisible(prev => ({ ...prev, poke: true })), 1000);       //ポケモンの表示
-    delay(async () => await playPokeVoice(pokeName), 1000);                     //鳴き声再生
+    delay(async () => await playPokeVoice(pokeState.name), 1000);                     //鳴き声再生
     delay(() => setAreaVisible(prev => ({ ...prev, text: false })), 2000);    //Goテキストの非表示    
     await stopProcessing(2000);
   };
 
   //相性倍率を受け取って、相性テキストを返す
-  const getCompatiText = async (attackerIsMe, atcState, defState) => {
-    const weaponName = getWeaponName(attackerIsMe);
+  const getCompatiText = async (atcIsMe) => {
+    const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+    const weaponName = getWeaponName(atcIsMe);
     let { type: weaponType } = await getWeaponInfo(weaponName);
-    if (atcState.terastalPokeNum === getPokeNum(atcState, atcState.name) && weaponName === "テラバースト") {
+    if (checkIsTerastal(atcIsMe) && weaponName === "テラバースト") {
       weaponType = atcState.terastal;
     }
 
-    const [defType1, defType2] = defState.terastalPokeNum === getPokeNum(defState, defState.name)
+    const [defType1, defType2] = checkIsTerastal(!atcIsMe)
       ? [defState.terastal, "なし"] : [defState.type1, defState.type2];
     const multiplier = calcMultiplier(weaponType, defType1, defType2);
     const compatiText = getCompatiTextLogic(multiplier);
@@ -966,25 +820,24 @@ export function useBattleHandlers(battleState) {
   }
 
   //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
-  const attackEffect = async (attackerIsMe, defState, isHit, atcTarget) => {
-    const atcImgElem = getAttackEffectElem(attackerIsMe);
-    const atcName = attackerIsMe ? myPokeState.name : opPokeState.name;
-    const weaponName = getWeaponName(attackerIsMe);
+  const attackEffect = async (atcIsMe, isHit, atcTarget) => {
+    const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+    const weaponName = getWeaponName(atcIsMe);
 
-    jumpEffect(atcImgElem);
+    jumpEffect(atcIsMe);
     await new Promise((resolve) => {
-      playPokeVoice(atcName, () => resolve());
+      playPokeVoice(atcState.name, () => resolve());
     });
 
     //技が命中してて、相性が無効ではない場合に攻撃エフェクトを入れる
     if (isHit && defState.text.content !== compatiTexts.mukou && atcTarget === "相手") {
-      attackEffectLogic(attackerIsMe, atcImgElem);
+      attackEffectLogic(atcIsMe);
       await new Promise((resolve) => {
         playWeaponSound(weaponName, () => resolve());
       });
     }
     if (isHit && atcTarget === "自分") {
-      jumpEffect(atcImgElem);
+      jumpEffect(atcIsMe);
       await new Promise((resolve) => {
         playWeaponSound(weaponName, () => resolve());
       });
@@ -992,21 +845,21 @@ export function useBattleHandlers(battleState) {
   };
 
   //ダメージエフェクト
-  const damageEffect = async (attackerIsMe, defState) => {
-    const defImgElem = getDamageEffectElem(attackerIsMe);
-    damageEffectLogic(defImgElem);
+  const damageEffect = async (isMe) => {
+    const defState = getPokeState(isMe, true);
+    damageEffectLogic(isMe);
     await new Promise((resolve) => {
       playDamageSound(defState.text.content, resolve);
     });
   };
 
   //相手は自分のポケモンとの相性を考慮した、最適なポケモンを選択肢て返す
-  const selectNextOpPoke = async (life) => {
+  const selectNextOpPoke = async () => {
     let nextOpPoke = "";
-    if (life === 2) {
-      const terastalType = myPokeState.terastalPokeNum === getPokeNum(myPokeState, myPokeState.name) ? myPokeState.terastal : null;
+    if (opLife.current === 2) {
+      const terastalType = checkIsTerastal(true) ? myPokeState.terastal : null;
       const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, terastalType, s: myPokeState.s };
-      const aliveOpBenchPokes = await getAliveBenchPokes(opPokeState);
+      const aliveOpBenchPokes = await getAliveBenchPokes(false);
       //相手の控えポケモンが、自分のポケモンから上からワンパンされないか
       // const [opPoke1Hp, opPoke2Hp] = [getPokeNumHp(opPokeState, aliveOpBenchPokes[0].name), getPokeNumHp(opPokeState, aliveOpBenchPokes[1].name)];
       // const { cnt1 } = await calcDefinitelyEndureHits(opPokeState);
@@ -1026,15 +879,16 @@ export function useBattleHandlers(battleState) {
   const stopProcessing = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   //生存している控えポケモン情報を取得する
-  const getAliveBenchPokes = async (pokeState) => {
-    const pokesInfo = await Promise.all(
+  const getAliveBenchPokes = async (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const pokeInfos = await Promise.all(
       [1, 2, 3].map(i => {
         const name = pokeState[`poke${i}Name`];
         const hp = pokeState[`poke${i}Hp`];
         return (pokeState.name !== name && hp !== 0) ? getPokeInfo(name) : null;
       })
     );
-    const aliveBenchPokes = pokesInfo.filter(Boolean);
+    const aliveBenchPokes = pokeInfos.filter(Boolean);
 
     return aliveBenchPokes;
   }
@@ -1047,7 +901,7 @@ export function useBattleHandlers(battleState) {
     const myMaxDamage = await predictMyAction();
 
     //合理的は技を算出してセット
-    const opWeapon = choiseBetterWeapon(strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage);
+    const opWeapon = choiseBetterWeapon(strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeState.s, opPokeState.s, myPokeState.hp, opPokeState.hp);
     opSelectedWeapon.current = opWeapon;
   }
 
@@ -1055,7 +909,7 @@ export function useBattleHandlers(battleState) {
   const setOpChangePoke = async (dangerousType, safeType, IsDangerousTerastal, terastalType) => {
 
     //生存している相手の控えポケモン情報を取得する
-    const aliveOpBenchPokes = await getAliveBenchPokes(opPokeState);
+    const aliveOpBenchPokes = await getAliveBenchPokes(false);
 
     opChangePokeName.current = aliveOpBenchPokes.length > 0
       ? getOpChangePoke(aliveOpBenchPokes, dangerousType, safeType, IsDangerousTerastal, terastalType) : null;
@@ -1063,9 +917,147 @@ export function useBattleHandlers(battleState) {
     console.log(`相手は相性が悪い${opChangePokeName.current ? "ため" + opChangePokeName.current + "に交代する" : "が交代できるポケモンがいない"}`);
   }
 
+  //ターン終了時に状況確認のためのデバッグ用コンソール
+  const consoleWhenTurnEnd = () => {
+    const myPokeNum = getPokeNum(myPokeState, myPokeState.name);
+    const opPokeNum = getPokeNum(opPokeState, opPokeState.name);
+    console.log(`${myPokeState.name}\n残HP：${myPokeState.hp}\n最大HP：${myPokeState[`poke${myPokeNum}MaxHp`]}`);
+    console.log(`${opPokeState.name}\n残HP：${opPokeState.hp}\n最大HP：${opPokeState[`poke${opPokeNum}MaxHp`]}`);
+    console.log(`自分 aBuff:${myPokeState.aBuff},bBuff:${myPokeState.bBuff},cBuff:${myPokeState.cBuff},dBuff:${myPokeState.dBuff},sBuff:${myPokeState.sBuff},`);
+    console.log(`相手 aBuff:${opPokeState.aBuff},bBuff:${opPokeState.bBuff},cBuff:${opPokeState.cBuff},dBuff:${opPokeState.dBuff},sBuff:${opPokeState.sBuff},`);
+  }
+
+  //変化技使用時用の効果等を取得
+  const getEffectiveness = async (isMe) => {
+    const weaponName = getWeaponName(isMe);
+    const weaponInfo = await getWeaponInfo(weaponName);
+    const isHit = weaponInfo.hitrate ? (Math.random() * 100 < weaponInfo.hitrate) : true;
+    const isIncident = weaponInfo.incidencerate ? (Math.random() * 100 < weaponInfo.incidencerate) : true;
+    const atcTarget = weaponInfo.atctarget;
+    const effTarget = weaponInfo.efftarget;
+    const effectiveness = isIncident ? weaponInfo.effectiveness : null;
+
+    return { isHit, atcTarget, effTarget, effectiveness };
+  }
+
+  const getPokeState = (isMe, simple) => {
+    const pokeState = isMe === simple ? myPokeState : opPokeState;
+    return pokeState;
+  }
+
+  const getSetPokeState = (isMe, simple) => {
+    const setPokeState = isMe === simple ? setMyPokeState : setOpPokeState;
+    return setPokeState;
+  }
+
+  const getSetPokeStateTrigger = (isMe, simple) => {
+    const setPokeStateTrigger = isMe === simple ? setMyPokeStateTrigger : setOpPokeStateTrigger;
+    return setPokeStateTrigger;
+  }
+
+  const getAreaVisible = (isMe) => {
+    const areaVisible = isMe ? myAreaVisible : opAreaVisible;
+    return areaVisible;
+  }
+
+  const getSetAreaVisible = (isMe, simple) => {
+    const setAreaVisible = isMe === simple ? setMyAreaVisible : setOpAreaVisible;
+    return setAreaVisible;
+  }
+
+  //追加効果を読み解いて発動する
+  const doSecondaryEffect = (atcIsMe, effTarget, effectiveness) => {
+    if (effectiveness) {
+      const myEffectiveness = atcIsMe && effTarget === "自分" || !atcIsMe && effTarget === "相手";
+      const [pokeState, setPokeState] = [getPokeState(myEffectiveness, true), getSetPokeState(myEffectiveness, true)];
+
+      if (effectiveness.includes("buff")) {
+        const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
+        let textArray = [`${pokeState.name}の`];
+
+        effectiveness = effectiveness.slice(5);
+        for (let i = 0; i < effectiveness.length; i += 3) {
+          const status = effectiveness[i];
+          const buff = Number(effectiveness.slice(i + 1, i + 3));
+          const key = `${status}Buff`;
+          const currentBuff = pokeState[key] ?? 0;
+          const clampedBuff = Math.max(-6, Math.min(6, currentBuff + buff));
+          const actualChange = clampedBuff - currentBuff;
+
+          let text1 = statusTextMap[status] || "不明";
+          let text2 = "";
+
+          if (actualChange !== 0) {
+            // 実際に変化があった場合のみ state 更新
+            setPokeState(prev => ({ ...prev, [key]: clampedBuff }));
+
+            text2 = actualChange > 0
+              ? actualChange >= 2 ? "がぐーんと上がった" : "が上がった"
+              : actualChange <= -2 ? "ががくっと下がった" : "が下がった"
+          }
+          // 変化しなかった場合（すでに限界値）
+          else
+            text2 = buff > 0 ? "はこれ以上上がらない" : "はこれ以上下がらない";
+
+          textArray.push(`${text1}${text2}`);
+        }
+
+        const buffText = textArray.join("\n");
+        setOtherText({ kind: "buff", content: buffText });
+
+        if (buffText.includes("上がった"))
+          soundList.general.statusUp.play();
+        if (buffText.includes("下がった"))
+          soundList.general.statusDown.play();
+      }
+    }
+  }
+
+  //バフ込みの実数値を取得する
+  const calcActualStatus = (isMe, status) => {
+    const pokeState = getPokeState(isMe, true);
+    const beforeStatus = pokeState[status];
+    const buff = pokeState[`${status}Buff`];
+    const buffMultiplier = buff > 0 ? buff * 0.5 + 1 : 2 / (2 - buff);
+    const actualStatus = beforeStatus * buffMultiplier;
+    return actualStatus;
+  }
+
+  //バトル場のポケモンがテラスタルしているか返す
+  const checkIsTerastal = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
+    const isTerastal = pokeState.terastalPokeNum === pokeNum;
+    return isTerastal;
+  }
+
+  //技の分類によって変わるAorCとBorDを返す
+  const getAtcDefPower = (atcIsMe, weaponInfo) => {
+    const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+    const [atcPower, defPower] = weaponInfo.name !== "テラバースト"
+      ? weaponInfo.kind === "物理" ? [atcState.a, defState.b] : [atcState.c, defState.d]
+      : atcState.a > atcState.c ? [atcState.a, defState.b] : [atcState.c, defState.d];
+    return { atcPower, defPower }
+  }
+
+  //技の分類にあったAorCとBorDのバフを取得する
+  const getAtcDefBuff = (atcIsMe, weaponInfo) => {
+    const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+
+    const atcBuff = weaponInfo.name !== "テラバースト"
+      ? (weaponInfo.kind === "物理" ? atcState.aBuff : atcState.cBuff)
+      : (atcState.a > atcState.c ? atcState.aBuff : atcState.cBuff);
+
+    const defBuff = weaponInfo.name !== "テラバースト"
+      ? (weaponInfo.kind === "物理" ? defState.bBuff : defState.dBuff)
+      : (atcState.a > atcState.c ? defState.bBuff : defState.dBuff);
+
+    return { atcBuff, defBuff };
+  }
+
+
   return {
     //toDoWhenFnc.jsで使用
-    checkIsMe,
     setPokeInfo,
     setHpOnEntry,
     setPokeNumHp,
@@ -1089,6 +1081,7 @@ export function useBattleHandlers(battleState) {
     setNextOpPokeName,
     setWinner,
     checkIsAttackWeapon,
+    getEffectiveness,
 
     //jsxや他jsで使用
     getPokeInfo,
@@ -1096,6 +1089,7 @@ export function useBattleHandlers(battleState) {
     getPokeNum,
     getMaxHp,
     resetChangeTurn,
+    checkIsTerastal,
 
     //jsxで使用
     setBgm,
@@ -1107,7 +1101,8 @@ export function useBattleHandlers(battleState) {
     setTextWhenClickWeaponBtn,
     initializeState,
 
-    //一時的
-    getWeaponName,
+    getPokeState,
+    getAreaVisible,
+    consoleWhenTurnEnd
   };
 }

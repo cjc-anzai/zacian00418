@@ -177,14 +177,14 @@ export const typeColors = {
 //値を返すのみでreactの状態に関与しない関数==================================================================
 
 //相手のポケモン全ての受け/攻め相性と素早さを計算して返す。
-export const calcResistanceForAllOpPokes = (myPokesInfo, opPokesInfo) => {
+export const calcResistanceForAllOpPokes = (myPokeInfos, opPokeInfos) => {
   const result = {};
 
-  opPokesInfo.forEach((opPoke, index) => {
+  opPokeInfos.forEach((opPoke, index) => {
     const [name, type1, type2] = [opPoke.name, opPoke.type1, opPoke.type2];
 
     // resistance（自分6体 → 相手1体）
-    const resistance = myPokesInfo.reduce((total, myPoke) => {
+    const resistance = myPokeInfos.reduce((total, myPoke) => {
       let maxVal = Math.max(
         calcMultiplier(myPoke.type1, opPoke.type1, opPoke.type2),
         myPoke.type2 !== "なし"
@@ -198,7 +198,7 @@ export const calcResistanceForAllOpPokes = (myPokesInfo, opPokesInfo) => {
     }, 0);
 
     // effectiveness（相手1体 → 自分6体）
-    const effectiveness = myPokesInfo.reduce((total, myPoke) => {
+    const effectiveness = myPokeInfos.reduce((total, myPoke) => {
       let maxVal = Math.max(
         calcMultiplier(opPoke.type1, myPoke.type1, myPoke.type2),
         opPoke.type2 !== "なし"
@@ -212,12 +212,7 @@ export const calcResistanceForAllOpPokes = (myPokesInfo, opPokesInfo) => {
     }, 0);
 
     result[`opPoke${index + 1}`] = {
-      name,
-      type1,
-      type2,
-      resistance,
-      effectiveness,
-      s: opPoke.s
+      name, type1, type2, resistance, effectiveness, s: opPoke.s
     };
   });
 
@@ -296,10 +291,14 @@ export const getWeaponText = (isMe, pokeName, weaponName) => {
 //getCompatiText()のロジック
 export const getCompatiTextLogic = (multiplier) => {
   let compatiText = "";
-  if (multiplier >= 2) compatiText = compatiTexts.batsugun;
-  else if (multiplier === 1) compatiText = compatiTexts.toubai;
-  else if (multiplier > 0) compatiText = compatiTexts.imahitotsu;
-  else compatiText = compatiTexts.mukou;
+  if (multiplier >= 2)
+    compatiText = compatiTexts.batsugun;
+  else if (multiplier === 1)
+    compatiText = compatiTexts.toubai;
+  else if (multiplier > 0)
+    compatiText = compatiTexts.imahitotsu;
+  else
+    compatiText = compatiTexts.mukou;
   return compatiText;
 }
 
@@ -335,105 +334,84 @@ export const getOpChangePoke = (aliveOpBenchPokes, dangerousType, safeType, IsDa
     if (IsDangerousTerastal) {
       if ((val21 + val22 + val23) <= 1.5) {
         if (val31 && (val31 + val32 + val33) <= 1.5) {
-          if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+          if ((val21 + val22 + val23) !== (val31 + val32 + val33))
             opChangePokeName =
               (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
-          else {
+          else
             opChangePokeName =
               aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
         }
-        else {
+        else
           opChangePokeName = aliveOpBenchPokes[0].name;
-        }
-
       }
-      else if (val31 && (val31 + val32 + val33) <= 1.5) {
+      else if (val31 && (val31 + val32 + val33) <= 1.5)
         opChangePokeName = aliveOpBenchPokes[1].name;
-      }
     }
     else {
       if ((val21 + val22) <= 1) {
         if (val31 && (val31 + val32) <= 1) {
-          if ((val21 + val22) !== (val31 + val32)) {
+          if ((val21 + val22) !== (val31 + val32))
             opChangePokeName =
               (val21 + val22) < (val31 + val32) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
-          else {
+          else
             opChangePokeName =
               aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
         }
-        else {
+        else
           opChangePokeName = aliveOpBenchPokes[0].name;
-        }
       }
-      else if (val31 && (val31 + val32) <= 1) {
+      else if (val31 && (val31 + val32) <= 1)
         opChangePokeName = aliveOpBenchPokes[1].name;
-      }
     }
   }
   else if (dangerousType.length === 1) {
     if (IsDangerousTerastal) {
       if (val21 <= 0.5 && val22 <= 1 && val23 <= 0.5) {
         if (val31 && val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
-          if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+          if ((val21 + val22 + val23) !== (val31 + val32 + val33))
             opChangePokeName =
               (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
-          else {
+          else
             opChangePokeName =
               aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
         }
-        else {
+        else
           opChangePokeName = aliveOpBenchPokes[0].name;
-        }
       }
-      else if (val31 && val31 <= 0.5 && val32 <= 1 && val33 <= 0.5) {
+      else if (val31 && val31 <= 0.5 && val32 <= 1 && val33 <= 0.5)
         opChangePokeName = aliveOpBenchPokes[1].name;
-      }
     }
     else {
       if (val21 <= 0.5 && val22 <= 1 && (val23 ? val23 <= 1 : true)) {
         if (val31 && val31 <= 0.5 && val32 <= 1 && (val33 ? val33 <= 1 : true)) {
-          if ((val21 + val22 + val23) !== (val31 + val32 + val33)) {
+          if ((val21 + val22 + val23) !== (val31 + val32 + val33))
             opChangePokeName =
               (val21 + val22 + val23) < (val31 + val32 + val33) ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
-          else {
+          else
             opChangePokeName =
               aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-          }
         }
-        else {
+        else
           opChangePokeName = aliveOpBenchPokes[0].name;
-        }
       }
-      else if (val31 && val31 <= 0.5 && val32 <= 1 && (val33 ? val33 <= 1 : true)) {
+      else if (val31 && val31 <= 0.5 && val32 <= 1 && (val33 ? val33 <= 1 : true))
         opChangePokeName = aliveOpBenchPokes[1].name;
-      }
     }
   }
   else {
     if (val21 <= 1 && val22 <= 1 && val23 <= 0.5) {
       if (val31 && val31 <= 1 && val32 <= 1 && val33 <= 0.5) {
-        if (val23 !== val33) {
+        if (val23 !== val33)
           opChangePokeName = val23 < val33 ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-        }
-        else {
+        else
           opChangePokeName =
             aliveOpBenchPokes[0].s > aliveOpBenchPokes[1].s ? aliveOpBenchPokes[0].name : aliveOpBenchPokes[1].name;
-        }
       }
-      else {
+      else
         opChangePokeName = aliveOpBenchPokes[0].name;
-      }
     }
-    else if (val31 && val31 <= 1 && val32 <= 1 && val33 <= 0.5) {
+    else if (val31 && val31 <= 1 && val32 <= 1 && val33 <= 0.5)
       opChangePokeName = aliveOpBenchPokes[1].name;
-    }
   }
 
   return opChangePokeName;
@@ -466,10 +444,14 @@ export const checkIsFirst = (myPokeSpeed, opPokeSpeed, myWeaponPriority, opWeapo
 export const getCompatiTextForWeaponInfoList = (weaponType, defType1, defType2) => {
   const multiplier = calcMultiplier(weaponType, defType1, defType2)
   let compatiText = "";
-  if (multiplier >= 2) compatiText = "効果ばつぐん";
-  else if (multiplier === 1) compatiText = "効果あり";
-  else if (multiplier < 1 && multiplier > 0) compatiText = "いまひとつ";
-  else compatiText = "効果なし";
+  if (multiplier >= 2)
+    compatiText = "効果ばつぐん";
+  else if (multiplier === 1)
+    compatiText = "効果あり";
+  else if (multiplier < 1 && multiplier > 0)
+    compatiText = "いまひとつ";
+  else
+    compatiText = "効果なし";
   return compatiText;
 };
 
@@ -480,17 +462,17 @@ export const calcMultiplier = (weaponType, defType1, defType2) => {
 }
 
 //getMostEffectiveWeapon()のロジック
-export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => {
+export const getMostEffectiveWeaponLogic = (weaponInfos, atcInfos, defInfos) => {
   //相手の全ての攻撃技で、自分のポケモンに与えるダメージを取得
   const [opW1Damage, opW2Damage, opW3Damage, opW4Damage] = [0, 1, 2, 3].map(
-    i => calcPureDamage(weaponsInfo[i], atcInfos[i], defInfos[i]).pureDamage
+    i => calcPureDamage(weaponInfos[i], atcInfos[i], defInfos[i]).pureDamage
   );
 
   //相手の全ての技の優先度を取得
-  const [opW1Priority, opW2Priority, opW3Priority, opW4Priority] = weaponsInfo.map(w => w.priority);
+  const [opW1Priority, opW2Priority, opW3Priority, opW4Priority] = weaponInfos.map(w => w.priority);
 
   // 技とダメージ・優先度をまとめる
-  const opWeapons = weaponsInfo.map((w, i) => ({
+  const opWeapons = weaponInfos.map((w, i) => ({
     name: w.name,
     damage: [opW1Damage, opW2Damage, opW3Damage, opW4Damage][i],
     priority: [opW1Priority, opW2Priority, opW3Priority, opW4Priority][i],
@@ -528,13 +510,13 @@ export const getMostEffectiveWeaponLogic = (weaponsInfo, atcInfos, defInfos) => 
 }
 
 //predictMyAction()のロジック
-export const predictMyActionLogic = (weaponsInfo, atcInfos, defInfos, randomMultiplier) => {
+export const predictMyActionLogic = (weaponInfos, atcInfos, defInfos, randomMultiplier) => {
   // 各技のダメージを計算して配列にする
   const damageList = [
-    calcPureDamage(weaponsInfo[0], atcInfos[0], defInfos[0]).pureDamage,
-    calcPureDamage(weaponsInfo[1], atcInfos[1], defInfos[1]).pureDamage,
-    calcPureDamage(weaponsInfo[2], atcInfos[2], defInfos[2]).pureDamage,
-    calcPureDamage(weaponsInfo[3], atcInfos[3], defInfos[3]).pureDamage,
+    calcPureDamage(weaponInfos[0], atcInfos[0], defInfos[0]).pureDamage,
+    calcPureDamage(weaponInfos[1], atcInfos[1], defInfos[1]).pureDamage,
+    calcPureDamage(weaponInfos[2], atcInfos[2], defInfos[2]).pureDamage,
+    calcPureDamage(weaponInfos[3], atcInfos[3], defInfos[3]).pureDamage,
   ];
 
   // 最大ダメージのインデックスを取得
@@ -542,48 +524,48 @@ export const predictMyActionLogic = (weaponsInfo, atcInfos, defInfos, randomMult
     current > arr[maxIdx] ? idx : maxIdx, 0
   );
 
-  const myStrongestWeapon = weaponsInfo[maxIndex].name;
+  const myStrongestWeapon = weaponInfos[maxIndex].name;
   const myMaxDamage = damageList[maxIndex] * randomMultiplier;
-  const myMaxDamageWeaponType = weaponsInfo[maxIndex].type;
+  const myMaxDamageWeaponType = weaponInfos[maxIndex].type;
 
   return { myStrongestWeapon, myMaxDamage, myMaxDamageWeaponType };
 }
 
 
-//choiseBetterWeapon()のロジック
-export const choiseBetterWeaponLogic = (strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeSpeed, opPokeSpeed, myPokeHp, opPokeHp) => {
+//相手目線で合理的な技を選択して返す
+export const choiseBetterWeapon = (strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeSpeed, opPokeSpeed, myPokeHp, opPokeHp) => {
   let betterWeapon = "";
   //先制技を持っていているとき
   if (strongestHighPriorityWeapon) {
     //相手の方が遅く、自分の攻撃の最低乱数で、相手が倒れる時は先制技を選択する(無効の場合を除く)
-    if (myPokeSpeed > opPokeSpeed && opPokeHp <= myMaxDamage && strongestHighPriorityWeaponDamage !== 0) {
+    if (myPokeSpeed > opPokeSpeed && opPokeHp <= myMaxDamage && strongestHighPriorityWeaponDamage !== 0)
       betterWeapon = strongestHighPriorityWeapon;
-    }
     //先制技(最低乱数)で自分を倒せる場合は先制技を選択する
-    else {
+    else
       betterWeapon = strongestHighPriorityWeaponDamage >= myPokeHp ? strongestHighPriorityWeapon : strongestWeapon;
-    }
   }
   //通常は一番与えるダメージが大きい技を選択する
-  else betterWeapon = strongestWeapon;
+  else
+    betterWeapon = strongestWeapon;
 
   return betterWeapon;
 }
 
 // 攻め側のエレメントを取得する
-export const getAttackEffectElem = (attackerIsMe) => {
-  const atcImgElem = document.querySelector(attackerIsMe ? `.my-poke-img` : `.op-poke-img`);
+export const getAttackEffectElem = (atcIsMe) => {
+  const atcImgElem = document.querySelector(atcIsMe ? `.my-poke-img` : `.op-poke-img`);
   return atcImgElem;
 }
 
 // 受け側のエレメントを取得する
-export const getDamageEffectElem = (attackerIsMe) => {
-  const defImgElem = document.querySelector(attackerIsMe ? `.op-poke-img` : `.my-poke-img`);
+export const getDamageEffectElem = (isMe) => {
+  const defImgElem = document.querySelector(isMe ? `.my-poke-img` : `.op-poke-img`);
   return defImgElem;
 }
 
 //ジャンプエフェクト
-export const jumpEffect = (elem) => {
+export const jumpEffect = (isMe) => {
+  const elem = getAttackEffectElem(isMe);
   elem.classList.remove("jump"); // ← 一回消しておくと連続ジャンプにも対応
   void elem.offsetWidth;         // ← 再描画を強制するテク（重要）
   elem.classList.add("jump");
@@ -591,8 +573,9 @@ export const jumpEffect = (elem) => {
 }
 
 //attackEffect()のロジック
-export const attackEffectLogic = (attackerIsMe, elem) => {
-  const attackClass = attackerIsMe ? "my-attack" : "op-attack";
+export const attackEffectLogic = (isMe) => {
+  const elem = getAttackEffectElem(isMe);
+  const attackClass = isMe ? "my-attack" : "op-attack";
   elem.classList.remove(attackClass);
   void elem.offsetWidth; // 再描画を強制
   elem.classList.add(attackClass);
@@ -600,20 +583,21 @@ export const attackEffectLogic = (attackerIsMe, elem) => {
 }
 
 //damageEffect()のロジック
-export const damageEffectLogic = (elem) => {
+export const damageEffectLogic = (isMe) => {
+  const elem = getDamageEffectElem(isMe);
   elem.classList.add("pokemon-damage-effect");
   delay(() => elem.classList.remove("pokemon-damage-effect"), 1000);
 }
 
 //ダメージ計算　ダメージ数/命中判定/急所判定　を返す
-export const calcTrueDamage = (weaponInfo, attackerInfo, defenderInfo) => {
+export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
   let trueDamage = 0;
   const isHit = Math.random() * 100 < weaponInfo.hitrate;    //命中判定
   let isCriticalHit = false;   //急所フラグ
 
   //命中時のみダメージ計算する
   if (isHit) {
-    let { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier } = calcPureDamage(weaponInfo, attackerInfo, defenderInfo);
+    let { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier } = calcPureDamage(weaponInfo, atcInfo, defInfo);
     const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
     isCriticalHit = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
     // isCriticalHit = true;   //テスト用
@@ -628,20 +612,18 @@ export const calcTrueDamage = (weaponInfo, attackerInfo, defenderInfo) => {
     trueDamage = Math.floor(pureDamage * randomMultiplier);    // 乱数
     trueDamage = Math.floor(trueDamage * (isCriticalHit ? 1.5 : 1));   //急所
 
-    console.log(`${defenderInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
+    console.log(`${defInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
   }
   else
-    console.log(`${attackerInfo.name}の攻撃は当たらなかった`);
+    console.log(`${atcInfo.name}の攻撃は当たらなかった`);
 
   return { trueDamage, isHit, isCriticalHit };
 }
 
-//adjustHpBar()のロジック
+//adjustHpBar()のロジック HPバーの制御
 export const adjustHpBarLogic = (isMe, newHp, MaxHp) => {
-  //HPバーの制御
-  const HpPrcent = Math.round((newHp / MaxHp) * 100);
-  //▼ロジック====
   const hpBarElem = document.querySelector(isMe ? ".my-hp-bar" : ".op-hp-bar");
+  const HpPrcent = Math.round((newHp / MaxHp) * 100);
   hpBarElem.style.width = `${HpPrcent}%`;
   hpBarElem.classList.remove("low", "mid");
   if (HpPrcent <= 25)
@@ -726,25 +708,25 @@ export const delay = (fn, ms) => setTimeout(fn, ms);
 
 
 //乱数と急所を考慮しないダメージ数と、基礎ダメージを返す
-export const calcPureDamage = (weaponInfo, attackerInfo, defenderInfo) => {
-  const isSameTerastal = attackerInfo.isTerastalAtc
-    ? (weaponInfo.type === attackerInfo.terastal && weaponInfo.type === attackerInfo.type1)
-    || (weaponInfo.type === attackerInfo.terastal && weaponInfo.type === attackerInfo.type2)
+export const calcPureDamage = (weaponInfo, atcInfo, defInfo) => {
+  const isSameTerastal = atcInfo.isTerastalAtc
+    ? (weaponInfo.type === atcInfo.terastal && weaponInfo.type === atcInfo.type1)
+    || (weaponInfo.type === atcInfo.terastal && weaponInfo.type === atcInfo.type2)
     : false;
   const isSameType =
-    (weaponInfo.type === attackerInfo.type1) || (weaponInfo.type === attackerInfo.type2)
-    || (weaponInfo.type === attackerInfo.terastal && attackerInfo.isTerastalAtc);    //タイプ一致フラグ
-  const [defType1, defType2] = defenderInfo.isTerastalDef
-    ? [defenderInfo.terastal, "なし"]
-    : [defenderInfo.type1, defenderInfo.type2];
+    (weaponInfo.type === atcInfo.type1) || (weaponInfo.type === atcInfo.type2)
+    || (weaponInfo.type === atcInfo.terastal && atcInfo.isTerastalAtc);    //タイプ一致フラグ
+  const [defType1, defType2] = defInfo.isTerastalDef
+    ? [defInfo.terastal, "なし"]
+    : [defInfo.type1, defInfo.type2];
   const multiplier = calcMultiplier(weaponInfo.type, defType1, defType2);
-  const atcBuffMultiplier = attackerInfo.buff > 0
-    ? attackerInfo.buff * 0.5 + 1 : 2 / (2 - attackerInfo.buff);
-  const defBuffMultiplier = defenderInfo.buff > 0
-    ? defenderInfo.buff * 0.5 + 1 : 2 / (2 - defenderInfo.buff);
+  const atcBuffMultiplier = atcInfo.buff > 0
+    ? atcInfo.buff * 0.5 + 1 : 2 / (2 - atcInfo.buff);
+  const defBuffMultiplier = defInfo.buff > 0
+    ? defInfo.buff * 0.5 + 1 : 2 / (2 - defInfo.buff);
 
   //ダメージ計算　22 * 技威力 * (AorC / BorD) / 50 + 2 * ダメージ補正(* 乱数　* タイプ一致 * 相性 * 急所)
-  let pureDamage = Math.floor(22 * weaponInfo.power * ((attackerInfo.power * atcBuffMultiplier) / (defenderInfo.power * defBuffMultiplier)));
+  let pureDamage = Math.floor(22 * weaponInfo.power * ((atcInfo.power * atcBuffMultiplier) / (defInfo.power * defBuffMultiplier)));
   pureDamage = Math.floor(pureDamage / 50 + 2);   //基礎ダメージ
   const basicDamage = pureDamage;   //デバッグ用
   pureDamage = Math.floor(pureDamage * (isSameTerastal ? 2 : (isSameType ? 1.5 : 1)));    // タイプ一致補正

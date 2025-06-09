@@ -20,6 +20,7 @@ const CommandArea = ({
     otherText,
     mySelectedWeapon,
     isTerastalActive, setIsTerastalActive,
+    iAmFirst,
     myChangePokeName,
     myChangeTurn,
   } = battleState;
@@ -30,14 +31,14 @@ const CommandArea = ({
     setMyTurn,
     setBackText,
     getWeaponInfo,
-    getPokeNum,
     decideOpAction,
     setTextWhenClickWeaponBtn,
+    checkIsTerastal,
   } = battleHandlers;
 
   const [weaponInfoList, setWeaponInfoList] = useState(null);
 
-  const isTerastal = myPokeState.terastalPokeNum === getPokeNum(myPokeState, myPokeState.name);
+  const isTerastal = checkIsTerastal(true);
 
   //たたかうボタン押下時、コマンド表示を切り替える
   const openBattleCmdArea = () => {
@@ -106,7 +107,7 @@ const CommandArea = ({
     myChangePokeName.current = changePoke;    //交代するポケモンをrefに保存
     await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
     await setMyTurn();
-    setBackText();    //先攻のbackテキストをセット
+    setBackText(iAmFirst.current);    //先攻のbackテキストをセット
     console.log(`${changePoke}に交代を選択`);
   }
 

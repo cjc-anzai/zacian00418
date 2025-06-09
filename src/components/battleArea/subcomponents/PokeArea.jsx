@@ -2,19 +2,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { terastalImgList, } from "../../../model/model";
 
 const PokeArea = ({
-    who,
+    isMe,
     battleState,
     battleHandlers,
 }) => {
 
     //インポートする変数や関数の取得
     const { opPokeState, myPokeState, opAreaVisible, myAreaVisible } = battleState;
-    const { getPokeNum, } = battleHandlers;
+    const { checkIsTerastal, getPokeState, getAreaVisible } = battleHandlers;
 
-    const isMy = who === "my";
-    const areaVisible = isMy ? myAreaVisible : opAreaVisible;
-    const pokeState = isMy ? myPokeState : opPokeState;
-    const isTerastal = pokeState.terastalPokeNum === getPokeNum(pokeState, pokeState.name);
+    const [pokeState, areaVisible, pokeArea] = [getPokeState(isMe, true), getAreaVisible(isMe, true)];
+    const isTerastal = checkIsTerastal(isMe);
+    const who = isMe ? "my" : "op";
 
     return (
         <div className={`${who}-poke-area`}>

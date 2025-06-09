@@ -1,20 +1,18 @@
 import { typeColors, getPokeIndicatorsColor } from "../../../model/model";
 
 const StatusBox = ({
-    who,
+    isMe,
     battleState,
     battleHandlers,
 }) => {
 
     //インポートする変数や関数の取得
     const { opPokeState, myPokeState, opAreaVisible, myAreaVisible, } = battleState;
-    const { getMaxHp } = battleHandlers;
+    const { getMaxHp, getPokeState, getAreaVisible } = battleHandlers;
 
-    const isMy = who === "my";
-    const areaVisible = isMy ? myAreaVisible : opAreaVisible;
-    const pokeState = isMy ? myPokeState : opPokeState;
-
-    const MaxHp = getMaxHp(pokeState);
+    const [pokeState, areaVisible] = [getPokeState(isMe, true), getAreaVisible(isMe, true)];
+    const MaxHp = getMaxHp(pokeState, pokeState.name);
+    const who = isMe ? "my" : "op";
 
     return (
         <div className="status-box" style={{ display: areaVisible.poke ? "block" : "none" }}>
@@ -49,7 +47,7 @@ const StatusBox = ({
             </div>
             <div className={`${who}-hp-container`}>
                 <div className={`${who}-hp-bar`}></div>
-                {isMy && (
+                {isMe && (
                     <span className="hp-text">
                         {Math.round(myPokeState.hp)} / {MaxHp}
                     </span>

@@ -22,7 +22,7 @@ export function useBattleEffects(battleState) {
   useEffect(() => {
     if (!myPokeState.name) return;
     const run = async () => {
-      await toDoWhenSetPokeName(myPokeState);
+      await toDoWhenSetPokeName(true);
     };
     run();
   }, [myPokeState.name]);
@@ -30,7 +30,7 @@ export function useBattleEffects(battleState) {
   useEffect(() => {
     if (!opPokeState.name) return;
     const run = async () => {
-      await toDoWhenSetPokeName(opPokeState);
+      await toDoWhenSetPokeName(false);
     };
     run();
   }, [opPokeState.name]);
@@ -39,41 +39,53 @@ export function useBattleEffects(battleState) {
   //img===============================================
   useEffect(() => {
     if (!myPokeState.img) return;
-    toDoWhenSetImg(myPokeState);
+    toDoWhenSetImg(true);
   }, [myPokeState.img]);
 
   useEffect(() => {
     if (!opPokeState.img) return;
-    toDoWhenSetImg(opPokeState);
+    toDoWhenSetImg(false);
   }, [opPokeState.img]);
 
   //hp=============================================
   useEffect(() => {
     if (!myPokeState.name) return;
-    toDoWhenSetHp(myPokeState);
+    const run = async () => {
+      await toDoWhenSetHp(true);
+    };
+    run();
   }, [myPokeState.hp]);
 
   useEffect(() => {
     if (!opPokeState.name) return;
-    toDoWhenSetHp(opPokeState);
+    const run = async () => {
+      await toDoWhenSetHp(false);
+    };
+    run();
   }, [opPokeState.hp]);
 
   //HpのuseEffect強制発火用のトリガー
   useEffect(() => {
     if (myPokeStateTrigger.hp == 0) return;
-    toDoWhenSetHp(myPokeState);
+    const run = async () => {
+      await toDoWhenSetHp(true);
+    };
+    run();
   }, [myPokeStateTrigger.hp]);
 
   useEffect(() => {
     if (opPokeStateTrigger.hp == 0) return;
-    toDoWhenSetHp(opPokeState);
+    const run = async () => {
+      await toDoWhenSetHp(false);
+    };
+    run();
   }, [opPokeStateTrigger.hp]);
 
   //text====================================================
   useEffect(() => {
     if (!myPokeState.text.content) return;
     const run = async () => {
-      await toDoWhenSetText(myPokeState);
+      await toDoWhenSetText(true);
     };
     run();
   }, [myPokeState.text]);
@@ -81,7 +93,7 @@ export function useBattleEffects(battleState) {
   useEffect(() => {
     if (!opPokeState.text.content) return;
     const run = async () => {
-      await toDoWhenSetText(opPokeState);
+      await toDoWhenSetText(false);
     };
     run();
   }, [opPokeState.text]);
@@ -90,7 +102,7 @@ export function useBattleEffects(battleState) {
   useEffect(() => {
     if (myPokeStateTrigger.text == 0) return;
     const run = async () => {
-      await toDoWhenSetText(myPokeState);
+      await toDoWhenSetText(true);
     };
     run();
   }, [myPokeStateTrigger.text]);
@@ -98,7 +110,7 @@ export function useBattleEffects(battleState) {
   useEffect(() => {
     if (opPokeStateTrigger.text == 0) return;
     const run = async () => {
-      await toDoWhenSetText(opPokeState);
+      await toDoWhenSetText(false);
     };
     run();
   }, [opPokeStateTrigger.text]);
@@ -106,12 +118,12 @@ export function useBattleEffects(battleState) {
   //テラスタル======================================
   useEffect(() => {
     if (!myPokeState.terastalPokeNum) return;
-    toDoWhenSetTerastalPokeNum(myPokeState);
+    toDoWhenSetTerastalPokeNum(true);
   }, [myPokeState.terastalPokeNum]);
 
   useEffect(() => {
     if (!opPokeState.terastalPokeNum) return;
-    toDoWhenSetTerastalPokeNum(opPokeState);
+    toDoWhenSetTerastalPokeNum(false);
   }, [opPokeState.terastalPokeNum]);
 
   //===========================================

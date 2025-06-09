@@ -13,12 +13,12 @@ const BattleArea = ({
         {/* 相手のポケモンエリア */}
         <div className="op-poke-area-wrap">
           <PokeArea
-            who={"op"}
+            isMe={false}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
           <StatusBox
-            who={"op"}
+            isMe={false}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
@@ -27,12 +27,12 @@ const BattleArea = ({
         {/* 自分のポケモンエリア */}
         <div className="my-poke-area-wrap">
           <PokeArea
-            who={"my"}
+            isMe={true}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
           <StatusBox
-            who={"my"}
+            isMe={true}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
