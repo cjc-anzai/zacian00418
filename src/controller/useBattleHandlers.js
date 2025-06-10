@@ -36,6 +36,7 @@ export function useBattleHandlers(battleState) {
     opTerastalFlag,
     mySelectedWeapon, opSelectedWeapon,
     myChangePokeName, opChangePokeName,
+    isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     resultText, turnCnt,
     loopAudioRef,
@@ -162,7 +163,7 @@ export function useBattleHandlers(battleState) {
     const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
     const deadText = getDeadText(isMe, pokeState.name);
 
-    if(otherText.content) await stopProcessing(2000);
+    if (otherText.content) await stopProcessing(2000);
     setPokeState(prev => ({ ...prev, text: { kind: "dead", content: deadText } }));
   }
 
@@ -274,7 +275,7 @@ export function useBattleHandlers(battleState) {
       setOtherText({ kind: "", content: "" });
     }
     if (isHit)
-      doSecondaryEffect(atcIsMe, effTarget, effectiveness);   //追加効果があるなら発動(変化技も)
+      doSecondaryEffect(atcIsMe, isAttackWeapon, effTarget, effectiveness, damage);   //追加効果があるなら発動(変化技も)
   }
 
   //倒れたポケモンに死亡エフェクトを入れる
@@ -779,10 +780,10 @@ export function useBattleHandlers(battleState) {
   }
 
   //HPバーの幅や色の制御をして現在HPを返す
-  const adjustHpBar = (isMe, currentHp) => {
+  const adjustHpBar = (isMe, newHp) => {
     const pokeState = getPokeState(isMe, true);
     const MaxHp = getMaxHp(pokeState, pokeState.name);
-    adjustHpBarLogic(isMe, currentHp, MaxHp);
+    adjustHpBarLogic(isMe, newHp, MaxHp);
   }
 
   //stateのHpと新しくセットするHpが同じか確認する
@@ -966,7 +967,7 @@ export function useBattleHandlers(battleState) {
   }
 
   //追加効果を読み解いて発動する
-  const doSecondaryEffect = (atcIsMe, effTarget, effectiveness) => {
+  const doSecondaryEffect = (atcIsMe, isAttackWeapon, effTarget, effectiveness, damage) => {
     if (effectiveness) {
       const myEffectiveness = atcIsMe && effTarget === "自分" || !atcIsMe && effTarget === "相手";
       const [pokeState, setPokeState] = [getPokeState(myEffectiveness, true), getSetPokeState(myEffectiveness, true)];
@@ -1009,6 +1010,25 @@ export function useBattleHandlers(battleState) {
           soundList.general.statusUp.play();
         if (buffText.includes("下がった"))
           soundList.general.statusDown.play();
+      }
+      else if (effectiveness.includes("heal")) {
+        effectiveness = effectiveness.slice(5);
+        //↑　h0.5 または　d0.5が入っている
+        // アルファベットと数値に分ける
+        const target = effectiveness.slice(0, 1);
+        const ratio = effectiveness.slice(1);
+        //hとdの場合の数値を取得
+        const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+        const atcPokeNum = getPokeNum(atcState, atcState.name);
+        const maxHp = atcState[`poke${atcPokeNum}MaxHp`];
+        const [atcCurrentHp, defCurrentHp] = [getPokeNumHp(atcState, atcState.name), getPokeNumHp(defState, defState.name)];
+        const base = target === "h" ? maxHp
+          : defCurrentHp < damage ? defCurrentHp : damage;
+        //回復量を計算
+        isHealAtc.current = isAttackWeapon ? true : false;
+        isHeal.current = true;
+        healHp.current = Math.floor(base * ratio);
+        healHp.current = atcCurrentHp + healHp.current < maxHp ? healHp.current : maxHp - atcCurrentHp;
       }
     }
   }
@@ -1055,6 +1075,21 @@ export function useBattleHandlers(battleState) {
     return { atcBuff, defBuff };
   }
 
+  const setHpOnHeal = (isMe) => {
+    const [pokeState, setPokeState, setPokeStateTrigger] = [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
+    const maxHp = pokeState[`poke${pokeNum}MaxHp`];
+    const currentHp = getPokeNumHp(pokeState, pokeState.name);
+    const newHp = currentHp + healHp.current;
+
+    adjustHpBar(isMe, newHp);
+    isHealAtc.current = false;
+    pokeState.hp !== newHp
+      ? setPokeState(prev => ({ ...prev, hp: Math.min(newHp, maxHp) }))
+      : setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
+    console.log(`${pokeState.name}は${healHp.current}回復した`)
+  }
+
 
   return {
     //toDoWhenFnc.jsで使用
@@ -1083,6 +1118,8 @@ export function useBattleHandlers(battleState) {
     checkIsAttackWeapon,
     getEffectiveness,
 
+    setHpOnHeal,
+
     //jsxや他jsで使用
     getPokeInfo,
     getWeaponInfo,
@@ -1103,6 +1140,8 @@ export function useBattleHandlers(battleState) {
 
     getPokeState,
     getAreaVisible,
-    consoleWhenTurnEnd
+    consoleWhenTurnEnd,
+
+    stopProcessing
   };
 }

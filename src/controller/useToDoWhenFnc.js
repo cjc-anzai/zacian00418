@@ -11,6 +11,7 @@ export function useToDoWhenFnc(battleState) {
     isTerastalActive, setIsTerastalActive,
     otherText, setOtherText,
     myLife, opLife, opTerastalFlag,
+    isHeal, isHealAtc, healHp,
     myChangePokeName, opChangePokeName,
     iAmFirst, myChangeTurn, opChangeTurn,
   } = battleState;
@@ -41,6 +42,10 @@ export function useToDoWhenFnc(battleState) {
     setWinner,
     getEffectiveness,
     consoleWhenTurnEnd,
+    setHpOnHeal,
+    getPokeState,
+
+    stopProcessing
   } = useBattleHandlers(battleState);
 
 
@@ -70,18 +75,45 @@ export function useToDoWhenFnc(battleState) {
       return;
     }
 
+
     //生存の場合、ターン終了か、後攻の技テキストをセット
     if (pokeState.hp > 0) {
-      if ((isMe && iAmFirst.current) || (!isMe && !iAmFirst.current)) {
+      if (isHeal.current) {
+        if (isHealAtc.current)
+          setHpOnHeal(!isMe)
+        else {
+          const pokeState = getPokeState(isMe, true);
+          const healText = healHp.current > 0
+            ? `${pokeState.name}の体力が回復した`
+            : `${pokeState.name}の体力は満タンだ`
+          setOtherText({ kind: "heal", content: healText });
+        }
+      }
+      else if ((isMe && iAmFirst.current) || (!isMe && !iAmFirst.current)) {
         setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
         consoleWhenTurnEnd();
       }
-      else if(!otherText.content)
+      else if (!otherText.content)
         setWeaponText(isMe);
     }
     //死亡の場合、死亡テキストをセット
-    else
+    else {
+      if (isHeal.current) {
+        if (isHealAtc.current)
+          setHpOnHeal(!isMe)
+        else {
+          const pokeState = getPokeState(isMe, true);
+          const healText = healHp.current > 0
+            ? `${pokeState.name}の体力が回復した`
+            : `${pokeState.name}の体力は満タンだ`;
+          setOtherText({ kind: "heal", content: healText });
+        }
+      }
+      await stopProcessing(1000);
+      if (isHeal.current)
+        await stopProcessing(1000);
       await setDeadText(isMe);
+    }
   };
 
 
@@ -140,6 +172,8 @@ export function useToDoWhenFnc(battleState) {
       else {
         const { isHit, atcTarget, effTarget, effectiveness } = await getEffectiveness(isMe);
         await playAttackingFlow(isMe, isHit, false, 0, isAttackWeapon, atcTarget, effTarget, effectiveness);
+        if (isHeal.current)
+          setHpOnHeal(isMe);
       }
     }
     //compatiTextがセットされたら、攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
@@ -192,18 +226,34 @@ export function useToDoWhenFnc(battleState) {
 
   //バフテキストセット後の処理
   const toDoWhenSetOtherText = () => {
-    if (otherText.kind === "buff") {
+    if (otherText.kind === "buff" || otherText.kind === "heal") {
       setTimeout(() => {
         setOtherText({ kind: "", content: "" });
-
-        //先攻で自分の技効果の場合と、後攻で相手の技効果の場合は後攻の技テキストセット
-        if (iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0)
-          setWeaponText(!iAmFirst.current);
-        //先攻で相手の技効果の場合と、後攻で自分の技効果の場合はターン終了
-        else if (iAmFirst.current && opPokeState.text.kind === "weapon" || !iAmFirst.current && myPokeState.text.kind === "weapon") {
-          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-          consoleWhenTurnEnd();
+        if (otherText.kind === "buff") {
+          //先攻で自分の技効果の場合と、後攻で相手の技効果の場合は後攻の技テキストセット
+          if ((iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0))
+            setWeaponText(!iAmFirst.current);
+          //先攻で相手の技効果の場合と、後攻で自分の技効果の場合はターン終了
+          else if (iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0) {
+            setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+            consoleWhenTurnEnd();
+          }
         }
+        else if (otherText.kind === "heal") {
+          //先攻で自分の技効果の場合と、後攻で相手の技効果の場合は後攻の技テキストセット
+          if ((iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0 && isHeal.current || !iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 && !isHeal.current))
+            setWeaponText(!iAmFirst.current);
+          //先攻で相手の技効果の場合と、後攻で自分の技効果の場合はターン終了
+          else if (iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0) {
+            setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+            consoleWhenTurnEnd();
+          }
+          isHealAtc.current = false;
+          isHeal.current = false;
+          healHp.current = 0;
+        }
+
+
       }, 2000);
     }
   }

@@ -43,6 +43,9 @@ export function useBattleState() {
   const [myChangePokeName, opChangePokeName] = [useRef(null), useRef(null)];    //交代するポケモン
   const opTerastalFlag = useRef(false);
   const iAmFirst = useRef(false);
+  const isHeal = useRef(false);
+  const isHealAtc = useRef(false);
+  const healHp = useRef(0);
   const resultText = useRef("");        //勝敗
   const turnCnt = useRef(1);            
   const loopAudioRef = useRef(null);    //再生中のBGM
@@ -62,6 +65,7 @@ export function useBattleState() {
     opTerastalFlag,
     myLife, opLife,
     mySelectedWeapon, opSelectedWeapon,
+    isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     myChangePokeName, opChangePokeName,
     resultText, turnCnt,
