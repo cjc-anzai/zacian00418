@@ -588,11 +588,11 @@ export const damageEffectLogic = (isMe) => {
   elem.classList.add("pokemon-damage-effect");
   delay(() => elem.classList.remove("pokemon-damage-effect"), 1000);
 }
-
+ 
 //ダメージ計算　ダメージ数/命中判定/急所判定　を返す
 export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
   let trueDamage = 0;
-  const isHit = Math.random() * 100 < weaponInfo.hitrate;    //命中判定
+  const isHit = weaponInfo.hitrate ? Math.random() * 100 < weaponInfo.hitrate : true;    //命中判定
   let isCriticalHit = false;   //急所フラグ
 
   //命中時のみダメージ計算する

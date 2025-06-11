@@ -45,7 +45,8 @@ export function useToDoWhenFnc(battleState) {
     setHpOnHeal,
     getPokeState,
 
-    stopProcessing
+    stopProcessing,
+    setHealText,
   } = useBattleHandlers(battleState);
 
 
@@ -75,19 +76,13 @@ export function useToDoWhenFnc(battleState) {
       return;
     }
 
-
     //生存の場合、ターン終了か、後攻の技テキストをセット
     if (pokeState.hp > 0) {
       if (isHeal.current) {
         if (isHealAtc.current)
           setHpOnHeal(!isMe)
-        else {
-          const pokeState = getPokeState(isMe, true);
-          const healText = healHp.current > 0
-            ? `${pokeState.name}の体力が回復した`
-            : `${pokeState.name}の体力は満タンだ`
-          setOtherText({ kind: "heal", content: healText });
-        }
+        else
+          setHealText(isMe);
       }
       else if ((isMe && iAmFirst.current) || (!isMe && !iAmFirst.current)) {
         setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
@@ -101,13 +96,8 @@ export function useToDoWhenFnc(battleState) {
       if (isHeal.current) {
         if (isHealAtc.current)
           setHpOnHeal(!isMe)
-        else {
-          const pokeState = getPokeState(isMe, true);
-          const healText = healHp.current > 0
-            ? `${pokeState.name}の体力が回復した`
-            : `${pokeState.name}の体力は満タンだ`;
-          setOtherText({ kind: "heal", content: healText });
-        }
+        else
+          setHealText(isMe);
       }
       await stopProcessing(1000);
       if (isHeal.current)
@@ -252,8 +242,6 @@ export function useToDoWhenFnc(battleState) {
           isHeal.current = false;
           healHp.current = 0;
         }
-
-
       }, 2000);
     }
   }

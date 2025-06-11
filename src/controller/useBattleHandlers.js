@@ -1013,14 +1013,11 @@ export function useBattleHandlers(battleState) {
       }
       else if (effectiveness.includes("heal")) {
         effectiveness = effectiveness.slice(5);
-        //↑　h0.5 または　d0.5が入っている
-        // アルファベットと数値に分ける
-        const target = effectiveness.slice(0, 1);
+        const target = effectiveness.slice(0, 1);   //h or d
         const ratio = effectiveness.slice(1);
         //hとdの場合の数値を取得
         const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
-        const atcPokeNum = getPokeNum(atcState, atcState.name);
-        const maxHp = atcState[`poke${atcPokeNum}MaxHp`];
+        const maxHp = getPokeNumMaxHp(atcState, atcState.name);
         const [atcCurrentHp, defCurrentHp] = [getPokeNumHp(atcState, atcState.name), getPokeNumHp(defState, defState.name)];
         const base = target === "h" ? maxHp
           : defCurrentHp < damage ? defCurrentHp : damage;
@@ -1075,19 +1072,35 @@ export function useBattleHandlers(battleState) {
     return { atcBuff, defBuff };
   }
 
+  //回復後のHPをセットする
   const setHpOnHeal = (isMe) => {
-    const [pokeState, setPokeState, setPokeStateTrigger] = [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
-    const pokeNum = getPokeNum(pokeState, pokeState.name);
-    const maxHp = pokeState[`poke${pokeNum}MaxHp`];
+    const [pokeState, setPokeState, setPokeStateTrigger]
+      = [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
     const currentHp = getPokeNumHp(pokeState, pokeState.name);
     const newHp = currentHp + healHp.current;
 
     adjustHpBar(isMe, newHp);
     isHealAtc.current = false;
     pokeState.hp !== newHp
-      ? setPokeState(prev => ({ ...prev, hp: Math.min(newHp, maxHp) }))
+      ? setPokeState(prev => ({ ...prev, hp: newHp }))
       : setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
     console.log(`${pokeState.name}は${healHp.current}回復した`)
+  }
+
+  //指定したポケモンの最大HPを取得する
+  const getPokeNumMaxHp = (pokeState, pokeName) => {
+    const pokeNum = getPokeNum(pokeState, pokeName);
+    const maxHp = pokeState[`poke${pokeNum}MaxHp`];
+    return maxHp;
+  }
+
+  //回復テキストをセットする
+  const setHealText = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const healText = healHp.current > 0
+      ? `${pokeState.name}の体力が回復した`
+      : `${pokeState.name}の体力は満タンだ`
+    setOtherText({ kind: "heal", content: healText });
   }
 
 
@@ -1119,6 +1132,7 @@ export function useBattleHandlers(battleState) {
     getEffectiveness,
 
     setHpOnHeal,
+    setHealText,
 
     //jsxや他jsで使用
     getPokeInfo,
