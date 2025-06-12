@@ -144,8 +144,8 @@ export function useBattleHandlers(battleState) {
     //麻痺チェック
     const pokeNum = getPokeNum(pokeState, pokeState.name);
     if (pokeState[`poke${pokeNum}Condition`] === "まひ") {
-      // const canMove = Math.random() >= 0.25
-      canMove = Math.random() >= 1   //テスト用
+      const canMove = Math.random() >= 0.25
+      // canMove = Math.random() >= 1   //テスト用
       cantMoveText = canMove ? "" : `${pokeState.name}はしびれて動けない`;
     }
 
