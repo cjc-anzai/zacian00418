@@ -1,4 +1,4 @@
-import { typeColors, getPokeIndicatorsColor } from "../../../model/model";
+import { typeColors, conditionColors, getPokeIndicatorsColor } from "../../../model/model";
 
 const StatusBox = ({
     isMe,
@@ -7,12 +7,13 @@ const StatusBox = ({
 }) => {
 
     //インポートする変数や関数の取得
-    const { opPokeState, myPokeState, opAreaVisible, myAreaVisible, } = battleState;
-    const { getMaxHp, getPokeState, getAreaVisible } = battleHandlers;
+    const { myPokeState,} = battleState;
+    const { getMaxHp, getPokeState, getAreaVisible, getPokeNum } = battleHandlers;
 
     const [pokeState, areaVisible] = [getPokeState(isMe, true), getAreaVisible(isMe, true)];
     const MaxHp = getMaxHp(pokeState, pokeState.name);
     const who = isMe ? "my" : "op";
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
 
     return (
         <div className="status-box" style={{ display: areaVisible.poke ? "block" : "none" }}>
@@ -20,18 +21,12 @@ const StatusBox = ({
                 <h1 className={`${who}-poke`}>
                     <span>{pokeState.name}</span>
                     <span className="type-wrapper">
-                        <span
-                            className="type-box"
-                            style={{ backgroundColor: typeColors[pokeState.type1], borderColor: typeColors[pokeState.type1] }}
-                        >
-                            {pokeState.type1}
-                        </span>
-                        {pokeState.type2 !== "なし" && (
+                        {pokeState[`poke${pokeNum}Condition`] !== "" && (
                             <span
-                                className="type-box"
-                                style={{ backgroundColor: typeColors[pokeState.type2], borderColor: typeColors[pokeState.type2] }}
+                                className="condition"
+                                style={{ backgroundColor: conditionColors[pokeState[`poke${pokeNum}Condition`]], borderColor: conditionColors[pokeState[`poke${pokeNum}Condition`]] }}
                             >
-                                {pokeState.type2}
+                                {pokeState[`poke${pokeNum}Condition`]}
                             </span>
                         )}
                     </span>

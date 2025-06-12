@@ -21,6 +21,7 @@ export function useBattleState() {
     poke1Name: "", poke2Name: "", poke3Name: "",
     poke1MaxHp: 0, poke2MaxHp: 0, poke3MaxHp: 0,
     poke1Hp: 0, poke2Hp: 0, poke3Hp: 0,
+    poke1Condition: "", poke2Condition: "", poke3Condition: "",
     canTerastal: true, terastalPokeNum: null,
     text: { kind: "", content: "" }
   };

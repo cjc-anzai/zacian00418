@@ -271,6 +271,18 @@
 }
 
 .type-box {
+  padding: 1px 3px;
+  border: 1px solid;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  min-width: 36px;
+  text-align: center;
+  font-size: 0.6em;
+  /* 名前の70%の大きさに設定 */
+}
+
+.condition {
   padding: 2px 6px;
   border: 2px solid;
   border-radius: 8px;
@@ -281,6 +293,8 @@
   font-size: 0.6em;
   /* 名前の70%の大きさに設定 */
 }
+
+
 
 .poke-indicators {
   display: flex;
@@ -417,7 +431,7 @@
 
 .status-area-wrapper button {
   height: 40px;
-  margin : auto 0 5px 10px;
+  margin: auto 0 5px 10px;
 }
 
 .status-area::before {

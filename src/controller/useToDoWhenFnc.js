@@ -216,7 +216,7 @@ export function useToDoWhenFnc(battleState) {
 
   //バフテキストセット後の処理
   const toDoWhenSetOtherText = () => {
-    if (otherText.kind === "buff" || otherText.kind === "heal") {
+    if (otherText.kind === "buff" || otherText.kind === "heal" || otherText.kind === "condition" || otherText.kind === "cantMove") {
       setTimeout(() => {
         setOtherText({ kind: "", content: "" });
         if (otherText.kind === "buff") {
@@ -241,6 +241,29 @@ export function useToDoWhenFnc(battleState) {
           isHealAtc.current = false;
           isHeal.current = false;
           healHp.current = 0;
+        }
+        else if (otherText.kind === "condition") {
+          //先攻で自分の技効果の場合と、後攻で相手の技効果の場合は後攻の技テキストセット
+          if ((iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0))
+            setWeaponText(!iAmFirst.current);
+          //先攻で相手の技効果の場合と、後攻で自分の技効果の場合はターン終了
+          else if (iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0) {
+            setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+            consoleWhenTurnEnd();
+          }
+        }
+        else if (otherText.kind === "cantMove") {
+          //動けないのはどちらか取得
+          const cantMoveIsMe = otherText.content.includes(myPokeState.name);
+
+          //先攻で自分の技効果の場合と、後攻で相手の技効果の場合は後攻の技テキストセット
+          if ((iAmFirst.current && cantMoveIsMe || !iAmFirst.current && !cantMoveIsMe))
+            setWeaponText(!iAmFirst.current);
+          //先攻で相手の技効果の場合と、後攻で自分の技効果の場合はターン終了
+          else if (iAmFirst.current && !cantMoveIsMe || !iAmFirst.current && cantMoveIsMe) {
+            setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+            consoleWhenTurnEnd();
+          }
         }
       }, 2000);
     }

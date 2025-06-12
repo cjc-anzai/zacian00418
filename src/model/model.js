@@ -174,6 +174,15 @@ export const typeColors = {
   フェアリー: "#D685AD",
 };
 
+export const conditionColors = {
+  まひ: "#FFD700",
+  やけど: "#FF4500",
+  どく: "#6A0DAD",
+  もうどく: "#F7D02C",
+  ねむり: "#6699CC",
+  こおり: "#99CCFF",
+};
+
 //値を返すのみでreactの状態に関与しない関数==================================================================
 
 //相手のポケモン全ての受け/攻め相性と素早さを計算して返す。
@@ -588,7 +597,7 @@ export const damageEffectLogic = (isMe) => {
   elem.classList.add("pokemon-damage-effect");
   delay(() => elem.classList.remove("pokemon-damage-effect"), 1000);
 }
- 
+
 //ダメージ計算　ダメージ数/命中判定/急所判定　を返す
 export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
   let trueDamage = 0;

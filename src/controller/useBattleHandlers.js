@@ -138,12 +138,27 @@ export function useBattleHandlers(battleState) {
     const [pokeState, setPokeState, setPokeStateTrigger] =
       [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
 
-    const weaponName = getWeaponName(isMe);
-    const weaponText = getWeaponText(isMe, pokeState.name, weaponName);
+    let canMove = true;
+    let cantMoveText = "";
 
-    pokeState.text.content !== weaponText
-      ? setPokeState(prev => ({ ...prev, text: { kind: "weapon", content: weaponText } }))
-      : setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
+    //麻痺チェック
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
+    if (pokeState[`poke${pokeNum}Condition`] === "まひ") {
+      // const canMove = Math.random() >= 0.25
+      canMove = Math.random() >= 1   //テスト用
+      cantMoveText = canMove ? "" : `${pokeState.name}はしびれて動けない`;
+    }
+
+    if (canMove) {
+      const weaponName = getWeaponName(isMe);
+      const weaponText = getWeaponText(isMe, pokeState.name, weaponName);
+
+      pokeState.text.content !== weaponText
+        ? setPokeState(prev => ({ ...prev, text: { kind: "weapon", content: weaponText } }))
+        : setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
+    }
+    else
+      setOtherText({ kind: "cantMove", content: cantMoveText });
   }
 
   //相性テキストをセットする
@@ -644,7 +659,7 @@ export function useBattleHandlers(battleState) {
 
           //テラス前後の確定耐え数を取得
           const { cnt2: cnt4 } = await calcDefinitelyEndureHits();
-          const cantWin = myPokeState.s > opPokeState.s && (cnt4 === 0 || cnt2 !== 1 && cnt4 <= 2);
+          const cantWin = calcActualStatus(true, "s") > calcActualStatus(false, "s") && (cnt4 === 0 || cnt2 !== 1 && cnt4 <= 2);
 
           //テラスしても、自分の控えから抜群を取られない場合で、自分の攻撃の前に倒される場合以外、テラスタルフラグを立てる
           if (Math.max(compati21Teras, compati22Teras) <= 1 && (compati31Teras ? (Math.max(compati31Teras, compati32Teras) <= 1) : true) && !cantWin) {
@@ -859,7 +874,7 @@ export function useBattleHandlers(battleState) {
     let nextOpPoke = "";
     if (opLife.current === 2) {
       const terastalType = checkIsTerastal(true) ? myPokeState.terastal : null;
-      const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, terastalType, s: myPokeState.s };
+      const myPokeInfo = { name: myPokeState.name, type1: myPokeState.type1, type2: myPokeState.type2, terastalType, s: calcActualStatus(true, "s") };
       const aliveOpBenchPokes = await getAliveBenchPokes(false);
       //相手の控えポケモンが、自分のポケモンから上からワンパンされないか
       // const [opPoke1Hp, opPoke2Hp] = [getPokeNumHp(opPokeState, aliveOpBenchPokes[0].name), getPokeNumHp(opPokeState, aliveOpBenchPokes[1].name)];
@@ -971,6 +986,7 @@ export function useBattleHandlers(battleState) {
     if (effectiveness) {
       const myEffectiveness = atcIsMe && effTarget === "自分" || !atcIsMe && effTarget === "相手";
       const [pokeState, setPokeState] = [getPokeState(myEffectiveness, true), getSetPokeState(myEffectiveness, true)];
+      const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
 
       if (effectiveness.includes("buff")) {
         const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
@@ -1016,7 +1032,6 @@ export function useBattleHandlers(battleState) {
         const target = effectiveness.slice(0, 1);   //h or d
         const ratio = effectiveness.slice(1);
         //hとdの場合の数値を取得
-        const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
         const maxHp = getPokeNumMaxHp(atcState, atcState.name);
         const [atcCurrentHp, defCurrentHp] = [getPokeNumHp(atcState, atcState.name), getPokeNumHp(defState, defState.name)];
         const base = target === "h" ? maxHp
@@ -1027,6 +1042,27 @@ export function useBattleHandlers(battleState) {
         healHp.current = Math.floor(base * ratio);
         healHp.current = atcCurrentHp + healHp.current < maxHp ? healHp.current : maxHp - atcCurrentHp;
       }
+      else if (effectiveness.includes("condition")) {
+        const condition = effectiveness.slice(10);  //まひ
+        const pokeNum = getPokeNum(pokeState, pokeState.name);
+
+        //電気タイプは麻痺しない
+        if (defState.type1 === "でんき" || defState.type2 === "でんき")
+          return;
+        //無効タイプなら麻痺しない。
+        if(defState.text.content === compatiTexts.mukou){
+          return;
+        }
+        //既に状態異常になっているなら麻痺しない
+        if (pokeState[`poke${pokeNum}Condition`] !== "")
+          return;
+
+        //stateに状態異常をセット
+        setPokeState(prev => ({ ...prev, [`poke${pokeNum}Condition`]: condition }));
+        //まひテキストをセット
+        const conditionText = `${pokeState.name}はまひして技が出にくくなった`
+        setOtherText({ kind: "condition", content: conditionText });
+      }
     }
   }
 
@@ -1036,7 +1072,11 @@ export function useBattleHandlers(battleState) {
     const beforeStatus = pokeState[status];
     const buff = pokeState[`${status}Buff`];
     const buffMultiplier = buff > 0 ? buff * 0.5 + 1 : 2 / (2 - buff);
-    const actualStatus = beforeStatus * buffMultiplier;
+    let actualStatus = beforeStatus * buffMultiplier;
+
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
+    if (status === "s" && pokeState[`poke${pokeNum}Condition`] === "まひ")
+      actualStatus = Math.floor(actualStatus * 0.5);
     return actualStatus;
   }
 

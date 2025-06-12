@@ -265,7 +265,23 @@ const CommandArea = ({
         <div className="status-area-wrapper" style={{ display: "flex" }}>
           <div className="status-area">
             <div className="poke-status">
-              <p>{opPokeState.name}</p>
+              <span className="type-wrapper">
+                <p>{opPokeState.name}</p>
+                <span
+                  className="type-box"
+                  style={{ backgroundColor: typeColors[opPokeState.type1], borderColor: typeColors[opPokeState.type1] }}
+                >
+                  {opPokeState.type1}
+                </span>
+                {opPokeState.type2 !== "なし" && (
+                  <span
+                    className="type-box"
+                    style={{ backgroundColor: typeColors[opPokeState.type2], borderColor: typeColors[opPokeState.type2] }}
+                  >
+                    {opPokeState.type2}
+                  </span>
+                )}
+              </span>
               <StatusRow label="攻撃" value={opPokeState.aBuff} />
               <StatusRow label="防御" value={opPokeState.bBuff} />
               <StatusRow label="特攻" value={opPokeState.cBuff} />
@@ -273,7 +289,23 @@ const CommandArea = ({
               <StatusRow label="素早さ" value={opPokeState.sBuff} />
             </div>
             <div className="poke-status">
-              <p>{myPokeState.name}</p>
+              <span className="type-wrapper">
+                <p>{myPokeState.name}</p>
+                <span
+                  className="type-box"
+                  style={{ backgroundColor: typeColors[myPokeState.type1], borderColor: typeColors[myPokeState.type1] }}
+                >
+                  {myPokeState.type1}
+                </span>
+                {myPokeState.type2 !== "なし" && (
+                  <span
+                    className="type-box"
+                    style={{ backgroundColor: typeColors[myPokeState.type2], borderColor: typeColors[myPokeState.type2] }}
+                  >
+                    {myPokeState.type2}
+                  </span>
+                )}
+              </span>
               <StatusRow label="攻撃" value={myPokeState.aBuff} />
               <StatusRow label="防御" value={myPokeState.bBuff} />
               <StatusRow label="特攻" value={myPokeState.cBuff} />
