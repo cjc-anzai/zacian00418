@@ -8,7 +8,7 @@ export function useBattleState() {
   const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });
   const [otherAreaVisible, setOtherAreaVisible] = useState({
     top: true, select: false, battle: false,
-    actionCmd: false, weaponCmd: false, changeCmd: false, nextPokeCmd: false
+    actionCmd: false, status: false, weaponCmd: false, changeCmd: false, nextPokeCmd: false
   });
 
   //お互いのポケモンたちのState

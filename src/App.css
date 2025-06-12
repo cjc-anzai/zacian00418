@@ -404,6 +404,87 @@
   gap: 20px;
 }
 
+.status-area {
+  display: flex;
+  justify-content: space-between;
+  background-color: #e0e0e0;
+  border-radius: 8px;
+  border: 2px solid #444;
+  /* padding: 10px 20px; */
+  position: relative;
+  width: fit-content;
+}
+
+.status-area-wrapper button {
+  height: 40px;
+  margin : auto 0 5px 10px;
+}
+
+.status-area::before {
+  content: "";
+  position: absolute;
+  top: 5%;
+  bottom: 5%;
+  left: 50%;
+  width: 2px;
+  background-color: #444;
+}
+
+.poke-status {
+  padding: 10px 10px;
+}
+
+.poke-status p {
+  margin: 0;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+}
+
+.label {
+  width: 45px;
+  text-align: right;
+}
+
+.buff-row {
+  display: flex;
+  gap: 6px;
+}
+
+.shape {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+}
+
+/* ▲ 上向き三角形 */
+.shape.up {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid red;
+}
+
+/* ▼ 下向き三角形 */
+.shape.down {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid blue;
+}
+
+/* ・点（丸） */
+.shape.neutral {
+  width: 10px;
+  height: 10px;
+  background-color: gray;
+  border-radius: 50%;
+}
+
 .weapon-cmd-area {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

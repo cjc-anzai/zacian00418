@@ -52,11 +52,17 @@ const CommandArea = ({
     setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, changeCmd: true }));
   };
 
+  //ステータスボタン押下時、コマンド表示を切り替える
+  const openStatusArea = () => {
+    soundList.general.decide.cloneNode().play();
+    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, status: true }));
+  };
+
   // 戻るボタン押下時、コマンド表示を切り替える
   const backCmd = () => {
     soundList.general.cancel.cloneNode().play();
     setIsTerastalActive(false);
-    setOtherAreaVisible(prev => ({ ...prev, actionCmd: true, weaponCmd: false, changeCmd: false }));
+    setOtherAreaVisible(prev => ({ ...prev, actionCmd: true, weaponCmd: false, changeCmd: false, status: false }));
   };
 
   //技ボタンマウスオーバー時に技情報をセットする
@@ -119,6 +125,39 @@ const CommandArea = ({
     delay(() => setMyPokeState(p => ({ ...p, name: nextMyPoke })), 1000);
   }
 
+  //ステータス状況をUIに反映させる
+  const renderBuffShapes = (value) => {
+    const max = 6;
+    const up = Math.max(0, value);
+    const down = Math.max(0, -value);
+    const neutral = max - up - down;
+
+    const shapes = [];
+
+    for (let i = 0; i < up; i++) {
+      shapes.push(<span className="shape up" key={`up-${i}`}></span>);
+    }
+    for (let i = 0; i < down; i++) {
+      shapes.push(<span className="shape down" key={`down-${i}`}></span>);
+    }
+    for (let i = 0; i < neutral; i++) {
+      shapes.push(<span className="shape neutral" key={`neutral-${i}`}></span>);
+    }
+
+    return shapes;
+  };
+
+  const StatusRow = ({ label, value }) => (
+    <div className="status-row">
+      <span className="label">{label}</span>
+      <span className="colon">：</span>
+      <div className="buff-row">
+        {renderBuffShapes(value)}
+      </div>
+    </div>
+  );
+
+
   return (
     <div className="cmd-text-area">
       {(opAreaVisible.text || myAreaVisible.text || otherText.content) && (
@@ -129,12 +168,13 @@ const CommandArea = ({
         </div>
       )}
 
-      {otherAreaVisible.actionCmd && !otherText.content &&(
+      {otherAreaVisible.actionCmd && !otherText.content && (
         <div className="cmd-area">
           <button className="weapon-cmd-btn" onClick={openBattleCmdArea}>たたかう</button>
           {(myPokeState.poke1Hp !== 0 || myPokeState.poke2Hp !== 0 || myPokeState.poke3Hp !== 0) && (
             <button className="change-cmd-btn" onClick={openChangeCmdArea}>交代</button>
           )}
+          <button className="weapon-cmd-btn" onClick={openStatusArea}>ステータス</button>
         </div>
       )}
 
@@ -198,53 +238,73 @@ const CommandArea = ({
             </div>
           )}
         </div>
-      )
-      }
+      )}
 
-      {
-        otherAreaVisible.changeCmd && (
-          <div className="cmd-area">
-            {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
-              <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke1Name)}>
-                {myPokeState.poke1Name}
-              </button>
-            )}
-            {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
-              <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke2Name)}>
-                {myPokeState.poke2Name}
-              </button>
-            )}
-            {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
-              <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke3Name)}>
-                {myPokeState.poke3Name}
-              </button>
-            )}
-            <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
-          </div>
-        )
-      }
+      {otherAreaVisible.changeCmd && (
+        <div className="cmd-area">
+          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
+            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke1Name)}>
+              {myPokeState.poke1Name}
+            </button>
+          )}
+          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
+            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke2Name)}>
+              {myPokeState.poke2Name}
+            </button>
+          )}
+          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
+            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke3Name)}>
+              {myPokeState.poke3Name}
+            </button>
+          )}
+          <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
+        </div>
+      )}
 
-      {
-        otherAreaVisible.nextPokeCmd && (
-          <div className="cmd-area">
-            {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
-              <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke1Name)}>
-                {myPokeState.poke1Name}
-              </button>
-            )}
-            {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
-              <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke2Name)}>
-                {myPokeState.poke2Name}
-              </button>
-            )}
-            {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
-              <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke3Name)}>
-                {myPokeState.poke3Name}
-              </button>
-            )}
+      {otherAreaVisible.status && (
+        <div className="status-area-wrapper" style={{ display: "flex" }}>
+          <div className="status-area">
+            <div className="poke-status">
+              <p>{opPokeState.name}</p>
+              <StatusRow label="攻撃" value={opPokeState.aBuff} />
+              <StatusRow label="防御" value={opPokeState.bBuff} />
+              <StatusRow label="特攻" value={opPokeState.cBuff} />
+              <StatusRow label="特防" value={opPokeState.dBuff} />
+              <StatusRow label="素早さ" value={opPokeState.sBuff} />
+            </div>
+            <div className="poke-status">
+              <p>{myPokeState.name}</p>
+              <StatusRow label="攻撃" value={myPokeState.aBuff} />
+              <StatusRow label="防御" value={myPokeState.bBuff} />
+              <StatusRow label="特攻" value={myPokeState.cBuff} />
+              <StatusRow label="特防" value={myPokeState.dBuff} />
+              <StatusRow label="素早さ" value={myPokeState.sBuff} />
+            </div>
           </div>
-        )
-      }
+          <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
+        </div>
+
+      )}
+
+      {otherAreaVisible.nextPokeCmd && (
+        <div className="cmd-area">
+          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
+            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke1Name)}>
+              {myPokeState.poke1Name}
+            </button>
+          )}
+          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
+            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke2Name)}>
+              {myPokeState.poke2Name}
+            </button>
+          )}
+          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
+            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke3Name)}>
+              {myPokeState.poke3Name}
+            </button>
+          )}
+        </div>
+      )}
     </div >
   );
 };
