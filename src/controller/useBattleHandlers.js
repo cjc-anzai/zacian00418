@@ -144,32 +144,35 @@ export function useBattleHandlers(battleState) {
     //麻痺チェック
     const pokeNum = getPokeNum(pokeState, pokeState.name);
     if (pokeState[`poke${pokeNum}Condition`] === "まひ") {
-      const canMove = Math.random() >= 0.25
-      // canMove = Math.random() >= 1   //テスト用
+      canMove = Math.random() >= 0.25;
+      // canMove = Math.random() >= 1;   //テスト用
       cantMoveText = canMove ? "" : `${pokeState.name}はしびれて動けない`;
     }
 
     if (canMove) {
       const weaponName = getWeaponName(isMe);
       const weaponText = getWeaponText(isMe, pokeState.name, weaponName);
-
       pokeState.text.content !== weaponText
         ? setPokeState(prev => ({ ...prev, text: { kind: "weapon", content: weaponText } }))
         : setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
     }
-    else
+    else {
+      soundList.general.paralyzed.play();
       setOtherText({ kind: "cantMove", content: cantMoveText });
+    }
   }
 
   //相性テキストをセットする
   const setCompatiText = async (atcIsMe) => {
-    const defState = getPokeState(atcIsMe, false);
-    const [setPokeState, setPokeStateTrigger] =
-      [getSetPokeState(atcIsMe, false), getSetPokeStateTrigger(atcIsMe, false)];
+    const [pokeState, setPokeState, setPokeStateTrigger] =
+      [getPokeState(atcIsMe, false), getSetPokeState(atcIsMe, false), getSetPokeStateTrigger(atcIsMe, false)];
+    const weaponInfo = (atcIsMe ? mySelectedWeapon : opSelectedWeapon).current;
 
-    const conpatiText = await getCompatiText(atcIsMe);
-    defState.text.content !== conpatiText ?
-      setPokeState(prev => ({ ...prev, text: { kind: "compati", content: conpatiText } })) :
+    let compatiText = await getCompatiText(atcIsMe);
+    if (weaponInfo.kind === "変化")
+      compatiText = compatiTexts.mukou ? compatiText : compatiTexts.toubai;
+    pokeState.text.content !== compatiText ?
+      setPokeState(prev => ({ ...prev, text: { kind: "compati", content: compatiText } })) :
       setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
   }
 
@@ -253,18 +256,19 @@ export function useBattleHandlers(battleState) {
   }
 
   //攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
-  const playAttackingFlow = async (atcIsMe, isHit, isCritical, damage, isAttackWeapon, atcTarget, effTarget, effectiveness) => {
+  const playAttackingFlow = async (atcIsMe, isHit, isCritical, damage) => {
     const defState = getPokeState(atcIsMe, false);
     const [setAreaVisible, setOtherTextInvisible] =
       [getSetAreaVisible(atcIsMe, true), getSetAreaVisible(atcIsMe, false)];
+    const weaponInfo = (atcIsMe ? mySelectedWeapon : opSelectedWeapon).current;
 
     setAreaVisible(prev => ({ ...prev, text: true }));     //技テキスト表示
 
     //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
-    await attackEffect(atcIsMe, isHit, atcTarget);
+    await attackEffect(atcIsMe, isHit, weaponInfo.atctarget);
     setAreaVisible(prev => ({ ...prev, text: false }));    //技テキストを非表示
 
-    if (isAttackWeapon) {
+    if (weaponInfo.kind !== "変化") {
       //無効ではない場合
       if (defState.text.content !== compatiTexts.mukou) {
         if (isHit) {
@@ -290,7 +294,7 @@ export function useBattleHandlers(battleState) {
       setOtherText({ kind: "", content: "" });
     }
     if (isHit)
-      doSecondaryEffect(atcIsMe, isAttackWeapon, effTarget, effectiveness, damage);   //追加効果があるなら発動(変化技も)
+      doSecondaryEffect(atcIsMe, weaponInfo, damage);   //追加効果があるなら発動(変化技も)
   }
 
   //倒れたポケモンに死亡エフェクトを入れる
@@ -327,8 +331,7 @@ export function useBattleHandlers(battleState) {
     const weaponName = getWeaponName(atcIsMe);
     const { weaponInfo, atcInfo, defInfo } = await getUseInCalcDamageInfo(atcIsMe, weaponName);
     const { trueDamage, isHit, isCriticalHit } = calcTrueDamage(weaponInfo, atcInfo, defInfo);
-    const { atcTarget, effTarget, effectiveness } = await getEffectiveness(atcIsMe);
-    return { damage: trueDamage, isHit, isCriticalHit, atcTarget, effTarget, effectiveness };
+    return { weaponInfo, damage: trueDamage, isHit, isCriticalHit };
   }
 
   //jsx, jsファイルから呼び出し=================================================================================================
@@ -523,8 +526,8 @@ export function useBattleHandlers(battleState) {
     setSelectedOrder([]);
     myLife.current = 3;
     opLife.current = 3;
-    mySelectedWeapon.current = "";
-    opSelectedWeapon.current = "";
+    mySelectedWeapon.current = null;
+    opSelectedWeapon.current = null;
     resultText.current = "";
     turnCnt.current = 1;
     loopAudioRef.current = null;
@@ -742,15 +745,15 @@ export function useBattleHandlers(battleState) {
 
   //選択した技名を取得する
   const getWeaponName = (isMe) => {
-    const weaponnName = (isMe ? mySelectedWeapon : opSelectedWeapon).current;
+    const weaponnName = (isMe ? mySelectedWeapon : opSelectedWeapon).current.name;
     return weaponnName;
   }
 
   //お互いが選択した技の優先度を取得する
   const getWeaponsPriority = async () => {
-    const [{ priority: myWeaponPriority }, { priority: opWeaponPriority }] = await Promise.all([
-      getWeaponInfo(mySelectedWeapon.current),
-      getWeaponInfo(opSelectedWeapon.current)
+    const [{ priority: myWeaponPriority }, { priority: opWeaponPriority }] = ([
+      mySelectedWeapon.current.priority,
+      opSelectedWeapon.current.priority
     ]);
     return { myWeaponPriority, opWeaponPriority };
   }
@@ -918,7 +921,8 @@ export function useBattleHandlers(battleState) {
 
     //合理的は技を算出してセット
     const opWeapon = choiseBetterWeapon(strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeState.s, opPokeState.s, myPokeState.hp, opPokeState.hp);
-    opSelectedWeapon.current = opWeapon;
+    const opWeaponInfo = await getWeaponInfo(opWeapon);
+    opSelectedWeapon.current = opWeaponInfo;
   }
 
   //相手はバトルポケモンを交換すべき時は、refにセットする
@@ -941,19 +945,6 @@ export function useBattleHandlers(battleState) {
     console.log(`${opPokeState.name}\n残HP：${opPokeState.hp}\n最大HP：${opPokeState[`poke${opPokeNum}MaxHp`]}`);
     console.log(`自分 aBuff:${myPokeState.aBuff},bBuff:${myPokeState.bBuff},cBuff:${myPokeState.cBuff},dBuff:${myPokeState.dBuff},sBuff:${myPokeState.sBuff},`);
     console.log(`相手 aBuff:${opPokeState.aBuff},bBuff:${opPokeState.bBuff},cBuff:${opPokeState.cBuff},dBuff:${opPokeState.dBuff},sBuff:${opPokeState.sBuff},`);
-  }
-
-  //変化技使用時用の効果等を取得
-  const getEffectiveness = async (isMe) => {
-    const weaponName = getWeaponName(isMe);
-    const weaponInfo = await getWeaponInfo(weaponName);
-    const isHit = weaponInfo.hitrate ? (Math.random() * 100 < weaponInfo.hitrate) : true;
-    const isIncident = weaponInfo.incidencerate ? (Math.random() * 100 < weaponInfo.incidencerate) : true;
-    const atcTarget = weaponInfo.atctarget;
-    const effTarget = weaponInfo.efftarget;
-    const effectiveness = isIncident ? weaponInfo.effectiveness : null;
-
-    return { isHit, atcTarget, effTarget, effectiveness };
   }
 
   const getPokeState = (isMe, simple) => {
@@ -982,7 +973,12 @@ export function useBattleHandlers(battleState) {
   }
 
   //追加効果を読み解いて発動する
-  const doSecondaryEffect = (atcIsMe, isAttackWeapon, effTarget, effectiveness, damage) => {
+  const doSecondaryEffect = (atcIsMe, weaponInfo, damage) => {
+    const [effTarget, incidenceRate, isAtcWeapon]
+      = [weaponInfo.efftarget, weaponInfo.incidencerate, weaponInfo.kind !== "変化"];
+    const isIncident = incidenceRate ? (Math.random() * 100 < incidenceRate) : false;
+    let effectiveness = isIncident ? weaponInfo.effectiveness : null;
+
     if (effectiveness) {
       const myEffectiveness = atcIsMe && effTarget === "自分" || !atcIsMe && effTarget === "相手";
       const [pokeState, setPokeState] = [getPokeState(myEffectiveness, true), getSetPokeState(myEffectiveness, true)];
@@ -1037,7 +1033,7 @@ export function useBattleHandlers(battleState) {
         const base = target === "h" ? maxHp
           : defCurrentHp < damage ? defCurrentHp : damage;
         //回復量を計算
-        isHealAtc.current = isAttackWeapon ? true : false;
+        isHealAtc.current = isAtcWeapon ? true : false;
         isHeal.current = true;
         healHp.current = Math.floor(base * ratio);
         healHp.current = atcCurrentHp + healHp.current < maxHp ? healHp.current : maxHp - atcCurrentHp;
@@ -1046,21 +1042,30 @@ export function useBattleHandlers(battleState) {
         const condition = effectiveness.slice(10);  //まひ
         const pokeNum = getPokeNum(pokeState, pokeState.name);
 
+        let conditionText = `${defState.name}はまひして技が出にくくなった`
+        let conditionFlg = true;
         //電気タイプは麻痺しない
-        if (defState.type1 === "でんき" || defState.type2 === "でんき")
-          return;
+        if (defState.type1 === "でんき" || defState.type2 === "でんき") {
+          conditionText = `${defState.name}には効果がないようだ`;
+          conditionFlg = false;
+        }
         //無効タイプなら麻痺しない。
-        if(defState.text.content === compatiTexts.mukou){
-          return;
+        if (defState.text.content === compatiTexts.mukou) {
+          conditionText = `${defState.name}には効果がないようだ`;
+          conditionFlg = false;
         }
         //既に状態異常になっているなら麻痺しない
-        if (pokeState[`poke${pokeNum}Condition`] !== "")
-          return;
+        if (pokeState[`poke${pokeNum}Condition`] !== "") {
+          conditionText = `しかしうまく決まらなかった`;
+          conditionFlg = false;
+        }
 
         //stateに状態異常をセット
-        setPokeState(prev => ({ ...prev, [`poke${pokeNum}Condition`]: condition }));
+        if (conditionFlg) {
+          soundList.general.paralyzed.play();
+          setPokeState(prev => ({ ...prev, [`poke${pokeNum}Condition`]: condition }));
+        }
         //まひテキストをセット
-        const conditionText = `${pokeState.name}はまひして技が出にくくなった`
         setOtherText({ kind: "condition", content: conditionText });
       }
     }
@@ -1169,7 +1174,6 @@ export function useBattleHandlers(battleState) {
     setNextOpPokeName,
     setWinner,
     checkIsAttackWeapon,
-    getEffectiveness,
 
     setHpOnHeal,
     setHealText,

@@ -51,6 +51,12 @@ export const soundList = {
       a.load();
       return a;
     })(),
+    paralyzed: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/paralyzed.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
     win: (() => {
       const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/winSe.mp3');
       a.preload = 'auto';
@@ -605,7 +611,7 @@ export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
   let isCriticalHit = false;   //急所フラグ
 
   //命中時のみダメージ計算する
-  if (isHit) {
+  if (isHit && weaponInfo.kind !== "変化") {
     let { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier } = calcPureDamage(weaponInfo, atcInfo, defInfo);
     const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
     isCriticalHit = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
@@ -623,7 +629,7 @@ export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
 
     console.log(`${defInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
   }
-  else
+  else if (!isHit && weaponInfo.kind !== "変化")
     console.log(`${atcInfo.name}の攻撃は当たらなかった`);
 
   return { trueDamage, isHit, isCriticalHit };

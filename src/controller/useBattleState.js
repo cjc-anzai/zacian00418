@@ -39,7 +39,7 @@ export function useBattleState() {
 
   //useRef
   const [myLife, opLife] = [useRef(3), useRef(3)];
-  const [mySelectedWeapon, opSelectedWeapon] = [useRef(""), useRef("")];
+  const [mySelectedWeapon, opSelectedWeapon] = [useRef(null), useRef(null)];
   const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];       //交代したターンか否か
   const [myChangePokeName, opChangePokeName] = [useRef(null), useRef(null)];    //交代するポケモン
   const opTerastalFlag = useRef(false);
@@ -65,7 +65,7 @@ export function useBattleState() {
     isTerastalActive, setIsTerastalActive,
     opTerastalFlag,
     myLife, opLife,
-    mySelectedWeapon, opSelectedWeapon,
+    mySelectedWeapon, opSelectedWeapon, 
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     myChangePokeName, opChangePokeName,

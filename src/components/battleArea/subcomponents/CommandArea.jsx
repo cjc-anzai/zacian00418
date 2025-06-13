@@ -5,6 +5,7 @@ import {
   getCompatiTextForWeaponInfoList,
   delay,
 } from "../../../model/model";
+import PokeStatus from "./pokeStatus";
 
 const CommandArea = ({
   battleState,
@@ -96,7 +97,8 @@ const CommandArea = ({
     resetChangeTurn();
     updateTurnCnt();
 
-    mySelectedWeapon.current = weaponName;
+    const myWeaponInfo = await getWeaponInfo(weaponName);
+    mySelectedWeapon.current = myWeaponInfo;
     await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
     await setMyTurn();
     setTextWhenClickWeaponBtn();
@@ -242,21 +244,23 @@ const CommandArea = ({
 
       {otherAreaVisible.changeCmd && (
         <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
-            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke1Name)}>
-              {myPokeState.poke1Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
-            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke2Name)}>
-              {myPokeState.poke2Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
-            <button className="change-cmd-btn" onClick={async () => await changeMyPoke(myPokeState.poke3Name)}>
-              {myPokeState.poke3Name}
-            </button>
-          )}
+          {[1, 2, 3].map(num => {
+            const name = myPokeState[`poke${num}Name`];
+            const hp = myPokeState[`poke${num}Hp`];
+
+            return (
+              name !== myPokeState.name && hp > 0 && (
+                <button
+                  key={name}
+                  className="change-cmd-btn"
+                  onClick={async () => await changeMyPoke(name)}
+                >
+                  {name}
+                </button>
+              )
+            );
+          })}
+
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>
       )}
@@ -264,77 +268,28 @@ const CommandArea = ({
       {otherAreaVisible.status && (
         <div className="status-area-wrapper" style={{ display: "flex" }}>
           <div className="status-area">
-            <div className="poke-status">
-              <span className="type-wrapper">
-                <p>{opPokeState.name}</p>
-                <span
-                  className="type-box"
-                  style={{ backgroundColor: typeColors[opPokeState.type1], borderColor: typeColors[opPokeState.type1] }}
-                >
-                  {opPokeState.type1}
-                </span>
-                {opPokeState.type2 !== "なし" && (
-                  <span
-                    className="type-box"
-                    style={{ backgroundColor: typeColors[opPokeState.type2], borderColor: typeColors[opPokeState.type2] }}
-                  >
-                    {opPokeState.type2}
-                  </span>
-                )}
-              </span>
-              <StatusRow label="攻撃" value={opPokeState.aBuff} />
-              <StatusRow label="防御" value={opPokeState.bBuff} />
-              <StatusRow label="特攻" value={opPokeState.cBuff} />
-              <StatusRow label="特防" value={opPokeState.dBuff} />
-              <StatusRow label="素早さ" value={opPokeState.sBuff} />
-            </div>
-            <div className="poke-status">
-              <span className="type-wrapper">
-                <p>{myPokeState.name}</p>
-                <span
-                  className="type-box"
-                  style={{ backgroundColor: typeColors[myPokeState.type1], borderColor: typeColors[myPokeState.type1] }}
-                >
-                  {myPokeState.type1}
-                </span>
-                {myPokeState.type2 !== "なし" && (
-                  <span
-                    className="type-box"
-                    style={{ backgroundColor: typeColors[myPokeState.type2], borderColor: typeColors[myPokeState.type2] }}
-                  >
-                    {myPokeState.type2}
-                  </span>
-                )}
-              </span>
-              <StatusRow label="攻撃" value={myPokeState.aBuff} />
-              <StatusRow label="防御" value={myPokeState.bBuff} />
-              <StatusRow label="特攻" value={myPokeState.cBuff} />
-              <StatusRow label="特防" value={myPokeState.dBuff} />
-              <StatusRow label="素早さ" value={myPokeState.sBuff} />
-            </div>
+            <PokeStatus isMe={false} battleState={battleState} />
+            <PokeStatus isMe={true} battleState={battleState} />
           </div>
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>
-
       )}
 
       {otherAreaVisible.nextPokeCmd && (
         <div className="cmd-area">
-          {myPokeState.name !== myPokeState.poke1Name && myPokeState.poke1Hp > 0 && (
-            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke1Name)}>
-              {myPokeState.poke1Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke2Name && myPokeState.poke2Hp > 0 && (
-            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke2Name)}>
-              {myPokeState.poke2Name}
-            </button>
-          )}
-          {myPokeState.name !== myPokeState.poke3Name && myPokeState.poke3Hp > 0 && (
-            <button className="change-cmd-btn" onClick={() => setNextMyPoke(myPokeState.poke3Name)}>
-              {myPokeState.poke3Name}
-            </button>
-          )}
+          {[1, 2, 3].map(num => {
+            const name = myPokeState[`poke${num}Name`];
+            const hp = myPokeState[`poke${num}Hp`];
+
+            return (
+              name !== myPokeState.name && hp > 0 && (
+                <button key={name} className="change-cmd-btn" onClick={() => setNextMyPoke(name)}>
+                  {name}
+                </button>
+              )
+            );
+          })}
+
         </div>
       )}
     </div >
