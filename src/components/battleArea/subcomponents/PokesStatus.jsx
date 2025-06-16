@@ -3,7 +3,7 @@ import {
   typeColors,
 } from "../../../model/model";
 
-const PokeStatus = ({
+const PokesStatus = ({
   isMe,
   battleState
 }) => {
@@ -77,4 +77,4 @@ const PokeStatus = ({
   );
 };
 
-export default PokeStatus;
+export default PokesStatus;

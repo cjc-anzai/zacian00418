@@ -5,7 +5,7 @@ import {
   getCompatiTextForWeaponInfoList,
   delay,
 } from "../../../model/model";
-import PokeStatus from "./pokeStatus";
+import PokesStatus from "./PokesStatus";
 
 const CommandArea = ({
   battleState,
@@ -268,8 +268,8 @@ const CommandArea = ({
       {otherAreaVisible.status && (
         <div className="status-area-wrapper" style={{ display: "flex" }}>
           <div className="status-area">
-            <PokeStatus isMe={false} battleState={battleState} />
-            <PokeStatus isMe={true} battleState={battleState} />
+            <PokesStatus isMe={false} battleState={battleState} />
+            <PokesStatus isMe={true} battleState={battleState} />
           </div>
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>
