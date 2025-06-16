@@ -44,6 +44,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
     
     //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
     const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
+    console.log("test");
     
     //テスト用で相手の選出を固定
     // const opSelectedOrder = ["ラプラス", "ハピナス", "エレキブル"];
