@@ -275,7 +275,7 @@ const CommandArea = ({
         </div>
       )}
 
-      {otherAreaVisible.nextPokeCmd && (
+      {otherAreaVisible.nextPokeCmd && !otherText.content && (
         <div className="cmd-area">
           {[1, 2, 3].map(num => {
             const name = myPokeState[`poke${num}Name`];

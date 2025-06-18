@@ -11,6 +11,7 @@ export function useToDoWhenFnc(battleState) {
     isTerastalActive, setIsTerastalActive,
     otherText, setOtherText,
     myLife, opLife, opTerastalFlag,
+    burned,
     isHeal, isHealAtc, healHp,
     myChangePokeName, opChangePokeName,
     iAmFirst, myChangeTurn, opChangeTurn,
@@ -40,7 +41,7 @@ export function useToDoWhenFnc(battleState) {
     setLife,
     setNextOpPokeName,
     setWinner,
-    consoleWhenTurnEnd,
+    toDoWhenTurnEnd,
     setHpOnHeal,
 
     stopProcessing,
@@ -82,9 +83,13 @@ export function useToDoWhenFnc(battleState) {
         else
           setHealText(isMe);
       }
-      else if ((isMe && iAmFirst.current) || (!isMe && !iAmFirst.current)) {
-        setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-        consoleWhenTurnEnd();
+      //火傷によるダメージ
+      else if (burned.current) {
+        burned.current = false;
+      }
+      else if (isMe === iAmFirst.current) {
+        // setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+        await toDoWhenTurnEnd();
       }
       else if (!otherText.content)
         setWeaponText(isMe);
@@ -97,10 +102,18 @@ export function useToDoWhenFnc(battleState) {
         else
           setHealText(isMe);
       }
+
+      //火傷によるダメージ
+      if (burned.current) {
+        burned.current = false;
+      }
+
       await stopProcessing(1000);
       if (isHeal.current)
         await stopProcessing(1000);
       await setDeadText(isMe);
+      await stopProcessing(3000);
+      await toDoWhenTurnEnd();
     }
   };
 
@@ -125,7 +138,7 @@ export function useToDoWhenFnc(battleState) {
           delay(() => setWeaponText(!isMe), 2000);
       }
       //どちらも交代するとき
-      else {
+      else if (myChangeTurn.current && opChangeTurn.current){
         //1周目は後攻の交代テキストをセット
         if (myChangePokeName.current && opChangePokeName.current) {
           (isMe ? myChangePokeName : opChangePokeName).current = null;
@@ -135,8 +148,8 @@ export function useToDoWhenFnc(battleState) {
         //2周目はrefの制御
         else {
           iAmFirst.current ? opChangePokeName.current = null : myChangePokeName.current = null;
-          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-          consoleWhenTurnEnd();
+          // setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+          await toDoWhenTurnEnd();
         }
       }
     }
@@ -158,7 +171,7 @@ export function useToDoWhenFnc(battleState) {
     else if (textKind === "compati") {
       const { weaponInfo, damage, isHit, isCriticalHit } = await getDamage(!isMe);
       await playAttackingFlow(!isMe, isHit, isCriticalHit, damage);
-      if (weaponInfo.kind !== "変化")
+      if (weaponInfo.kind !== "変化" || !isHit)
         setHpOnDamage(isMe, damage);
       else if (isHeal.current)
         setHpOnHeal(!isMe);
@@ -207,22 +220,22 @@ export function useToDoWhenFnc(battleState) {
 
   //テキストセット後の処理
   const toDoWhenSetOtherText = () => {
-    setTimeout(() => {
+    setTimeout(async () => {
       setOtherText({ kind: "", content: "" });
       if (otherText.kind === "buff") {
         if ((iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0))
           setWeaponText(!iAmFirst.current);
         else if (iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0) {
-          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-          consoleWhenTurnEnd();
+          // setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+          await toDoWhenTurnEnd();
         }
       }
       else if (otherText.kind === "heal") {
         if ((iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0 && isHeal.current || !iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 && !isHeal.current))
           setWeaponText(!iAmFirst.current);
         else if (iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0) {
-          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-          consoleWhenTurnEnd();
+          // setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+          await toDoWhenTurnEnd();
         }
         isHealAtc.current = false;
         isHeal.current = false;
@@ -232,8 +245,8 @@ export function useToDoWhenFnc(battleState) {
         if ((iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0))
           setWeaponText(!iAmFirst.current);
         else if (iAmFirst.current && opPokeState.text.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myPokeState.text.kind === "weapon" && opPokeState.hp > 0) {
-          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-          consoleWhenTurnEnd();
+          // setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+          await toDoWhenTurnEnd();
         }
       }
       else if (otherText.kind === "cantMove") {
@@ -243,9 +256,11 @@ export function useToDoWhenFnc(battleState) {
         if ((iAmFirst.current === cantMoveIsMe))
           setWeaponText(!iAmFirst.current);
         else if (iAmFirst.current !== cantMoveIsMe) {
-          setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-          consoleWhenTurnEnd();
+          // setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+          await toDoWhenTurnEnd();
         }
+      }
+      else if (otherText.kind === "burned") {
       }
     }, 2000);
   }

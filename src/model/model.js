@@ -57,6 +57,12 @@ export const soundList = {
       a.load();
       return a;
     })(),
+    burned: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/burned.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
     win: (() => {
       const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/winSe.mp3');
       a.preload = 'auto';
@@ -622,12 +628,14 @@ export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
       atcBuffMultiplier = atcBuffMultiplier >= 1 ? 1 : atcBuffMultiplier;
       defBuffMultiplier = defBuffMultiplier <= 1 ? 1 : defBuffMultiplier
       pureDamage = (pureDamage - 2) / atcBuffMultiplier * defBuffMultiplier + 2;
+      atcInfo.isBurned = false;
     }
 
     trueDamage = Math.floor(pureDamage * randomMultiplier);    // 乱数
     trueDamage = Math.floor(trueDamage * (isCriticalHit ? 1.5 : 1));   //急所
+    trueDamage = atcInfo.isBurned ? Math.floor(trueDamage * 0.5) : trueDamage;  //やけど補正
 
-    console.log(`${defInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}`);
+    console.log(`${defInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}\nやけど：${atcInfo.isBurned ? 0.5 : 1}`);
   }
   else if (!isHit && weaponInfo.kind !== "変化")
     console.log(`${atcInfo.name}の攻撃は当たらなかった`);

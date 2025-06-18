@@ -36,6 +36,7 @@ export function useBattleHandlers(battleState) {
     opTerastalFlag,
     mySelectedWeapon, opSelectedWeapon,
     myChangePokeName, opChangePokeName,
+    burned,
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     resultText, turnCnt,
@@ -88,14 +89,24 @@ export function useBattleHandlers(battleState) {
     const [pokeState, setPokeState, setPokeStateTrigger] =
       [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
 
-    //HPバーの制御
     const currentHp = getPokeNumHp(pokeState, pokeState.name);
     const newHp = calcNewHp(currentHp, damage);
+    //HPバーの制御はplayAttackingFlow()内で行う
     //HPのセット
 
     !checkIsSameHp(pokeState.hp, currentHp, newHp)
       ? setPokeState(prev => ({ ...prev, hp: newHp }))
       : setPokeStateTrigger(prev => ({ ...prev, hp: prev.hp + 1 }));
+  }
+
+  //攻撃を受けた後のHPセット
+  const setHpOnOtherDamage = (isMe, damage) => {
+    const [pokeState, setPokeState] =
+      [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+
+    const newHp = calcNewHp(pokeState.hp, damage);
+    adjustHpBar(isMe, newHp);
+    setPokeState(prev => ({ ...prev, hp: newHp }));
   }
 
   //poke1Hp等のHpをバトル場のポケモンのHpと同じ値に更新する
@@ -235,7 +246,6 @@ export function useBattleHandlers(battleState) {
       //死亡後の交代の場合はコマンドボタンを表示
       if (!changeTurn) {
         setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-        consoleWhenTurnEnd();
       }
     }
   }
@@ -293,8 +303,15 @@ export function useBattleHandlers(battleState) {
       setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
       setOtherText({ kind: "", content: "" });
     }
+    else if (!isHit) {
+      setOtherText({ kind: "general", content: `${defState.name}にはあたらなかった` });
+      await stopProcessing(2000);
+      setOtherText({ kind: "", content: "" });
+    }
+
+    //追加効果があるなら発動(変化技も)
     if (isHit)
-      doSecondaryEffect(atcIsMe, weaponInfo, damage);   //追加効果があるなら発動(変化技も)
+      doSecondaryEffect(atcIsMe, weaponInfo, damage);
   }
 
   //倒れたポケモンに死亡エフェクトを入れる
@@ -780,6 +797,10 @@ export function useBattleHandlers(battleState) {
     let isTerastalAtc = checkIsTerastal(atcIsMe) || (!atcIsMe && opTerastalFlag.current);
     let isTerastalDef = checkIsTerastal(!atcIsMe);
 
+    //火傷状態で物理技を選択したらフラグを立てる
+    const pokeNum = getPokeNum(atcState, atcState.name);
+    const isBurned = atcState[`poke${pokeNum}Condition`] === "やけど" && atcPower === atcState.a;
+
     //相手のテラス判断のための値変更
     if (atcIsMe && terastalCheckFlg)
       isTerastalDef = true;
@@ -792,7 +813,7 @@ export function useBattleHandlers(battleState) {
 
     const { atcBuff, defBuff } = getAtcDefBuff(atcIsMe, weaponInfo);
 
-    const atcInfo = { name: atcState.name, type1: atcState.type1, type2: atcState.type2, terastal: atcState.terastal, isTerastalAtc, power: atcPower, buff: atcBuff };
+    const atcInfo = { name: atcState.name, type1: atcState.type1, type2: atcState.type2, terastal: atcState.terastal, isTerastalAtc, power: atcPower, buff: atcBuff, isBurned };
     const defInfo = { name: defState.name, type1: defState.type1, type2: defState.type2, terastal: defState.terastal, isTerastalDef, power: defPower, buff: defBuff };
     return { weaponInfo, atcInfo, defInfo };
   }
@@ -937,14 +958,62 @@ export function useBattleHandlers(battleState) {
     console.log(`相手は相性が悪い${opChangePokeName.current ? "ため" + opChangePokeName.current + "に交代する" : "が交代できるポケモンがいない"}`);
   }
 
-  //ターン終了時に状況確認のためのデバッグ用コンソール
-  const consoleWhenTurnEnd = () => {
+  //ターン終了時にやること
+  const toDoWhenTurnEnd = async () => {
     const myPokeNum = getPokeNum(myPokeState, myPokeState.name);
     const opPokeNum = getPokeNum(opPokeState, opPokeState.name);
+
+    //火傷による定数ダメージ
+
+    //火傷チェック
+    const checkIsBurned = (isMe) => {
+      const pokeState = getPokeState(isMe, true);
+      const pokeNum = getPokeNum(pokeState, pokeState.name);
+      const isBurned = pokeState[`poke${pokeNum}Condition`] === "やけど" && pokeState.hp > 0;
+      return isBurned;
+    }
+
+    //火傷ダメージ計算
+    const calcBurnedDamage = (isMe) => {
+      const pokeState = getPokeState(isMe, true);
+      const maxHp = getMaxHp(pokeState, pokeState.name);
+      const burnedDamage = Math.floor(maxHp / 16);
+      return burnedDamage;
+    }
+
+    let myDeadFlg = false;
+    let opDeadFlg = false;
+
+    await stopProcessing(2000);
+    if (checkIsBurned(true)) {
+      burned.current = true;
+      const burnedDamage = calcBurnedDamage(true);
+      myDeadFlg = burnedDamage >= myPokeState.hp ? true : false;
+      soundList.general.burned.play();
+      setHpOnOtherDamage(true, burnedDamage);
+      const burnedText = `${myPokeState.name}はやけどのダメージを受けた`;
+      setOtherText({ kind: "burned", content: burnedText });
+      await stopProcessing(2500);
+    }
+
+
+    if (checkIsBurned(false)) {
+      burned.current = true;
+      const burnedDamage = calcBurnedDamage(false);
+      opDeadFlg = burnedDamage >= opPokeState.hp ? true : false;
+      soundList.general.burned.play();
+      setHpOnOtherDamage(false, burnedDamage);
+      const burnedText = `${opPokeState.name}はやけどのダメージを受けた`;
+      setOtherText({ kind: "burned", content: burnedText });
+    }
+
+    //ターン終了時に定数ダメージを受けても生存する場合にコマンドを表示
+    if (myPokeState.hp > 0 && opPokeState.hp > 0 && !myDeadFlg && !opDeadFlg)
+      setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+
+    //お互いの残りHPを表示する
     console.log(`${myPokeState.name}\n残HP：${myPokeState.hp}\n最大HP：${myPokeState[`poke${myPokeNum}MaxHp`]}`);
     console.log(`${opPokeState.name}\n残HP：${opPokeState.hp}\n最大HP：${opPokeState[`poke${opPokeNum}MaxHp`]}`);
-    console.log(`自分 aBuff:${myPokeState.aBuff},bBuff:${myPokeState.bBuff},cBuff:${myPokeState.cBuff},dBuff:${myPokeState.dBuff},sBuff:${myPokeState.sBuff},`);
-    console.log(`相手 aBuff:${opPokeState.aBuff},bBuff:${opPokeState.bBuff},cBuff:${opPokeState.cBuff},dBuff:${opPokeState.dBuff},sBuff:${opPokeState.sBuff},`);
   }
 
   const getPokeState = (isMe, simple) => {
@@ -979,10 +1048,13 @@ export function useBattleHandlers(battleState) {
     const isIncident = incidenceRate ? (Math.random() * 100 < incidenceRate) : false;
     let effectiveness = isIncident ? weaponInfo.effectiveness : null;
 
+    const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+    const isAlive = damage < defState.hp;
+    effectiveness = effTarget === "相手" && !isAlive ? null : effectiveness;
+
     if (effectiveness) {
       const myEffectiveness = atcIsMe && effTarget === "自分" || !atcIsMe && effTarget === "相手";
       const [pokeState, setPokeState] = [getPokeState(myEffectiveness, true), getSetPokeState(myEffectiveness, true)];
-      const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
 
       if (effectiveness.includes("buff")) {
         const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
@@ -1041,31 +1113,43 @@ export function useBattleHandlers(battleState) {
       else if (effectiveness.includes("condition")) {
         const condition = effectiveness.slice(10);  //まひ
         const pokeNum = getPokeNum(pokeState, pokeState.name);
-
-        let conditionText = `${defState.name}はまひして技が出にくくなった`
+        let conditionText = "";
         let conditionFlg = true;
-        //電気タイプは麻痺しない
-        if (defState.type1 === "でんき" || defState.type2 === "でんき") {
-          conditionText = `${defState.name}には効果がないようだ`;
-          conditionFlg = false;
-        }
-        //無効タイプなら麻痺しない。
+
+        //無効タイプなら状態異常にならない。
         if (defState.text.content === compatiTexts.mukou) {
           conditionText = `${defState.name}には効果がないようだ`;
           conditionFlg = false;
         }
-        //既に状態異常になっているなら麻痺しない
+        //既に状態異常になっているなら他の状態異常にならない
         if (pokeState[`poke${pokeNum}Condition`] !== "") {
           conditionText = `しかしうまく決まらなかった`;
           conditionFlg = false;
         }
 
+        if (condition === "まひ") {
+          //電気タイプは麻痺しない
+          if (defState.type1 === "でんき" || defState.type2 === "でんき") {
+            conditionText = `${defState.name}には効果がないようだ`;
+            conditionFlg = false;
+          }
+          conditionText = conditionFlg ? `${defState.name}はまひして技が出にくくなった` : conditionText;
+        }
+        else if (condition === "やけど") {
+          //炎タイプは火傷しない
+          if (defState.type1 === "ほのお" || defState.type2 === "ほのお") {
+            conditionText = `${defState.name}には効果がないようだ`;
+            conditionFlg = false;
+          }
+          conditionText = conditionFlg ? `${defState.name}はやけどを負った` : conditionText;
+        }
         //stateに状態異常をセット
         if (conditionFlg) {
-          soundList.general.paralyzed.play();
+          const conditionSe = condition === "まひ" ? "paralyzed" : "やけど" ? "burned" : null;
+          soundList.general[conditionSe].play();
           setPokeState(prev => ({ ...prev, [`poke${pokeNum}Condition`]: condition }));
         }
-        //まひテキストをセット
+        //状態異常テキストをセット
         setOtherText({ kind: "condition", content: conditionText });
       }
       else if (effectiveness === "ひるみ") {
@@ -1206,7 +1290,7 @@ export function useBattleHandlers(battleState) {
 
     getPokeState,
     getAreaVisible,
-    consoleWhenTurnEnd,
+    toDoWhenTurnEnd,
 
     stopProcessing
   };

@@ -46,7 +46,8 @@ export function useBattleState() {
   const iAmFirst = useRef(false);
   const isHeal = useRef(false);
   const isHealAtc = useRef(false);
-  const healHp = useRef(0);
+  const healHp = useRef(false);
+  const burned = useRef(0);; //火傷ダメージをセットしたフラグ
   const resultText = useRef("");        //勝敗
   const turnCnt = useRef(1);            
   const loopAudioRef = useRef(null);    //再生中のBGM
@@ -66,6 +67,7 @@ export function useBattleState() {
     opTerastalFlag,
     myLife, opLife,
     mySelectedWeapon, opSelectedWeapon, 
+    burned,
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     myChangePokeName, opChangePokeName,
