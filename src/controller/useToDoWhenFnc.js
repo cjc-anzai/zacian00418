@@ -240,9 +240,9 @@ export function useToDoWhenFnc(battleState) {
         //動けないのはどちらか取得
         const cantMoveIsMe = otherText.content.includes(myPokeState.name);
 
-        if ((iAmFirst.current && cantMoveIsMe || !iAmFirst.current && !cantMoveIsMe))
+        if ((iAmFirst.current === cantMoveIsMe))
           setWeaponText(!iAmFirst.current);
-        else if (iAmFirst.current && !cantMoveIsMe || !iAmFirst.current && cantMoveIsMe) {
+        else if (iAmFirst.current !== cantMoveIsMe) {
           setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
           consoleWhenTurnEnd();
         }

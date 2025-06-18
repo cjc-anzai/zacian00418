@@ -751,7 +751,7 @@ export function useBattleHandlers(battleState) {
 
   //お互いが選択した技の優先度を取得する
   const getWeaponsPriority = async () => {
-    const [{ priority: myWeaponPriority }, { priority: opWeaponPriority }] = ([
+    const [myWeaponPriority, opWeaponPriority] = ([
       mySelectedWeapon.current.priority,
       opSelectedWeapon.current.priority
     ]);
@@ -1067,6 +1067,14 @@ export function useBattleHandlers(battleState) {
         }
         //まひテキストをセット
         setOtherText({ kind: "condition", content: conditionText });
+      }
+      else if (effectiveness === "ひるみ") {
+        //先攻の場合のみひるみの効果が発動する
+        const isFlinch = atcIsMe === iAmFirst.current;
+        if (isFlinch) {
+          const flinchText = `${defState.name}はひるんで動けない`;
+          setOtherText({ kind: "cantMove", content: flinchText });
+        }
       }
     }
   }
