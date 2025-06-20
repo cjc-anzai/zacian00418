@@ -33,10 +33,10 @@ export function useBattleHandlers(battleState) {
     setSelectedOrder,
     isTerastalActive,
     myLife, opLife,
-    opTerastalFlag,
+    opTerastalFlg,
     mySelectedWeapon, opSelectedWeapon,
     myChangePokeName, opChangePokeName,
-    burned,
+    myDeathFlg, opDeathFlg, burned,
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     resultText, turnCnt,
@@ -153,8 +153,8 @@ export function useBattleHandlers(battleState) {
     let cantMoveText = "";
 
     //麻痺チェック
-    const pokeNum = getPokeNum(pokeState, pokeState.name);
-    if (pokeState[`poke${pokeNum}Condition`] === "まひ") {
+    const pokeCondition = getPokeCondition(isMe);
+    if (pokeCondition === "まひ") {
       canMove = Math.random() >= 0.25;
       // canMove = Math.random() >= 1;   //テスト用
       cantMoveText = canMove ? "" : `${pokeState.name}はしびれて動けない`;
@@ -501,8 +501,8 @@ export function useBattleHandlers(battleState) {
       setBackText(false);
     else {
       //どちらかがテラスタルする場合、先攻のテラスタルテキストセット
-      if (isTerastalActive || opTerastalFlag.current) {
-        const isMe = isTerastalActive && opTerastalFlag.current
+      if (isTerastalActive || opTerastalFlg.current) {
+        const isMe = isTerastalActive && opTerastalFlg.current
           ? calcActualStatus(true, "s") >= calcActualStatus(false, "s")
           : isTerastalActive;
         setTerastalText(isMe);
@@ -653,7 +653,7 @@ export function useBattleHandlers(battleState) {
     if (isDangerous && !opChangeTurn.current) {
       const { cnt1, cnt2 } = await calcDefinitelyEndureHits();
       if (cnt1 < cnt2) {
-        opTerastalFlag.current = true;
+        opTerastalFlg.current = true;
         debugText = "相手は耐性を強めるためにテラスタルする";
       }
     }
@@ -683,7 +683,7 @@ export function useBattleHandlers(battleState) {
 
           //テラスしても、自分の控えから抜群を取られない場合で、自分の攻撃の前に倒される場合以外、テラスタルフラグを立てる
           if (Math.max(compati21Teras, compati22Teras) <= 1 && (compati31Teras ? (Math.max(compati31Teras, compati32Teras) <= 1) : true) && !cantWin) {
-            opTerastalFlag.current = true;
+            opTerastalFlg.current = true;
             debugText = (cnt1 > cnt2) ? "相手は攻撃力上昇のためにテラスタルする" : "相手は自分の攻撃を無効化するためにテラスタルする";
           }
           //テラスすると、自分の控えから抜群を取られる場合 && テラスせずとも抜群とられる場合、テラスタルフラグを立てる
@@ -693,18 +693,18 @@ export function useBattleHandlers(battleState) {
               ? getCompati(aliveMyBenchPokes[1].type1, aliveMyBenchPokes[1].type2, opPokeState.type1, opPokeState.type2)
               : [null, null];
             if (Math.max(compati21, compati22) >= 2 || (compati31 ? (Math.max(compati31, compati32) >= 2) : true)) {
-              opTerastalFlag.current = true;
+              opTerastalFlg.current = true;
               debugText = (cnt1 > cnt2) ? "相手は攻撃力上昇のためにテラスタルする" : "相手は自分の攻撃を無効化するためにテラスタルする";
             }
           }
         }
         else {
-          opTerastalFlag.current = true;
+          opTerastalFlg.current = true;
           debugText = (cnt1 > cnt2) ? "相手は攻撃力上昇のためにテラスタルする" : "相手は自分の攻撃を無効化するためにテラスタルする";
         }
       }
     }
-    console.log(opTerastalFlag.current ? debugText : "相手はテラスタルしない");
+    console.log(opTerastalFlg.current ? debugText : "相手はテラスタルしない");
   }
 
   //自分のポケモンが相手に対して打点が強い方のタイプと、もう一方のタイプを取得して返す
@@ -794,12 +794,12 @@ export function useBattleHandlers(battleState) {
     const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
     const { atcPower, defPower } = getAtcDefPower(atcIsMe, weaponInfo);
     //テラスタルしているか
-    let isTerastalAtc = checkIsTerastal(atcIsMe) || (!atcIsMe && opTerastalFlag.current);
+    let isTerastalAtc = checkIsTerastal(atcIsMe) || (!atcIsMe && opTerastalFlg.current);
     let isTerastalDef = checkIsTerastal(!atcIsMe);
 
     //火傷状態で物理技を選択したらフラグを立てる
-    const pokeNum = getPokeNum(atcState, atcState.name);
-    const isBurned = atcState[`poke${pokeNum}Condition`] === "やけど" && atcPower === atcState.a;
+    const pokeCondition = getPokeCondition(atcIsMe);
+    const isBurned = pokeCondition === "やけど" && atcPower === atcState.a;
 
     //相手のテラス判断のための値変更
     if (atcIsMe && terastalCheckFlg)
@@ -960,60 +960,13 @@ export function useBattleHandlers(battleState) {
 
   //ターン終了時にやること
   const toDoWhenTurnEnd = async () => {
-    const myPokeNum = getPokeNum(myPokeState, myPokeState.name);
-    const opPokeNum = getPokeNum(opPokeState, opPokeState.name);
-
-    //火傷による定数ダメージ
-
-    //火傷チェック
-    const checkIsBurned = (isMe) => {
-      const pokeState = getPokeState(isMe, true);
-      const pokeNum = getPokeNum(pokeState, pokeState.name);
-      const isBurned = pokeState[`poke${pokeNum}Condition`] === "やけど" && pokeState.hp > 0;
-      return isBurned;
-    }
-
-    //火傷ダメージ計算
-    const calcBurnedDamage = (isMe) => {
-      const pokeState = getPokeState(isMe, true);
-      const maxHp = getMaxHp(pokeState, pokeState.name);
-      const burnedDamage = Math.floor(maxHp / 16);
-      return burnedDamage;
-    }
-
-    let myDeadFlg = false;
-    let opDeadFlg = false;
-
     await stopProcessing(2000);
-    if (checkIsBurned(true)) {
-      burned.current = true;
-      const burnedDamage = calcBurnedDamage(true);
-      myDeadFlg = burnedDamage >= myPokeState.hp ? true : false;
-      soundList.general.burned.play();
-      setHpOnOtherDamage(true, burnedDamage);
-      const burnedText = `${myPokeState.name}はやけどのダメージを受けた`;
-      setOtherText({ kind: "burned", content: burnedText });
-      await stopProcessing(2500);
-    }
-
-
-    if (checkIsBurned(false)) {
-      burned.current = true;
-      const burnedDamage = calcBurnedDamage(false);
-      opDeadFlg = burnedDamage >= opPokeState.hp ? true : false;
-      soundList.general.burned.play();
-      setHpOnOtherDamage(false, burnedDamage);
-      const burnedText = `${opPokeState.name}はやけどのダメージを受けた`;
-      setOtherText({ kind: "burned", content: burnedText });
-    }
+    await processBurnedDamage(true);  //火傷ダメージの処理
+    await processBurnedDamage(false);
 
     //ターン終了時に定数ダメージを受けても生存する場合にコマンドを表示
-    if (myPokeState.hp > 0 && opPokeState.hp > 0 && !myDeadFlg && !opDeadFlg)
+    if (myPokeState.hp > 0 && opPokeState.hp > 0 && !myDeathFlg.current && !opDeathFlg.current)
       setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
-
-    //お互いの残りHPを表示する
-    console.log(`${myPokeState.name}\n残HP：${myPokeState.hp}\n最大HP：${myPokeState[`poke${myPokeNum}MaxHp`]}`);
-    console.log(`${opPokeState.name}\n残HP：${opPokeState.hp}\n最大HP：${opPokeState[`poke${opPokeNum}MaxHp`]}`);
   }
 
   const getPokeState = (isMe, simple) => {
@@ -1049,6 +1002,8 @@ export function useBattleHandlers(battleState) {
     let effectiveness = isIncident ? weaponInfo.effectiveness : null;
 
     const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+
+    //相手が死亡した際は、相手への追加効果は発動しない
     const isAlive = damage < defState.hp;
     effectiveness = effTarget === "相手" && !isAlive ? null : effectiveness;
 
@@ -1122,8 +1077,9 @@ export function useBattleHandlers(battleState) {
           conditionFlg = false;
         }
         //既に状態異常になっているなら他の状態異常にならない
-        if (pokeState[`poke${pokeNum}Condition`] !== "") {
-          conditionText = `しかしうまく決まらなかった`;
+        const defPokeCondition = getPokeCondition(!atcIsMe);
+        if (defPokeCondition !== "") {
+          conditionText = isAtcWeapon ? "" : `しかしうまく決まらなかった`;
           conditionFlg = false;
         }
 
@@ -1171,8 +1127,8 @@ export function useBattleHandlers(battleState) {
     const buffMultiplier = buff > 0 ? buff * 0.5 + 1 : 2 / (2 - buff);
     let actualStatus = beforeStatus * buffMultiplier;
 
-    const pokeNum = getPokeNum(pokeState, pokeState.name);
-    if (status === "s" && pokeState[`poke${pokeNum}Condition`] === "まひ")
+    const pokeCondition = getPokeCondition(isMe);
+    if (status === "s" && pokeCondition === "まひ")
       actualStatus = Math.floor(actualStatus * 0.5);
     return actualStatus;
   }
@@ -1240,6 +1196,62 @@ export function useBattleHandlers(battleState) {
     setOtherText({ kind: "heal", content: healText });
   }
 
+  //火傷チェック
+  const checkIsBurned = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const pokeCondition = getPokeCondition(isMe);
+    const isBurned = pokeCondition === "やけど" && pokeState.hp > 0;
+    return isBurned;
+  }
+
+  //火傷ダメージ計算
+  const calcBurnedDamage = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const maxHp = getMaxHp(pokeState, pokeState.name);
+    const burnedDamage = Math.floor(maxHp / 16);
+    return burnedDamage;
+  }
+
+  //火傷テキストのセット
+  const setBurnedText = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const burnedText = `${pokeState.name}はやけどのダメージを受けた`;
+    setOtherText({ kind: "burned", content: burnedText });
+  }
+
+  //火傷のダメージ処理
+  const processBurnedDamage = async (isMe) => {
+    if (checkIsBurned(isMe)) {
+      burned.current = true;
+      const burnedDamage = calcBurnedDamage(isMe);
+
+      const deathFlg = isMe ? myDeathFlg : opDeathFlg;
+      const pokeState = getPokeState(isMe, true);
+      deathFlg.current = burnedDamage >= pokeState.hp ? true : false;
+
+      soundList.general.burned.play();
+      setHpOnOtherDamage(isMe, burnedDamage);
+      setBurnedText(isMe);
+      if (isMe)
+        await stopProcessing(2500);
+    }
+  }
+
+  //ポケモンの現在HPと最大HPをコンソールする
+  const consolePokeHp = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const maxHp = getPokeNumMaxHp(pokeState, pokeState.name);
+    console.log(`${pokeState.name}\n残HP：${pokeState.hp}\n最大HP：${maxHp}`);
+  }
+
+  //バトル場のポケモンの状態異常を取得する
+  const getPokeCondition = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const pokeNum = getPokeNum(pokeState, pokeState.name);
+    const pokeCondition = pokeState[`poke${pokeNum}Condition`];
+    return pokeCondition;
+  }
+
 
   return {
     //toDoWhenFnc.jsで使用
@@ -1269,6 +1281,7 @@ export function useBattleHandlers(battleState) {
 
     setHpOnHeal,
     setHealText,
+    consolePokeHp,
 
     //jsxや他jsで使用
     getPokeInfo,
@@ -1287,6 +1300,7 @@ export function useBattleHandlers(battleState) {
     decideOpAction,
     setTextWhenClickWeaponBtn,
     initializeState,
+    getPokeCondition,
 
     getPokeState,
     getAreaVisible,

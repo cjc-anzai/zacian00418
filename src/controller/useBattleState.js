@@ -33,24 +33,25 @@ export function useBattleState() {
   const [myPokeStateTrigger, setMyPokeStateTrigger] = useState({ ...defaultPokeStateTrigger });
   const [opPokeStateTrigger, setOpPokeStateTrigger] = useState({ ...defaultPokeStateTrigger });
 
-  const [selectedOrder, setSelectedOrder] = useState([]);   //自分が選出するポケモン3体
-  const [isTerastalActive, setIsTerastalActive] = useState(false);    //テラスタルボタン
+  const [selectedOrder, setSelectedOrder] = useState([]);                  //自分が選出するポケモン3体
+  const [isTerastalActive, setIsTerastalActive] = useState(false);         //テラスタルボタン
   const [otherText, setOtherText] = useState({ kind: "", content: "" });   //イレギュラーなテキスト
 
   //useRef
-  const [myLife, opLife] = [useRef(3), useRef(3)];
-  const [mySelectedWeapon, opSelectedWeapon] = [useRef(null), useRef(null)];
-  const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];       //交代したターンか否か
+  const [myLife, opLife] = [useRef(3), useRef(3)];                              //
+  const [mySelectedWeapon, opSelectedWeapon] = [useRef(null), useRef(null)];    //
+  const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];          //交代したターンか否か
   const [myChangePokeName, opChangePokeName] = [useRef(null), useRef(null)];    //交代するポケモン
-  const opTerastalFlag = useRef(false);
-  const iAmFirst = useRef(false);
-  const isHeal = useRef(false);
-  const isHealAtc = useRef(false);
-  const healHp = useRef(false);
-  const burned = useRef(0);; //火傷ダメージをセットしたフラグ
-  const resultText = useRef("");        //勝敗
-  const turnCnt = useRef(1);            
-  const loopAudioRef = useRef(null);    //再生中のBGM
+  const [myDeathFlg, opDeathFlg] = [useRef(false), useRef(false)];              //定数ダメージによって死亡する場合のフラグ
+  const opTerastalFlg = useRef(false);                                          //
+  const iAmFirst = useRef(false);                                               //先攻後攻
+  const isHeal = useRef(false);                                                 //回復の変化技or回復の攻撃技
+  const isHealAtc = useRef(false);                                              //回復の攻撃技
+  const healHp = useRef(false);                                                 //回復技によって回復するHP
+  const burned = useRef(0);                                                     //火傷ダメージをセットしたフラグ
+  const resultText = useRef("");                                                //勝敗
+  const turnCnt = useRef(1);                                                    //デバッグ用ターンカウント    
+  const loopAudioRef = useRef(null);                                            //再生中のBGM
 
   return {
     myAreaVisible, setMyAreaVisible,
@@ -64,13 +65,14 @@ export function useBattleState() {
     otherText, setOtherText,
     selectedOrder, setSelectedOrder,
     isTerastalActive, setIsTerastalActive,
-    opTerastalFlag,
+    opTerastalFlg,
     myLife, opLife,
     mySelectedWeapon, opSelectedWeapon, 
     burned,
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     myChangePokeName, opChangePokeName,
+    myDeathFlg, opDeathFlg,
     resultText, turnCnt,
     loopAudioRef,
   };

@@ -8,12 +8,13 @@ const StatusBox = ({
 
     //インポートする変数や関数の取得
     const { myPokeState,} = battleState;
-    const { getMaxHp, getPokeState, getAreaVisible, getPokeNum } = battleHandlers;
+    const { getMaxHp, getPokeState, getAreaVisible, getPokeCondition } = battleHandlers;
 
     const [pokeState, areaVisible] = [getPokeState(isMe, true), getAreaVisible(isMe, true)];
     const MaxHp = getMaxHp(pokeState, pokeState.name);
     const who = isMe ? "my" : "op";
-    const pokeNum = getPokeNum(pokeState, pokeState.name);
+    const pokeCondition = getPokeCondition(isMe);
+    
 
     return (
         <div className="status-box" style={{ display: areaVisible.poke ? "block" : "none" }}>
@@ -21,12 +22,12 @@ const StatusBox = ({
                 <h1 className={`${who}-poke`}>
                     <span>{pokeState.name}</span>
                     <span className="type-wrapper">
-                        {pokeState[`poke${pokeNum}Condition`] !== "" && (
+                        {pokeCondition !== "" && (
                             <span
                                 className="condition"
-                                style={{ backgroundColor: conditionColors[pokeState[`poke${pokeNum}Condition`]], borderColor: conditionColors[pokeState[`poke${pokeNum}Condition`]] }}
+                                style={{ backgroundColor: conditionColors[pokeCondition], borderColor: conditionColors[pokeCondition] }}
                             >
-                                {pokeState[`poke${pokeNum}Condition`]}
+                                {pokeCondition}
                             </span>
                         )}
                     </span>

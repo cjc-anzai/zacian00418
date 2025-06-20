@@ -129,7 +129,10 @@ export function useBattleEffects(battleState) {
   //===========================================
   useEffect(() => {
     if (!otherText.content) return;
-    toDoWhenSetOtherText();
+    const run = async () => {
+      await toDoWhenSetOtherText();
+    };
+    run();
   }, [otherText]);
 
   return {};
