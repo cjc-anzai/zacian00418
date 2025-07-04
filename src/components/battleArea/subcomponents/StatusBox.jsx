@@ -13,8 +13,8 @@ const StatusBox = ({
     const [pokeState, areaVisible] = [getPokeState(isMe, true), getAreaVisible(isMe, true)];
     const MaxHp = getMaxHp(pokeState, pokeState.name);
     const who = isMe ? "my" : "op";
-    const pokeCondition = getPokeCondition(isMe);
-    
+    let pokeCondition = getPokeCondition(isMe);
+    pokeCondition = pokeCondition === "もうどく" ? "どく" : pokeCondition;
 
     return (
         <div className="status-box" style={{ display: areaVisible.poke ? "block" : "none" }}>

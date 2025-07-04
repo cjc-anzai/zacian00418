@@ -63,6 +63,18 @@ export const soundList = {
       a.load();
       return a;
     })(),
+    poisoned: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/poisoned.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
+    frozen: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/frozen.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
     win: (() => {
       const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/winSe.mp3');
       a.preload = 'auto';
@@ -190,7 +202,6 @@ export const conditionColors = {
   まひ: "#FFD700",
   やけど: "#FF4500",
   どく: "#6A0DAD",
-  もうどく: "#F7D02C",
   ねむり: "#6699CC",
   こおり: "#99CCFF",
 };

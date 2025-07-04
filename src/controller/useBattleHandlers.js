@@ -36,7 +36,8 @@ export function useBattleHandlers(battleState) {
     opTerastalFlg,
     mySelectedWeapon, opSelectedWeapon,
     myChangePokeName, opChangePokeName,
-    myDeathFlg, opDeathFlg, burned,
+    myDeathFlg, opDeathFlg, burned, poisoned,
+    myPoisonedCnt, opPoisonedCnt,
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     resultText, turnCnt,
@@ -56,6 +57,9 @@ export function useBattleHandlers(battleState) {
       aBuff: 0, bBuff: 0, cBuff: 0, dBuff: 0, sBuff: 0,
       weapon1: pokeInfo.weapon1, weapon2: pokeInfo.weapon2, weapon3: pokeInfo.weapon3, weapon4: pokeInfo.weapon4,
     }));
+    //猛毒の初期化
+    const poisonedCnt = isMe ? myPoisonedCnt : opPoisonedCnt;
+    poisonedCnt.current = 0;
   }
 
   //ポケモン名をセットする
@@ -117,9 +121,10 @@ export function useBattleHandlers(battleState) {
   }
 
   //テラスタルするポケモンNoをセットする
-  const setTerastalPokeNum = (isMe) => {
+  const setTerastalPokeNum = async (isMe) => {
+    await stopProcessing(2000);
     const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
-    delay(() => setPokeState(prev => ({ ...prev, canTerastal: false, terastalPokeNum: getPokeNum(pokeState, pokeState.name) })), 2000);
+    setPokeState(prev => ({ ...prev, canTerastal: false, terastalPokeNum: getPokeNum(pokeState, pokeState.name) }));
   }
 
   //Goテキストをセットする
@@ -145,7 +150,7 @@ export function useBattleHandlers(battleState) {
   }
 
   //Weaponテキストをセットする
-  const setWeaponText = (isMe) => {
+  const setWeaponText = async (isMe) => {
     const [pokeState, setPokeState, setPokeStateTrigger] =
       [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
 
@@ -159,8 +164,18 @@ export function useBattleHandlers(battleState) {
       // canMove = Math.random() >= 1;   //テスト用
       cantMoveText = canMove ? "" : `${pokeState.name}はしびれて動けない`;
     }
+    //凍りチェック
+    else if (pokeCondition === "こおり") {
+      canMove = Math.random() >= 0.80;
+      // canMove = Math.random() >= 0.1;   //テスト用
+      cantMoveText = canMove ? "" : `${pokeState.name}は凍ってしまって動けない`;
+    }
 
     if (canMove) {
+      if (pokeCondition === "こおり") {
+        setOtherText({ kind: "general", content: `${pokeState.name}は氷が溶けた` });
+        await stopProcessing(2000);
+      }
       const weaponName = getWeaponName(isMe);
       const weaponText = getWeaponText(isMe, pokeState.name, weaponName);
       pokeState.text.content !== weaponText
@@ -168,7 +183,9 @@ export function useBattleHandlers(battleState) {
         : setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
     }
     else {
-      soundList.general.paralyzed.play();
+      const conditionSe = pokeCondition === "まひ" ? "paralyzed"
+        : pokeCondition === "こおり" ? "frozen" : null;
+      soundList.general[conditionSe].play();
       setOtherText({ kind: "cantMove", content: cantMoveText });
     }
   }
@@ -251,18 +268,20 @@ export function useBattleHandlers(battleState) {
   }
 
   //ポケモン交換時の表示制御
-  const setAreaVisibleForChange = (isMe) => {
+  const setAreaVisibleForChange = async (isMe) => {
     soundList.general.back.cloneNode().play();
     const setAreaVisible = getSetAreaVisible(isMe, true);
     setAreaVisible(prev => ({ ...prev, text: true }));    //backテキストを表示
-    delay(() => setAreaVisible(p => ({ ...p, poke: false })), 1000);
+    await stopProcessing(1000);
+    setAreaVisible(p => ({ ...p, poke: false }));
   }
 
   //テラスタルテキスト表示の制御
-  const setAreaVisibleForTerastal = (isMe) => {
+  const setAreaVisibleForTerastal = async (isMe) => {
     const setAreaVisible = getSetAreaVisible(isMe, true);
     setAreaVisible(prev => ({ ...prev, text: true }));
-    delay(() => setAreaVisible(prev => ({ ...prev, text: false })), 2000);
+    await stopProcessing(2000);
+    setAreaVisible(prev => ({ ...prev, text: false }));
   }
 
   //攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
@@ -321,17 +340,15 @@ export function useBattleHandlers(battleState) {
       const pokeIMGElm = getDamageEffectElem(isMe);
 
       // 1秒後に死亡演出を開始
-      setTimeout(async () => {
-        setAreaVisible(prev => ({ ...prev, text: true }));
-        await playPokeVoice(pokeState.name);
-        pokeIMGElm.classList.add("pokemon-dead");
-      }, 1000);
+      await stopProcessing(1000);
+      setAreaVisible(prev => ({ ...prev, text: true }));
+      await playPokeVoice(pokeState.name);
+      pokeIMGElm.classList.add("pokemon-dead");
 
       // さらに2秒後に非表示 & resolve
-      setTimeout(() => {
-        setAreaVisible(prev => ({ ...prev, poke: false, text: false }));
-        resolve();
-      }, 3000 + 1);
+      await stopProcessing(3001)
+      setAreaVisible(prev => ({ ...prev, poke: false, text: false }));
+      resolve();
     });
   };
 
@@ -495,7 +512,7 @@ export function useBattleHandlers(battleState) {
   }
 
   //技ボタン押下時にセットするテキストを分岐する
-  const setTextWhenClickWeaponBtn = () => {
+  const setTextWhenClickWeaponBtn = async () => {
     //相手が交代するなら、相手のbackテキストをセット
     if (opChangeTurn.current)
       setBackText(false);
@@ -509,7 +526,7 @@ export function useBattleHandlers(battleState) {
       }
       //どちらもテラスタルしない場合、先攻の技テキストをセット
       else
-        setWeaponText(iAmFirst.current);
+        await setWeaponText(iAmFirst.current);
     }
   }
 
@@ -963,6 +980,8 @@ export function useBattleHandlers(battleState) {
     await stopProcessing(2000);
     await processBurnedDamage(true);  //火傷ダメージの処理
     await processBurnedDamage(false);
+    await processPoisonedDamage(true);  //毒ダメージの処理
+    await processPoisonedDamage(false);
 
     //ターン終了時に定数ダメージを受けても生存する場合にコマンドを表示
     if (myPokeState.hp > 0 && opPokeState.hp > 0 && !myDeathFlg.current && !opDeathFlg.current)
@@ -1099,9 +1118,29 @@ export function useBattleHandlers(battleState) {
           }
           conditionText = conditionFlg ? `${defState.name}はやけどを負った` : conditionText;
         }
+        else if (condition.includes("どく")) {
+          const isBadlyPoisoned = condition === "もうどく";
+          //どくタイプは毒状態にならない
+          if (defState.type1 === "どく" || defState.type2 === "どく") {
+            conditionText = `${defState.name}には効果がないようだ`;
+            conditionFlg = false;
+          }
+          conditionText = conditionFlg ? `${defState.name}は${isBadlyPoisoned ? "猛" : ""}毒状態になった` : conditionText;
+        }
+        else if (condition === "こおり") {
+          //氷タイプは凍らない
+          if (defState.type1 === "こおり" || defState.type2 === "こおり")
+            conditionFlg = false;
+          conditionText = conditionFlg ? `${defState.name}は凍ってしまった` : conditionText;
+        }
+
         //stateに状態異常をセット
         if (conditionFlg) {
-          const conditionSe = condition === "まひ" ? "paralyzed" : "やけど" ? "burned" : null;
+          const conditionSe = condition === "まひ" ? "paralyzed"
+            : condition === "やけど" ? "burned"
+              : condition.includes("どく") ? "poisoned"
+                : condition === "こおり" ? "frozen"
+                  : null;
           soundList.general[conditionSe].play();
           setPokeState(prev => ({ ...prev, [`poke${pokeNum}Condition`]: condition }));
         }
@@ -1232,6 +1271,55 @@ export function useBattleHandlers(battleState) {
       soundList.general.burned.play();
       setHpOnOtherDamage(isMe, burnedDamage);
       setBurnedText(isMe);
+      if (isMe)
+        await stopProcessing(2500);
+    }
+  }
+
+  //毒チェック
+  const checkIsPoisoned = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const pokeCondition = getPokeCondition(isMe);
+    const isPoisoned = pokeCondition.includes("どく") && pokeState.hp > 0;
+    return isPoisoned;
+  }
+
+  //毒ダメージ計算
+  const calcPoisonedDamage = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const pokeCondition = getPokeCondition(isMe);
+    const maxHp = getMaxHp(pokeState, pokeState.name);
+    let poisonedDamage = 0;
+    if (pokeCondition === "もうどく") {
+      const cnt = isMe ? myPoisonedCnt : opPoisonedCnt;
+      const ratio = Math.min(cnt.current, 15) / 16;
+      poisonedDamage = Math.floor(maxHp * ratio);
+      cnt.current++;
+    } else
+      poisonedDamage = Math.floor(maxHp / 8);
+    return poisonedDamage;
+  }
+
+  //毒テキストのセット
+  const setPoisonedText = (isMe) => {
+    const pokeState = getPokeState(isMe, true);
+    const poisonedText = `${pokeState.name}は毒のダメージを受けた`;
+    setOtherText({ kind: "poisonsed", content: poisonedText });
+  }
+
+  //毒のダメージ処理
+  const processPoisonedDamage = async (isMe) => {
+    if (checkIsPoisoned(isMe)) {
+      poisoned.current = true;
+      const poisonedDamage = calcPoisonedDamage(isMe);
+
+      const deathFlg = isMe ? myDeathFlg : opDeathFlg;
+      const pokeState = getPokeState(isMe, true);
+      deathFlg.current = poisonedDamage >= pokeState.hp ? true : false;
+
+      soundList.general.poisoned.play();
+      setHpOnOtherDamage(isMe, poisonedDamage);
+      setPoisonedText(isMe);
       if (isMe)
         await stopProcessing(2500);
     }

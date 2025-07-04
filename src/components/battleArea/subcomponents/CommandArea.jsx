@@ -101,7 +101,7 @@ const CommandArea = ({
     mySelectedWeapon.current = myWeaponInfo;
     await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
     await setMyTurn();
-    setTextWhenClickWeaponBtn();
+    await setTextWhenClickWeaponBtn();
   };
 
   //〇〇に交代ボタン押下時、交代するポケモン名を保存し、交代フラグを立てる

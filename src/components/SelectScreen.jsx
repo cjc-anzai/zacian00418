@@ -46,7 +46,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
     const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
     
     //テスト用で相手の選出を固定
-    // const opSelectedOrder = ["エレキブル", "エルレイド", "グライオン"];
+    // const opSelectedOrder = ["ラプラス", "エルレイド", "グライオン"];
 
     //DBから6体のポケモンの最大HPを取得
     const [myPokeInfos, opPokeInfos] = await Promise.all([

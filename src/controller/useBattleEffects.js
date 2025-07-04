@@ -118,12 +118,18 @@ export function useBattleEffects(battleState) {
   //テラスタル======================================
   useEffect(() => {
     if (!myPokeState.terastalPokeNum) return;
-    toDoWhenSetTerastalPokeNum(true);
+    const run = async () => {
+      await toDoWhenSetTerastalPokeNum(true);
+    };
+    run();
   }, [myPokeState.terastalPokeNum]);
 
   useEffect(() => {
     if (!opPokeState.terastalPokeNum) return;
-    toDoWhenSetTerastalPokeNum(false);
+    const run = async () => {
+      await toDoWhenSetTerastalPokeNum(false);
+    };
+    run();
   }, [opPokeState.terastalPokeNum]);
 
   //===========================================

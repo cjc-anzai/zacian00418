@@ -48,7 +48,9 @@ export function useBattleState() {
   const isHeal = useRef(false);                                                 //回復の変化技or回復の攻撃技
   const isHealAtc = useRef(false);                                              //回復の攻撃技
   const healHp = useRef(false);                                                 //回復技によって回復するHP
-  const burned = useRef(0);                                                     //火傷ダメージをセットしたフラグ
+  const burned = useRef(false);                                                 //火傷ダメージをセットしたフラグ
+  const poisoned = useRef(false);                                               //毒ダメージをセットしたフラグ
+  const [myPoisonedCnt, opPoisonedCnt] = [useRef(1), useRef(1)];
   const resultText = useRef("");                                                //勝敗
   const turnCnt = useRef(1);                                                    //デバッグ用ターンカウント    
   const loopAudioRef = useRef(null);                                            //再生中のBGM
@@ -68,7 +70,8 @@ export function useBattleState() {
     opTerastalFlg,
     myLife, opLife,
     mySelectedWeapon, opSelectedWeapon, 
-    burned,
+    burned, poisoned,
+    myPoisonedCnt, opPoisonedCnt,
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     myChangePokeName, opChangePokeName,
