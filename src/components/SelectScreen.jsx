@@ -14,8 +14,8 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
   const opPokesRomaName = ["erekiburu", "erureido", "rapurasu", "manmu", "guraion", "hapinasu"];
   const opPokesKanaName = ["エレキブル", "エルレイド", "ラプラス", "マンムー", "グライオン", "ハピナス"];
-  const myPokesRomaName = ["gaburiasu", "rukario", "genga", "mirokarosu", "jukain", "rizadon"];
-  const myPokesKanaName = ["ガブリアス", "ルカリオ", "ゲンガー", "ミロカロス", "ジュカイン", "リザードン"];
+  const myPokesRomaName = ["gaburiasu", "goukazaru", "sanda", "genga", "mirokarosu", "jukain"];
+  const myPokesKanaName = ["ガブリアス", "ゴウカザル", "サンダー", "ゲンガー", "ミロカロス", "ジュカイン"];
 
   //選出画面のポケモン押下時
   const handleSelect = (pokeName) => {
