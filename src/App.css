@@ -582,6 +582,7 @@
   }
 
   .op-poke-select {
+    height: 30%;
     gap: 5px;
     margin: 10px 0;
     padding: 0 50px;
@@ -597,25 +598,25 @@
   }
 
   .poke-preview {
-    height: 45%;
-    width: auto;
+    width: 30%;
+    height: auto;
     padding: 0;
   }
 
   .poke-option {
+    width: 30%;
     height: 45%;
-    width: auto;
     padding: 0;
   }
 
   .poke-preview img {
-    width: auto;
-    height: 80%;
+    width: 100%;
+    height: auto;
   }
 
   .poke-option img {
-    width: auto;
-    height: 60%;
+    width: 100%;
+    height: auto;
   }
 
   .poke-option p,
