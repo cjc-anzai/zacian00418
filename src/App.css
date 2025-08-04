@@ -568,48 +568,71 @@
   color: black;
 }
 
-@media screen and (max-width: 730px) {
+@media screen and (max-width: 350px) {
   .select-area {
-    padding: 0;
+    padding: 20px 8px;
   }
 
   .select-area>.content {
     height: 100%;
   }
 
-  .op-poke-select,
-  .my-poke-select {
-    gap: 0;
-    margin: 0;
+  .op-poke-select {
+    gap: 5px;
+    margin: 10px 0;
+    padding: 0 50px;
+    flex-wrap: wrap;
   }
 
-  .poke-option,
+  .my-poke-select {
+    height: 45%;
+    gap: 5px;
+    margin: 10px 0;
+    padding: 0 10px;
+    flex-wrap: wrap;
+  }
+
   .poke-preview {
-    height: 100%;
-    width: 15%;
+    height: 45%;
+    width: auto;
     padding: 0;
   }
 
-  .poke-option img,
+  .poke-option {
+    height: 45%;
+    width: auto;
+    padding: 0;
+  }
+
   .poke-preview img {
     width: auto;
-    height: 50%;
+    height: 80%;
+  }
+
+  .poke-option img {
+    width: auto;
+    height: 60%;
   }
 
   .poke-option p,
   .poke-preview p {
     margin: 0px;
     font-weight: 350;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
+  /* .content h2 {
+    margin-top: 20px;
+  } */
+
   .select-actions {
-    height: 80px;
+    height: 10%;
   }
 
   .select-actions button {
-    height: 50px;
-    padding: 0 20px;
+    width: 70%;
+    height: 100%;
+    padding: 0 10px;
     font-size: 0.9rem;
   }
 
@@ -757,7 +780,7 @@
   .cmd-area {
     width: 90%;
     padding: 5px 10px;
-    gap:3px;
+    gap: 3px;
   }
 
   .status-area {

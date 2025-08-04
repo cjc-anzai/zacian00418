@@ -88,7 +88,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
           </div>
         </div>
 
-        <h2>自分のポケモンを選出</h2>
+        <h2>自分のポケモンを3体選出</h2>
         <div className="my-poke-select">
           {[{ name: myPokesKanaName[0], img: getPokeImg(myPokesRomaName[0]) }, { name: myPokesKanaName[1], img: getPokeImg(myPokesRomaName[1]) },
           { name: myPokesKanaName[2], img: getPokeImg(myPokesRomaName[2]) }, { name: myPokesKanaName[3], img: getPokeImg(myPokesRomaName[3]) },
