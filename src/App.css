@@ -834,7 +834,7 @@
   }
 
   .cmd-text-area button {
-    /* width: unset; */
+    width: unset;
     padding: 2px 4px;
     font-size: 0.9rem;
   }
