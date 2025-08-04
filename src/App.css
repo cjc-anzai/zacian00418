@@ -81,6 +81,10 @@
   flex-direction: column;
 }
 
+  .content h2 {
+    color: black;
+  }
+
 .op-poke-select,
 .my-poke-select {
   height: 30%;
@@ -568,7 +572,7 @@
   color: black;
 }
 
-@media screen and (max-width: 400px) {
+@media screen and (max-width: 450px) {
   .select-area {
     padding: 20px 8px;
   }
@@ -620,10 +624,6 @@
     font-weight: 350;
     font-size: 0.8rem;
   }
-
-  /* .content h2 {
-    margin-top: 20px;
-  } */
 
   .select-actions {
     height: 10%;
