@@ -1,11 +1,10 @@
 #root {
   width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  height: 100%;
 }
 
 .App {
-  height: 100%;
+  height: calc(var(--vh, 1vh) * 100);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -81,9 +80,9 @@
   flex-direction: column;
 }
 
-  .content h2 {
-    color: black;
-  }
+.content h2 {
+  color: black;
+}
 
 .op-poke-select,
 .my-poke-select {
@@ -627,7 +626,7 @@
   }
 
   .select-actions {
-    height: 10%;
+    height: 8%;
   }
 
   .select-actions button {

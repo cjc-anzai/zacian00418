@@ -1,4 +1,5 @@
 import "./App.css";
+import { useEffect } from 'react';
 import TopScreen from './components/TopScreen';
 import SelectScreen from "./components/SelectScreen";
 import BattleArea from "./components/battleArea/BattleArea";
@@ -12,6 +13,17 @@ function App() {
   const battleState = useBattleState();
   useBattleEffects(battleState);
   const battleHandlers = useBattleHandlers(battleState);
+
+  //縦画面サイズの取得
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    setVh();
+    window.addEventListener("resize", setVh);
+    return () => window.removeEventListener("resize", setVh);
+  }, []);
 
   return (
     <div className="App">

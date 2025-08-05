@@ -19,6 +19,8 @@ html, body {
   padding: 0;
   overflow: auto; /* ← スクロール可能にする */
   overflow-y: auto; /* ← hiddenだとスクロールできなくなる */
+  overflow: hidden; /* ← スクロール可能にする */
+  overflow-y: hidden; /* ← hiddenだとスクロールできなくなる */
 }
 
 h1 {
