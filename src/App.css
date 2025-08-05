@@ -581,45 +581,52 @@
   }
 
   .op-poke-select {
-    height: 30%;
+    height: 25%;
     gap: 5px;
-    margin: 10px 0;
-    padding: 0 50px;
-    flex-wrap: wrap;
-  }
-
-  .my-poke-select {
-    height: 45%;
-    gap: 5px;
-    margin: 10px 0;
-    padding: 0 10px;
+    margin: 5px 0;
+    padding: 0 60px;
     flex-wrap: wrap;
   }
 
   .poke-preview {
-    width: 30%;
-    height: auto;
-    padding: 0;
-  }
-
-  .poke-option {
-    width: 30%;
-    height: 45%;
+    width: auto;
+    height: 40%;
     padding: 0;
   }
 
   .poke-preview img {
-    width: 100%;
-    height: auto;
+    width: auto;
+    height: 80%;
+  }
+
+  .poke-preview p {
+    height: 20%;
+    margin: 0px;
+    font-weight: 350;
+    font-size: 0.7rem;
+  }
+
+  .my-poke-select {
+    height: 40%;
+    gap: 3px;
+    margin: 5px 0;
+    padding: 0 0px;
+    flex-wrap: wrap;
+  }
+
+  .poke-option {
+    width: auto;
+    height: 45%;
+    padding: 0;
   }
 
   .poke-option img {
-    width: 100%;
-    height: auto;
+    width: auto;
+    height: 70%;
   }
 
-  .poke-option p,
-  .poke-preview p {
+  .poke-option p {
+    height: 10%;
     margin: 0px;
     font-weight: 350;
     font-size: 0.8rem;
@@ -633,7 +640,7 @@
     width: 70%;
     height: 100%;
     padding: 0 10px;
-    font-size: 0.9rem;
+    font-size: 1.5rem;
   }
 
   /* //================================ */
