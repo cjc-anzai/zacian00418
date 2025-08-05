@@ -64,7 +64,7 @@
 
 .select-area {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100%;
   padding: 40px 20px;
   background-color: #e6f7ff;
   background-image:
@@ -86,6 +86,7 @@
 
 .op-poke-select,
 .my-poke-select {
+  width: 100%;
   height: 30%;
   display: flex;
   justify-content: center;
@@ -581,6 +582,7 @@
   }
 
   .op-poke-select {
+    width: 100%;
     height: 25%;
     gap: 5px;
     margin: 5px 0;
@@ -589,24 +591,24 @@
   }
 
   .poke-preview {
-    width: auto;
-    height: 40%;
+    width: 30%;
+    height: auto;
     padding: 0;
   }
 
   .poke-preview img {
-    width: auto;
-    height: 80%;
+    width: 100%;
+    height: auto;
   }
 
   .poke-preview p {
-    height: 20%;
     margin: 0px;
     font-weight: 350;
     font-size: 0.7rem;
   }
 
   .my-poke-select {
+    width: 100%;
     height: 40%;
     gap: 3px;
     margin: 5px 0;
@@ -615,24 +617,24 @@
   }
 
   .poke-option {
-    width: auto;
-    height: 45%;
+    width: 30%;
+    height: 48%;
     padding: 0;
   }
 
   .poke-option img {
-    width: auto;
-    height: 70%;
+    width: 90%;
+    height: auto;
   }
 
   .poke-option p {
-    height: 10%;
     margin: 0px;
     font-weight: 350;
     font-size: 0.8rem;
   }
 
   .select-actions {
+    margin-top: 5px;
     height: 8%;
   }
 
