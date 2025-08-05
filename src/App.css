@@ -20,12 +20,13 @@
   align-items: center;
   flex-direction: column;
   background-color: #fff4c8;
+  flex: 1; /* ←これで中身が余白に応じて拡張する */
 }
 
 /* 初期画面============================================================================ */
 .top-screen {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   color: white;
   font-family: 'Arial', sans-serif;
   background-image: url('/img/otherImg/top.png');
@@ -648,7 +649,7 @@
   /* //================================ */
   .battle-area-wrap {
     width: 100%;
-    height: 100vh;
+    height: 100%;
   }
 
   .battle-area {
@@ -776,7 +777,7 @@
   /* コマンドエリア======================================================= */
   .cmd-text-area {
     height: 50px;
-    margin-top: 8x;
+    margin-top: 8px;
   }
 
   .text-area {
@@ -803,7 +804,7 @@
 
   .status-area-wrapper button {
     height: 10px;
-    margin: auto 0 2px 5px;
+    margin: 0 0 2px 5px;
   }
 
   .status-area::before {
@@ -903,7 +904,7 @@
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
