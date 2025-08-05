@@ -20,7 +20,8 @@
   align-items: center;
   flex-direction: column;
   background-color: #fff4c8;
-  flex: 1; /* ←これで中身が余白に応じて拡張する */
+  flex: 1;
+  /* ←これで中身が余白に応じて拡張する */
 }
 
 /* 初期画面============================================================================ */
@@ -575,18 +576,23 @@
 
 @media screen and (max-width: 450px) {
   .select-area {
-    padding: 20px 8px;
+    padding: 4% 2% 16%;
   }
 
   .select-area>.content {
     height: 100%;
   }
 
+  .content h2 {
+    height: 4%;
+  }
+
   .op-poke-select {
     width: 100%;
-    height: 25%;
+    height: 32%;
     gap: 5px;
-    margin: 5px 0;
+    margin: 1% 0;
+    margin-bottom: 3%;
     padding: 0 60px;
     flex-wrap: wrap;
   }
@@ -610,9 +616,10 @@
 
   .my-poke-select {
     width: 100%;
-    height: 40%;
+    height: 48%;
     gap: 3px;
-    margin: 5px 0;
+    margin: 1% 0;
+    margin-bottom: 2%;
     padding: 0 0px;
     flex-wrap: wrap;
   }
@@ -635,7 +642,6 @@
   }
 
   .select-actions {
-    margin-top: 5px;
     height: 8%;
   }
 
