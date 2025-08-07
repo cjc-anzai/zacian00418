@@ -16,13 +16,14 @@ import {
   calcPureDamage,
   getCompati,
 } from "../model/model";
+import { FailoverStatusCode } from "aws-cdk-lib/aws-cloudfront";
 
 export function useBattleHandlers(battleState) {
 
   //インポートの取得===========================================================
   const {
     defaultAreaVisible,
-    myAreaVisible, opAreaVisible,
+    myAreaVisible, opAreaVisible, otherAreaVisible,
     setMyAreaVisible, setOpAreaVisible, setOtherAreaVisible,
     defaultPokeState, defaultPokeStateTrigger,
     myPokeState, setMyPokeState,
@@ -32,6 +33,7 @@ export function useBattleHandlers(battleState) {
     otherText, setOtherText,
     setSelectedOrder,
     isTerastalActive,
+    myTextRef, opTextRef, otherTextRef, textAreaRef,
     myLife, opLife,
     opTerastalFlg,
     mySelectedWeapon, opSelectedWeapon,
@@ -59,7 +61,7 @@ export function useBattleHandlers(battleState) {
     }));
     //猛毒の初期化
     const poisonedCnt = isMe ? myPoisonedCnt : opPoisonedCnt;
-    poisonedCnt.current = 0;
+    poisonedCnt.current = 1;
   }
 
   //ポケモン名をセットする
@@ -129,30 +131,39 @@ export function useBattleHandlers(battleState) {
 
   //Goテキストをセットする
   const setGoText = (isMe) => {
-    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    // const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    const pokeState = getPokeState(isMe, true);
     const goText = getGoText(isMe, pokeState.name);
-    setPokeState(prev => ({ ...prev, text: { kind: "go", content: goText } }));
+    // setPokeState(prev => ({ ...prev, text: { kind: "go", content: goText } }));
+    const textRef = getTextRef(isMe);
+    textRef.current = { kind: "go", content: goText };
   }
 
   //backテキストをセットする
   const setBackText = (isMe) => {
-    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    // const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    const pokeState = getPokeState(isMe, true);
     const backText = `戻れ！${pokeState.name}！`;
-    setPokeState(prev => ({ ...prev, text: { kind: "back", content: backText } }));
+    // setPokeState(prev => ({ ...prev, text: { kind: "back", content: backText } }));
+    const textRef = getTextRef(isMe);
+    textRef.current = { kind: "back", content: backText };
   }
 
   //テラスタルテキストをセットする
   const setTerastalText = (isMe) => {
-    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    // const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    const pokeState = getPokeState(isMe, true);
     const terastalText = getTerastalText(isMe, pokeState.name);
-
-    setPokeState(prev => ({ ...prev, text: { kind: "terastal", content: terastalText } }));
+    // setPokeState(prev => ({ ...prev, text: { kind: "terastal", content: terastalText } }));
+    const textRef = getTextRef(isMe);
+    textRef.current = { kind: "terastal", content: terastalText };
   }
 
   //Weaponテキストをセットする
   const setWeaponText = async (isMe) => {
-    const [pokeState, setPokeState, setPokeStateTrigger] =
-      [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
+    // const [pokeState, setPokeState, setPokeStateTrigger] =
+    //   [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
+    const pokeState = getPokeState(isMe, true);
 
     let canMove = true;
     let cantMoveText = "";
@@ -173,44 +184,56 @@ export function useBattleHandlers(battleState) {
 
     if (canMove) {
       if (pokeCondition === "こおり") {
-        setOtherText({ kind: "general", content: `${pokeState.name}は氷が溶けた` });
-        await stopProcessing(2000);
+        // setOtherText({ kind: "general", content: `${pokeState.name}は氷が溶けた` });
+        otherTextRef.current = { kind: "general", content: `${pokeState.name}は氷が溶けた` };
+        await displayOtherText();
       }
       const weaponName = getWeaponName(isMe);
       const weaponText = getWeaponText(isMe, pokeState.name, weaponName);
-      pokeState.text.content !== weaponText
-        ? setPokeState(prev => ({ ...prev, text: { kind: "weapon", content: weaponText } }))
-        : setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
+      // pokeState.text.content !== weaponText
+      //   ? setPokeState(prev => ({ ...prev, text: { kind: "weapon", content: weaponText } }))
+      //   : setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
+      const textRef = getTextRef(isMe);
+      textRef.current = { kind: "weapon", content: weaponText };
     }
     else {
       const conditionSe = pokeCondition === "まひ" ? "paralyzed"
         : pokeCondition === "こおり" ? "frozen" : null;
       soundList.general[conditionSe].play();
-      setOtherText({ kind: "cantMove", content: cantMoveText });
+      // setOtherText({ kind: "cantMove", content: cantMoveText });
+      otherTextRef.current = { kind: "cantMove", content: cantMoveText };
+      await displayOtherText();
+      await cantMoveFnc();
     }
   }
 
   //相性テキストをセットする
   const setCompatiText = async (atcIsMe) => {
-    const [pokeState, setPokeState, setPokeStateTrigger] =
-      [getPokeState(atcIsMe, false), getSetPokeState(atcIsMe, false), getSetPokeStateTrigger(atcIsMe, false)];
+    // const [pokeState, setPokeState, setPokeStateTrigger] =
+    //   [getPokeState(atcIsMe, false), getSetPokeState(atcIsMe, false), getSetPokeStateTrigger(atcIsMe, false)];
     const weaponInfo = (atcIsMe ? mySelectedWeapon : opSelectedWeapon).current;
 
     let compatiText = await getCompatiText(atcIsMe);
     if (weaponInfo.kind === "変化")
       compatiText = compatiTexts.mukou ? compatiText : compatiTexts.toubai;
-    pokeState.text.content !== compatiText ?
-      setPokeState(prev => ({ ...prev, text: { kind: "compati", content: compatiText } })) :
-      setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
+    // pokeState.text.content !== compatiText ?
+    //   setPokeState(prev => ({ ...prev, text: { kind: "compati", content: compatiText } })) :
+    //   setPokeStateTrigger(prev => ({ ...prev, text: prev.text + 1 }));
+    const textRef = getTextRef(!atcIsMe);
+    textRef.current = { kind: "compati", content: compatiText };
   }
 
   //deadテキストをセットする
   const setDeadText = async (isMe) => {
-    const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    // const [pokeState, setPokeState] = [getPokeState(isMe, true), getSetPokeState(isMe, true)];
+    const pokeState = getPokeState(isMe, true);
     const deadText = getDeadText(isMe, pokeState.name);
 
-    if (otherText.content) await stopProcessing(2000);
-    setPokeState(prev => ({ ...prev, text: { kind: "dead", content: deadText } }));
+    if (otherAreaVisible.textArea)
+      await stopProcessing(2000);
+    // setPokeState(prev => ({ ...prev, text: { kind: "dead", content: deadText } }));
+    const textRef = getTextRef(isMe);
+    textRef.current = { kind: "dead", content: deadText };
   }
 
 
@@ -253,8 +276,9 @@ export function useBattleHandlers(battleState) {
     //バトル開始時の表示制御(バトル開始時はお互いにGoテキストがセットされるため、一方のみ処理を行うため、isMeを入れる)
     if (isMe && !myAreaVisible.poke && !opAreaVisible.poke) {
       await controllAreaVisibleForApp(isMe);
+      setGoText(!isMe);
       await controllAreaVisibleForApp(!isMe);
-      setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+      setOtherAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
     }
     //一方のポケモン登場時の表示制御
     else if (!!myAreaVisible.poke !== !!opAreaVisible.poke) {
@@ -262,26 +286,35 @@ export function useBattleHandlers(battleState) {
       await controllAreaVisibleForApp(isMe);
       //死亡後の交代の場合はコマンドボタンを表示
       if (!changeTurn) {
-        setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+        setOtherAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
       }
     }
   }
 
   //ポケモン交換時の表示制御
   const setAreaVisibleForChange = async (isMe) => {
+    const textRef = getTextRef(isMe);
     soundList.general.back.cloneNode().play();
     const setAreaVisible = getSetAreaVisible(isMe, true);
-    setAreaVisible(prev => ({ ...prev, text: true }));    //backテキストを表示
-    await stopProcessing(1000);
-    setAreaVisible(p => ({ ...p, poke: false }));
+    // setAreaVisible(prev => ({ ...prev, text: true }));    //backテキストを表示
+    setOtherAreaVisible(prev => ({ ...prev, textArea: true }));    //backテキストを表示
+    delay(() => textAreaRef.current.textContent = textRef.current.content, 1);
+
+    // await stopProcessing(1000);
+    setAreaVisible(prev => ({ ...prev, poke: false }));
+    // delay(() => setOtherAreaVisible(prev => ({ ...prev, textArea: false })), 1000);    //backテキストを非表示
   }
 
   //テラスタルテキスト表示の制御
   const setAreaVisibleForTerastal = async (isMe) => {
-    const setAreaVisible = getSetAreaVisible(isMe, true);
-    setAreaVisible(prev => ({ ...prev, text: true }));
+    const textRef = getTextRef(isMe);
+    // const setAreaVisible = getSetAreaVisible(isMe, true);
+    // setAreaVisible(prev => ({ ...prev, text: true }));
+    setOtherAreaVisible(prev => ({ ...prev, textArea: true }));
+    delay(() => textAreaRef.current.textContent = textRef.current.content, 1);
     await stopProcessing(2000);
-    setAreaVisible(prev => ({ ...prev, text: false }));
+    // setAreaVisible(prev => ({ ...prev, text: false }));
+    // setOtherAreaVisible(prev => ({ ...prev, textArea: false }));
   }
 
   //攻撃関連のアニメーションを再生し、ダメージを反映したHPをセット
@@ -290,21 +323,26 @@ export function useBattleHandlers(battleState) {
     const [setAreaVisible, setOtherTextInvisible] =
       [getSetAreaVisible(atcIsMe, true), getSetAreaVisible(atcIsMe, false)];
     const weaponInfo = (atcIsMe ? mySelectedWeapon : opSelectedWeapon).current;
+    const [atcTextRef, defTextRef] = [getTextRef(atcIsMe), getTextRef(!atcIsMe)];
 
-    setAreaVisible(prev => ({ ...prev, text: true }));     //技テキスト表示
+    // setAreaVisible(prev => ({ ...prev, text: true }));     //技テキスト表示
+    setOtherAreaVisible(prev => ({ ...prev, textArea: true }));
+    delay(() => textAreaRef.current.textContent = atcTextRef.current.content, 1);  //技テキスト表示
 
     //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
     await attackEffect(atcIsMe, isHit, weaponInfo.atctarget);
-    setAreaVisible(prev => ({ ...prev, text: false }));    //技テキストを非表示
+    // setAreaVisible(prev => ({ ...prev, text: false }));    //技テキストを非表示
 
     if (weaponInfo.kind !== "変化") {
       //無効ではない場合
-      if (defState.text.content !== compatiTexts.mukou) {
+      if (defTextRef.current.content !== compatiTexts.mukou) {
         if (isHit) {
-          if (defState.text.content !== compatiTexts.toubai)
-            setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
+          if (defTextRef.current.content !== compatiTexts.toubai)
+            // setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
+            textAreaRef.current.textContent = defTextRef.current.content;   //相性テキスト表示
           if (isCritical)
-            setOtherText({ kind: "general", content: "急所にあたった" });
+            // setOtherText({ kind: "general", content: "急所にあたった" });
+            textAreaRef.current.textContent = `${textAreaRef.current.textContent}\n急所に当たった！`;
 
           //HPバー調整とダメージエフェクト
           const currentHp = getPokeNumHp(defState, defState.name);
@@ -313,24 +351,29 @@ export function useBattleHandlers(battleState) {
           await damageEffect(!atcIsMe);
         }
         else
-          setOtherText({ kind: "general", content: `${defState.name}にはあたらなかった` });
+          // setOtherText({ kind: "general", content: `${defState.name}にはあたらなかった` });
+          textAreaRef.current.textContent = `${defState.name}にはあたらなかった`;
       }
       else
-        setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
+        // setOtherTextInvisible(prev => ({ ...prev, text: true }));  //相性テキスト表示
+        textAreaRef.current.textContent = defTextRef.current.content;   //相性テキスト表示
 
       await stopProcessing(2000);
-      setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
-      setOtherText({ kind: "", content: "" });
+      // setOtherTextInvisible(prev => ({ ...prev, text: false }));  //相性テキスト非表示
+      // setOtherText({ kind: "", content: "" });
     }
     else if (!isHit) {
-      setOtherText({ kind: "general", content: `${defState.name}にはあたらなかった` });
+      // setOtherText({ kind: "general", content: `${defState.name}にはあたらなかった` });
+      textAreaRef.current.textContent = `${defState.name}にはあたらなかった`;
       await stopProcessing(2000);
-      setOtherText({ kind: "", content: "" });
+      // setOtherText({ kind: "", content: "" });
     }
 
     //追加効果があるなら発動(変化技も)
     if (isHit)
-      doSecondaryEffect(atcIsMe, weaponInfo, damage);
+      await doSecondaryEffect(atcIsMe, weaponInfo, damage);
+
+    // setOtherAreaVisible(prev => ({ ...prev, textArea: false }));
   }
 
   //倒れたポケモンに死亡エフェクトを入れる
@@ -338,16 +381,20 @@ export function useBattleHandlers(battleState) {
     return new Promise(async (resolve) => {
       const [pokeState, setAreaVisible] = [getPokeState(isMe, true), getSetAreaVisible(isMe, true)];
       const pokeIMGElm = getDamageEffectElem(isMe);
+      const textRef = getTextRef(isMe);
 
       // 1秒後に死亡演出を開始
       await stopProcessing(1000);
-      setAreaVisible(prev => ({ ...prev, text: true }));
+      // setAreaVisible(prev => ({ ...prev, text: true }));
+      setOtherAreaVisible(prev => ({ ...prev, textArea: true }));    //deadテキストの表示
+      delay(() => textAreaRef.current.textContent = textRef.current.content, 1);
       await playPokeVoice(pokeState.name);
       pokeIMGElm.classList.add("pokemon-dead");
 
       // さらに2秒後に非表示 & resolve
       await stopProcessing(3001)
-      setAreaVisible(prev => ({ ...prev, poke: false, text: false }));
+      setAreaVisible(prev => ({ ...prev, poke: false }));
+      // setOtherAreaVisible(prev => ({ ...prev, textArea: false }));
       resolve();
     });
   };
@@ -514,8 +561,10 @@ export function useBattleHandlers(battleState) {
   //技ボタン押下時にセットするテキストを分岐する
   const setTextWhenClickWeaponBtn = async () => {
     //相手が交代するなら、相手のbackテキストをセット
-    if (opChangeTurn.current)
+    if (opChangeTurn.current) {
       setBackText(false);
+      changeFnc1(false);
+    }
     else {
       //どちらかがテラスタルする場合、先攻のテラスタルテキストセット
       if (isTerastalActive || opTerastalFlg.current) {
@@ -523,10 +572,14 @@ export function useBattleHandlers(battleState) {
           ? calcActualStatus(true, "s") >= calcActualStatus(false, "s")
           : isTerastalActive;
         setTerastalText(isMe);
+        terastalFnc1(isMe);
       }
       //どちらもテラスタルしない場合、先攻の技テキストをセット
-      else
+      else {
         await setWeaponText(iAmFirst.current);
+        await setCompatiText(iAmFirst.current);
+        await compatiFnc1(!iAmFirst.current);
+      }
     }
   }
 
@@ -570,15 +623,18 @@ export function useBattleHandlers(battleState) {
   //ハンドラー内関数のパーツ===============================================================================
 
   //ポケモンの鳴き声再生
-  const playPokeVoice = async (pokeName, onEnded) => {
+  const playPokeVoice = async (isMe, onEnded) => {
+    const pokeState = isMe ? myPokeState : opPokeState;
     try {
-      const { voice: pokeVoice } = await getPokeInfo(pokeName);
+      // const { voice: pokeVoice } = await getPokeInfo(pokeName);
+      // const sound = new Audio(pokeVoice);
+      const pokeVoice = pokeState.voice;
       const sound = new Audio(pokeVoice);
       sound.currentTime = 0;
       if (onEnded) sound.onended = onEnded;
       await sound.play();
     } catch (e) {
-      console.error(`鳴き声の再生に失敗: ${pokeName}`, e);
+      console.error(`鳴き声の再生に失敗: ${pokeState.name}`, e);
       onEnded?.(); // 失敗したときだけ呼びたいならOK
     }
   };
@@ -852,11 +908,16 @@ export function useBattleHandlers(battleState) {
   const controllAreaVisibleForApp = async (isMe) => {
     const [pokeState, setAreaVisible]
       = [getPokeState(isMe, true), getSetAreaVisible(isMe, true)];
+    const textRef = getTextRef(isMe);
 
-    setAreaVisible(prev => ({ ...prev, text: true }));    //Goテキストの表示
+    // setAreaVisible(prev => ({ ...prev, text: true }));    //Goテキストの表示
+    setOtherAreaVisible(prev => ({ ...prev, textArea: true }));    //Goテキストの表示
+    delay(() => textAreaRef.current.textContent = textRef.current.content, 1);
     delay(() => setAreaVisible(prev => ({ ...prev, poke: true })), 1000);       //ポケモンの表示
-    delay(async () => await playPokeVoice(pokeState.name), 1000);                     //鳴き声再生
-    delay(() => setAreaVisible(prev => ({ ...prev, text: false })), 2000);    //Goテキストの非表示    
+    // delay(async () => await playPokeVoice(pokeState.name), 1000);                     //鳴き声再生
+    delay(async () => await playPokeVoice(isMe), 1000);                     //鳴き声再生
+    // if (!(turnCnt.current === 1 && textRef.current.content.includes(myPokeState.name) && !myChangeTurn.current && !opChangeTurn.current)) //stateの更新削減
+    // delay(() => setOtherAreaVisible(prev => ({ ...prev, textArea: false })), 2000);    //Goテキストの非表示    
     await stopProcessing(2000);
   };
 
@@ -880,14 +941,15 @@ export function useBattleHandlers(battleState) {
   const attackEffect = async (atcIsMe, isHit, atcTarget) => {
     const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
     const weaponName = getWeaponName(atcIsMe);
+    const defTextRef = getTextRef(!atcIsMe);
 
     jumpEffect(atcIsMe);
     await new Promise((resolve) => {
-      playPokeVoice(atcState.name, () => resolve());
+      playPokeVoice(atcIsMe, () => resolve());
     });
 
     //技が命中してて、相性が無効ではない場合に攻撃エフェクトを入れる
-    if (isHit && defState.text.content !== compatiTexts.mukou && atcTarget === "相手") {
+    if (isHit && defTextRef.current.content !== compatiTexts.mukou && atcTarget === "相手") {
       attackEffectLogic(atcIsMe);
       await new Promise((resolve) => {
         playWeaponSound(weaponName, () => resolve());
@@ -904,9 +966,10 @@ export function useBattleHandlers(battleState) {
   //ダメージエフェクト
   const damageEffect = async (isMe) => {
     const defState = getPokeState(isMe, true);
+    const defTextRef = getTextRef(isMe);
     damageEffectLogic(isMe);
     await new Promise((resolve) => {
-      playDamageSound(defState.text.content, resolve);
+      playDamageSound(defTextRef.current.content, resolve);
     });
   };
 
@@ -982,10 +1045,11 @@ export function useBattleHandlers(battleState) {
     await processBurnedDamage(false);
     await processPoisonedDamage(true);  //毒ダメージの処理
     await processPoisonedDamage(false);
+    otherTextRef.current.content = "";
 
     //ターン終了時に定数ダメージを受けても生存する場合にコマンドを表示
     if (myPokeState.hp > 0 && opPokeState.hp > 0 && !myDeathFlg.current && !opDeathFlg.current)
-      setOtherAreaVisible(prev => ({ ...prev, actionCmd: true }));
+      setOtherAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
   }
 
   const getPokeState = (isMe, simple) => {
@@ -1014,13 +1078,14 @@ export function useBattleHandlers(battleState) {
   }
 
   //追加効果を読み解いて発動する
-  const doSecondaryEffect = (atcIsMe, weaponInfo, damage) => {
+  const doSecondaryEffect = async (atcIsMe, weaponInfo, damage) => {
     const [effTarget, incidenceRate, isAtcWeapon]
       = [weaponInfo.efftarget, weaponInfo.incidencerate, weaponInfo.kind !== "変化"];
     const isIncident = incidenceRate ? (Math.random() * 100 < incidenceRate) : false;
     let effectiveness = isIncident ? weaponInfo.effectiveness : null;
 
     const [atcState, defState] = [getPokeState(atcIsMe, true), getPokeState(atcIsMe, false)];
+    const [atcTextRef, defTextRef] = [getTextRef(atcIsMe), getTextRef(!atcIsMe)];
 
     //相手が死亡した際は、相手への追加効果は発動しない
     const isAlive = damage < defState.hp;
@@ -1062,12 +1127,17 @@ export function useBattleHandlers(battleState) {
         }
 
         const buffText = textArray.join("\n");
-        setOtherText({ kind: "buff", content: buffText });
+        // setOtherText({ kind: "buff", content: buffText });
+        otherTextRef.current = { kind: "buff", content: buffText };
 
         if (buffText.includes("上がった"))
           soundList.general.statusUp.play();
         if (buffText.includes("下がった"))
           soundList.general.statusDown.play();
+
+        await displayOtherText();
+        if (!isAtcWeapon)
+          await buffFnc();
       }
       else if (effectiveness.includes("heal")) {
         effectiveness = effectiveness.slice(5);
@@ -1075,7 +1145,8 @@ export function useBattleHandlers(battleState) {
         const ratio = effectiveness.slice(1);
         //hとdの場合の数値を取得
         const maxHp = getPokeNumMaxHp(atcState, atcState.name);
-        const [atcCurrentHp, defCurrentHp] = [getPokeNumHp(atcState, atcState.name), getPokeNumHp(defState, defState.name)];
+        // const [atcCurrentHp, defCurrentHp] = [getPokeNumHp(atcState, atcState.name), getPokeNumHp(defState, defState.name)];
+        const [atcCurrentHp, defCurrentHp] = [atcState.hp, defState.hp];
         const base = target === "h" ? maxHp
           : defCurrentHp < damage ? defCurrentHp : damage;
         //回復量を計算
@@ -1091,7 +1162,7 @@ export function useBattleHandlers(battleState) {
         let conditionFlg = true;
 
         //無効タイプなら状態異常にならない。
-        if (defState.text.content === compatiTexts.mukou) {
+        if (defTextRef.current.content === compatiTexts.mukou) {
           conditionText = `${defState.name}には効果がないようだ`;
           conditionFlg = false;
         }
@@ -1144,15 +1215,22 @@ export function useBattleHandlers(battleState) {
           soundList.general[conditionSe].play();
           setPokeState(prev => ({ ...prev, [`poke${pokeNum}Condition`]: condition }));
         }
-        //状態異常テキストをセット
-        setOtherText({ kind: "condition", content: conditionText });
+        // //状態異常テキストをセット
+        // // setOtherText({ kind: "condition", content: conditionText });
+        otherTextRef.current = { kind: "condition", content: conditionText };
+        // await displayOtherText();
+        // if (!isAtcWeapon)
+        //   await conditionFnc();
       }
       else if (effectiveness === "ひるみ") {
         //先攻の場合のみひるみの効果が発動する
         const isFlinch = atcIsMe === iAmFirst.current;
         if (isFlinch) {
           const flinchText = `${defState.name}はひるんで動けない`;
-          setOtherText({ kind: "cantMove", content: flinchText });
+          // setOtherText({ kind: "cantMove", content: flinchText });
+          otherTextRef.current = { kind: "cantMove", content: flinchText };
+          await displayOtherText();
+          // await cantMoveFnc();
         }
       }
     }
@@ -1208,8 +1286,8 @@ export function useBattleHandlers(battleState) {
   const setHpOnHeal = (isMe) => {
     const [pokeState, setPokeState, setPokeStateTrigger]
       = [getPokeState(isMe, true), getSetPokeState(isMe, true), getSetPokeStateTrigger(isMe, true)];
-    const currentHp = getPokeNumHp(pokeState, pokeState.name);
-    const newHp = currentHp + healHp.current;
+    // const currentHp = getPokeNumHp(pokeState, pokeState.name);
+    const newHp = pokeState.hp + healHp.current;
 
     adjustHpBar(isMe, newHp);
     isHealAtc.current = false;
@@ -1232,7 +1310,8 @@ export function useBattleHandlers(battleState) {
     const healText = healHp.current > 0
       ? `${pokeState.name}の体力が回復した`
       : `${pokeState.name}の体力は満タンだ`
-    setOtherText({ kind: "heal", content: healText });
+    // setOtherText({ kind: "heal", content: healText });
+    otherTextRef.current = { kind: "heal", content: healText };
   }
 
   //火傷チェック
@@ -1255,7 +1334,8 @@ export function useBattleHandlers(battleState) {
   const setBurnedText = (isMe) => {
     const pokeState = getPokeState(isMe, true);
     const burnedText = `${pokeState.name}はやけどのダメージを受けた`;
-    setOtherText({ kind: "burned", content: burnedText });
+    // setOtherText({ kind: "burned", content: burnedText });
+    otherTextRef.current = { kind: "burned", content: burnedText };
   }
 
   //火傷のダメージ処理
@@ -1271,6 +1351,7 @@ export function useBattleHandlers(battleState) {
       soundList.general.burned.play();
       setHpOnOtherDamage(isMe, burnedDamage);
       setBurnedText(isMe);
+      await displayOtherText();
       if (isMe)
         await stopProcessing(2500);
     }
@@ -1304,7 +1385,8 @@ export function useBattleHandlers(battleState) {
   const setPoisonedText = (isMe) => {
     const pokeState = getPokeState(isMe, true);
     const poisonedText = `${pokeState.name}は毒のダメージを受けた`;
-    setOtherText({ kind: "poisonsed", content: poisonedText });
+    // setOtherText({ kind: "poisonsed", content: poisonedText });
+    otherTextRef.current = { kind: "poisonsed", content: poisonedText };
   }
 
   //毒のダメージ処理
@@ -1320,6 +1402,7 @@ export function useBattleHandlers(battleState) {
       soundList.general.poisoned.play();
       setHpOnOtherDamage(isMe, poisonedDamage);
       setPoisonedText(isMe);
+      await displayOtherText();
       if (isMe)
         await stopProcessing(2500);
     }
@@ -1339,6 +1422,107 @@ export function useBattleHandlers(battleState) {
     const pokeCondition = pokeState[`poke${pokeNum}Condition`];
     return pokeCondition;
   }
+
+  //textRef
+  const getTextRef = (isMe) => {
+    const textRef = isMe ? myTextRef : opTextRef;
+    return textRef;
+  }
+
+  const changeFnc1 = async (isMe) => {
+    const changePokeName = (isMe ? myChangePokeName : opChangePokeName).current;
+    await setAreaVisibleForChange(isMe);
+    await stopProcessing(1000);
+    setPokeName(isMe, changePokeName);
+  }
+
+  const terastalFnc1 = async (isMe) => {
+    await setAreaVisibleForTerastal(isMe);
+    await setTerastalPokeNum(isMe);
+  }
+
+  const compatiFnc1 = async (isMe) => {
+    const { weaponInfo, damage, isHit, isCriticalHit } = await getDamage(!isMe);
+    await playAttackingFlow(!isMe, isHit, isCriticalHit, damage);
+    if (weaponInfo.kind !== "変化" || !isHit)
+      setHpOnDamage(isMe, damage);
+    else if (isHeal.current)
+      setHpOnHeal(!isMe);
+  }
+
+  const deadFnc1 = async (isMe) => {
+    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false }));
+    await playDeathEffect(isMe);
+    resetChangeTurn();
+    setLife(isMe);
+    if ((isMe ? myLife : opLife).current > 0) {
+      if (isMe) {
+        // const opPokeCondion = getPokeCondition(false);
+        // if (opPokeCondion === "やけど" || opPokeCondion.includes("どく"))
+        //   await stopProcessing(3000);
+        // setOtherAreaVisible(prev => ({ ...prev, textArea: false, nextPokeCmd: true }));
+      }
+      else
+        await setNextOpPokeName();
+    }
+    else
+      setWinner(!isMe)
+  }
+
+  const buffFnc = async () => {
+    if ((iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0)) {
+      await setWeaponText(!iAmFirst.current);
+      await setCompatiText(!iAmFirst.current);
+      await compatiFnc1(iAmFirst.current);
+    }
+    else if (iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0)
+      await toDoWhenTurnEnd();
+  }
+
+  const healFnc = async () => {
+    if ((iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0 && isHeal.current || !iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 && !isHeal.current)) {
+      await setWeaponText(!iAmFirst.current);
+      await setCompatiText(!iAmFirst.current);
+      await compatiFnc1(iAmFirst.current);
+    }
+    else if (iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0)
+      await toDoWhenTurnEnd();
+    isHealAtc.current = false;
+    isHeal.current = false;
+    healHp.current = 0;
+  }
+
+  const conditionFnc = async () => {
+    if ((iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0)) {
+      await setWeaponText(!iAmFirst.current);
+      await setCompatiText(!iAmFirst.current);
+      await compatiFnc1(iAmFirst.current);
+    }
+    else if (iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0)
+      await toDoWhenTurnEnd();
+  }
+
+  const cantMoveFnc = async () => {
+    //動けないのはどちらか取得
+    const cantMoveIsMe = otherText.content.includes(myPokeState.name);
+
+    if ((iAmFirst.current === cantMoveIsMe)) {
+      await setWeaponText(!iAmFirst.current);
+      await setCompatiText(!iAmFirst.current);
+      await compatiFnc1(iAmFirst.current);
+    }
+    else if (iAmFirst.current !== cantMoveIsMe)
+      await toDoWhenTurnEnd();
+  }
+
+  const displayOtherText = async () => {
+    setOtherAreaVisible(prev => ({ ...prev, textArea: true }));
+    textAreaRef.current.textContent = otherTextRef.current.content;
+    // delay(() => setOtherAreaVisible(prev => ({ ...prev, textArea: false })), 2000);
+    await stopProcessing(2000);
+    // otherTextRef.current.content = "";
+  }
+
 
 
   return {
@@ -1370,6 +1554,15 @@ export function useBattleHandlers(battleState) {
     setHpOnHeal,
     setHealText,
     consolePokeHp,
+    getTextRef,
+    terastalFnc1,
+    compatiFnc1,
+    deadFnc1,
+    buffFnc,
+    healFnc,
+    conditionFnc,
+    cantMoveFnc,
+    displayOtherText,
 
     //jsxや他jsで使用
     getPokeInfo,
@@ -1378,6 +1571,7 @@ export function useBattleHandlers(battleState) {
     getMaxHp,
     resetChangeTurn,
     checkIsTerastal,
+    changeFnc1,
 
     //jsxで使用
     setBgm,

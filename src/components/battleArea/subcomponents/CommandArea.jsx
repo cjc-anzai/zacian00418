@@ -21,8 +21,9 @@ const CommandArea = ({
     otherText,
     mySelectedWeapon,
     isTerastalActive, setIsTerastalActive,
+    textAreaRef,
     iAmFirst,
-    myChangePokeName,
+    myChangePokeName, opChangePokeName,
     myChangeTurn,
   } = battleState;
 
@@ -35,6 +36,7 @@ const CommandArea = ({
     decideOpAction,
     setTextWhenClickWeaponBtn,
     checkIsTerastal,
+    changeFnc1,
   } = battleHandlers;
 
   const [weaponInfoList, setWeaponInfoList] = useState(null);
@@ -117,6 +119,7 @@ const CommandArea = ({
     await setMyTurn();
     setBackText(iAmFirst.current);    //先攻のbackテキストをセット
     console.log(`${changePoke}に交代を選択`);
+    changeFnc1(iAmFirst.current);
   }
 
   //倒れた後、次に出すポケモンボタン押下時、次のポケモン名を保存し、HPをセット
@@ -162,15 +165,18 @@ const CommandArea = ({
 
   return (
     <div className="cmd-text-area">
-      {(opAreaVisible.text || myAreaVisible.text || otherText.content) && (
+      {/* {(opAreaVisible.text || myAreaVisible.text || otherText.content) && (
         <div className="text-area">
           {opAreaVisible.text && <p>{opPokeState.text.content}</p>}
           {myAreaVisible.text && <p>{myPokeState.text.content}</p>}
           {otherText.content && <p>{otherText.content}</p>}
         </div>
+      )} */}
+      {otherAreaVisible.textArea && (
+        <div ref={textAreaRef} className="text-area"></div>
       )}
 
-      {otherAreaVisible.actionCmd && !otherText.content && (
+      {otherAreaVisible.actionCmd && !otherAreaVisible.textArea && (
         <div className="cmd-area">
           <button className="weapon-cmd-btn" onClick={openBattleCmdArea}>たたかう</button>
           {(myPokeState.poke1Hp !== 0 || myPokeState.poke2Hp !== 0 || myPokeState.poke3Hp !== 0) && (

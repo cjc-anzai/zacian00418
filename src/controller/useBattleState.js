@@ -3,11 +3,12 @@ import { useState, useRef } from "react";
 export function useBattleState() {
 
   //表示制御のState
-  const defaultAreaVisible = { poke: false, text: false };
+  // const defaultAreaVisible = { poke: false, text: false };
+  const defaultAreaVisible = { poke: false };
   const [myAreaVisible, setMyAreaVisible] = useState({ ...defaultAreaVisible });
   const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });
   const [otherAreaVisible, setOtherAreaVisible] = useState({
-    top: true, select: false, battle: false,
+    top: true, select: false, battle: false, textArea: false,
     actionCmd: false, status: false, weaponCmd: false, changeCmd: false, nextPokeCmd: false
   });
 
@@ -23,7 +24,7 @@ export function useBattleState() {
     poke1Hp: 0, poke2Hp: 0, poke3Hp: 0,
     poke1Condition: "", poke2Condition: "", poke3Condition: "",
     canTerastal: true, terastalPokeNum: null,
-    text: { kind: "", content: "" }
+    // text: { kind: "", content: "" }
   };
   const [myPokeState, setMyPokeState] = useState({ ...defaultPokeState });
   const [opPokeState, setOpPokeState] = useState({ ...defaultPokeState });
@@ -38,6 +39,10 @@ export function useBattleState() {
   const [otherText, setOtherText] = useState({ kind: "", content: "" });   //イレギュラーなテキスト
 
   //useRef
+  const myTextRef = useRef({ kind: "", content: "" });
+  const opTextRef = useRef({ kind: "", content: "" });
+  const otherTextRef = useRef({ kind: "", content: "" });
+  const textAreaRef = useRef("");
   const [myLife, opLife] = [useRef(3), useRef(3)];                              //
   const [mySelectedWeapon, opSelectedWeapon] = [useRef(null), useRef(null)];    //
   const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];          //交代したターンか否か
@@ -68,8 +73,9 @@ export function useBattleState() {
     selectedOrder, setSelectedOrder,
     isTerastalActive, setIsTerastalActive,
     opTerastalFlg,
+    myTextRef, opTextRef, otherTextRef, textAreaRef,
     myLife, opLife,
-    mySelectedWeapon, opSelectedWeapon, 
+    mySelectedWeapon, opSelectedWeapon,
     burned, poisoned,
     myPoisonedCnt, opPoisonedCnt,
     isHeal, isHealAtc, healHp,

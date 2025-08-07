@@ -7,6 +7,9 @@ export function useBattleEffects(battleState) {
     myPokeState, opPokeState,
     myPokeStateTrigger, opPokeStateTrigger,
     otherText,
+    otherAreaVisible, myTextRef, opTextRef, otherTextRef, textAreaRef,
+    mySelectedWeapon, opSelectedWeapon,
+    setOtherAreaVisible,
   } = battleState;
 
   const {
@@ -16,6 +19,7 @@ export function useBattleEffects(battleState) {
     toDoWhenSetText,
     toDoWhenSetTerastalPokeNum,
     toDoWhenSetOtherText,
+    toDoWhenSetPokeCondition
   } = useToDoWhenFnc(battleState);
 
   //name=============================================
@@ -81,39 +85,57 @@ export function useBattleEffects(battleState) {
     run();
   }, [opPokeStateTrigger.hp]);
 
+
+  //condition================
+  useEffect(() => {
+    if (myPokeState.poke1Condition === "" && myPokeState.poke2Condition === "" && myPokeState.poke3Condition === "") return;
+    const run = async () => {
+      toDoWhenSetPokeCondition(true);
+    };
+    run();
+  }, [myPokeState.poke1Condition, myPokeState.poke2Condition, myPokeState.poke3Condition,]);
+
+  useEffect(() => {
+    if (opPokeState.poke1Condition === "" && opPokeState.poke2Condition === "" && opPokeState.poke3Condition === "") return;
+    const run = async () => {
+      toDoWhenSetPokeCondition(false);
+    };
+    run();
+  }, [opPokeState.poke1Condition, opPokeState.poke2Condition, opPokeState.poke3Condition,]);
+
   //text====================================================
-  useEffect(() => {
-    if (!myPokeState.text.content) return;
-    const run = async () => {
-      await toDoWhenSetText(true);
-    };
-    run();
-  }, [myPokeState.text]);
+  // useEffect(() => {
+  //   if (!myPokeState.text.content) return;
+  //   const run = async () => {
+  //     await toDoWhenSetText(true);
+  //   };
+  //   run();
+  // }, [myPokeState.text]);
 
-  useEffect(() => {
-    if (!opPokeState.text.content) return;
-    const run = async () => {
-      await toDoWhenSetText(false);
-    };
-    run();
-  }, [opPokeState.text]);
+  // useEffect(() => {
+  //   if (!opPokeState.text.content) return;
+  //   const run = async () => {
+  //     await toDoWhenSetText(false);
+  //   };
+  //   run();
+  // }, [opPokeState.text]);
 
-  //TextのuseEffect強制発火用のトリガー
-  useEffect(() => {
-    if (myPokeStateTrigger.text == 0) return;
-    const run = async () => {
-      await toDoWhenSetText(true);
-    };
-    run();
-  }, [myPokeStateTrigger.text]);
+  // //TextのuseEffect強制発火用のトリガー
+  // useEffect(() => {
+  //   if (myPokeStateTrigger.text == 0) return;
+  //   const run = async () => {
+  //     await toDoWhenSetText(true);
+  //   };
+  //   run();
+  // }, [myPokeStateTrigger.text]);
 
-  useEffect(() => {
-    if (opPokeStateTrigger.text == 0) return;
-    const run = async () => {
-      await toDoWhenSetText(false);
-    };
-    run();
-  }, [opPokeStateTrigger.text]);
+  // useEffect(() => {
+  //   if (opPokeStateTrigger.text == 0) return;
+  //   const run = async () => {
+  //     await toDoWhenSetText(false);
+  //   };
+  //   run();
+  // }, [opPokeStateTrigger.text]);
 
   //テラスタル======================================
   useEffect(() => {
@@ -133,13 +155,13 @@ export function useBattleEffects(battleState) {
   }, [opPokeState.terastalPokeNum]);
 
   //===========================================
-  useEffect(() => {
-    if (!otherText.content) return;
-    const run = async () => {
-      await toDoWhenSetOtherText();
-    };
-    run();
-  }, [otherText]);
+  // useEffect(() => {
+  //   if (!otherText.content) return;
+  //   const run = async () => {
+  //     await toDoWhenSetOtherText();
+  //   };
+  //   run();
+  // }, [otherText]);
 
   return {};
 }
