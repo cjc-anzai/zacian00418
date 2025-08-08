@@ -3,13 +3,11 @@ import { useState, useRef } from "react";
 export function useBattleState() {
 
   //表示制御のState
-  // const defaultAreaVisible = { poke: false, text: false };
-  const defaultAreaVisible = { poke: false };
-  const [myAreaVisible, setMyAreaVisible] = useState({ ...defaultAreaVisible });
-  const [opAreaVisible, setOpAreaVisible] = useState({ ...defaultAreaVisible });
+  const [myAreaVisible, setMyAreaVisible] = useState({ poke: false });
+  const [opAreaVisible, setOpAreaVisible] = useState({ poke: false });
   const [otherAreaVisible, setOtherAreaVisible] = useState({
     top: true, select: false, battle: false, textArea: false,
-    actionCmd: false, status: false, weaponCmd: false, changeCmd: false, nextPokeCmd: false
+    actionCmd: false, weaponCmd: false, changeCmd: false, status: false, nextPokeCmd: false
   });
 
   //お互いのポケモンたちのState
@@ -19,33 +17,31 @@ export function useBattleState() {
     hp: 0, a: 0, b: 0, c: 0, d: 0, s: 0,
     aBuff: 0, bBuff: 0, cBuff: 0, dBuff: 0, sBuff: 0,
     weapon1: "", weapon2: "", weapon3: "", weapon4: "",
+    weapon1Se: null, weapon2Se: null, weapon3Se: null, weapon4Se: null,
     poke1Name: "", poke2Name: "", poke3Name: "",
     poke1MaxHp: 0, poke2MaxHp: 0, poke3MaxHp: 0,
     poke1Hp: 0, poke2Hp: 0, poke3Hp: 0,
     poke1Condition: "", poke2Condition: "", poke3Condition: "",
     canTerastal: true, terastalPokeNum: null,
-    // text: { kind: "", content: "" }
   };
   const [myPokeState, setMyPokeState] = useState({ ...defaultPokeState });
   const [opPokeState, setOpPokeState] = useState({ ...defaultPokeState });
 
   //Stateに同じ値を更新しうるStateのuseEffectを強制発火させるためのトリガー
-  const defaultPokeStateTrigger = { hp: 0, text: 0 };
-  const [myPokeStateTrigger, setMyPokeStateTrigger] = useState({ ...defaultPokeStateTrigger });
-  const [opPokeStateTrigger, setOpPokeStateTrigger] = useState({ ...defaultPokeStateTrigger });
+  const [myPokeStateTrigger, setMyPokeStateTrigger] = useState({ hp: 0 });
+  const [opPokeStateTrigger, setOpPokeStateTrigger] = useState({ hp: 0 });
 
   const [selectedOrder, setSelectedOrder] = useState([]);                  //自分が選出するポケモン3体
   const [isTerastalActive, setIsTerastalActive] = useState(false);         //テラスタルボタン
-  const [otherText, setOtherText] = useState({ kind: "", content: "" });   //イレギュラーなテキスト
 
   //useRef
-  const myTextRef = useRef({ kind: "", content: "" });
-  const opTextRef = useRef({ kind: "", content: "" });
-  const otherTextRef = useRef({ kind: "", content: "" });
-  const textAreaRef = useRef("");
-  const [myLife, opLife] = [useRef(3), useRef(3)];                              //
-  const [mySelectedWeapon, opSelectedWeapon] = [useRef(null), useRef(null)];    //
-  const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];          //交代したターンか否か
+  const myTextRef = useRef({ kind: "", content: "" });                          //自分向けの一般のテキスト
+  const opTextRef = useRef({ kind: "", content: "" });                          //相手向けの一般のテキスト
+  const otherTextRef = useRef({ kind: "", content: "" });                       //イレギュラーなテキスト
+  const textAreaRef = useRef("");                                               //テキストエリアに表示するテキスト
+  const [myLife, opLife] = [useRef(3), useRef(3)];                              //手持ち3体のライフ
+  const [mySelectedWeapon, opSelectedWeapon] = [useRef(null), useRef(null)];    //そのターンに選択した技
+  const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];          //交代ターンフラグ
   const [myChangePokeName, opChangePokeName] = [useRef(null), useRef(null)];    //交代するポケモン
   const [myDeathFlg, opDeathFlg] = [useRef(false), useRef(false)];              //定数ダメージによって死亡する場合のフラグ
   const opTerastalFlg = useRef(false);                                          //
@@ -55,7 +51,7 @@ export function useBattleState() {
   const healHp = useRef(false);                                                 //回復技によって回復するHP
   const burned = useRef(false);                                                 //火傷ダメージをセットしたフラグ
   const poisoned = useRef(false);                                               //毒ダメージをセットしたフラグ
-  const [myPoisonedCnt, opPoisonedCnt] = [useRef(1), useRef(1)];
+  const [myPoisonedCnt, opPoisonedCnt] = [useRef(1), useRef(1)];                //猛毒状態のカウント
   const resultText = useRef("");                                                //勝敗
   const turnCnt = useRef(1);                                                    //デバッグ用ターンカウント    
   const loopAudioRef = useRef(null);                                            //再生中のBGM
@@ -68,8 +64,7 @@ export function useBattleState() {
     opPokeState, setOpPokeState,
     myPokeStateTrigger, setMyPokeStateTrigger,
     opPokeStateTrigger, setOpPokeStateTrigger,
-    defaultPokeState, defaultPokeStateTrigger,
-    otherText, setOtherText,
+    defaultPokeState,
     selectedOrder, setSelectedOrder,
     isTerastalActive, setIsTerastalActive,
     opTerastalFlg,
@@ -82,7 +77,6 @@ export function useBattleState() {
     iAmFirst, myChangeTurn, opChangeTurn,
     myChangePokeName, opChangePokeName,
     myDeathFlg, opDeathFlg,
-    resultText, turnCnt,
-    loopAudioRef,
+    resultText, turnCnt, loopAudioRef,
   };
 }

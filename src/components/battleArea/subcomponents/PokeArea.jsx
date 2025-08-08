@@ -18,7 +18,6 @@ const PokeArea = ({
     return (
         <div className={`${who}-poke-area`}>
             <div className="poke-img-wrapper">
-                {/* テラスタル画像（上部に浮かせる） */}
                 {areaVisible.poke && isTerastal && (
                     <img
                         src={terastalImgList[pokeState.terastal]}
@@ -26,8 +25,6 @@ const PokeArea = ({
                         className="terastal-img"
                     />
                 )}
-
-                {/* ポケモン画像 */}
                 <AnimatePresence>
                     {areaVisible.poke && (
                         <motion.img
