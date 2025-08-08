@@ -37,6 +37,7 @@ export function useBattleHandlers(battleState) {
     iAmFirst, myChangeTurn, opChangeTurn,
     resultText, turnCnt,
     loopAudioRef,
+    myCantMoveFlg, opCantMoveFlg,
   } = battleState;
 
   //useToDoWhenFnc()のパーツとなる関数=============================================================================================
@@ -170,7 +171,7 @@ export function useBattleHandlers(battleState) {
     //凍りチェック
     else if (pokeCondition === "こおり") {
       canMove = Math.random() >= 0.80;
-      // canMove = Math.random() >= 0.1;   //テスト用
+      // canMove = Math.random() >= 1;   //テスト用
       cantMoveText = canMove ? "" : `${pokeState.name}は凍ってしまって動けない`;
     }
 
@@ -185,12 +186,13 @@ export function useBattleHandlers(battleState) {
       textRef.current = { kind: "weapon", content: weaponText };
     }
     else {
+      (isMe ? myCantMoveFlg : opCantMoveFlg).current = true;
       const conditionSe = pokeCondition === "まひ" ? "paralyzed"
         : pokeCondition === "こおり" ? "frozen" : null;
       soundList.general[conditionSe].play();
       otherTextRef.current = { kind: "cantMove", content: cantMoveText };
-      await displayOtherText();
-      await cantMoveFnc();
+      // await displayOtherText();
+      // await cantMoveFnc();
     }
   }
 
@@ -490,8 +492,8 @@ export function useBattleHandlers(battleState) {
 
   //ターン数を更新してコンソールに表示する。（デバッグ用）
   const updateTurnCnt = () => {
-    console.log(turnCnt.current + "ターン目================================================");
     turnCnt.current++;
+    console.log(turnCnt.current + "ターン目================================================");
   }
 
   //相手の行動を決める(交代/テラス/技選択)
@@ -511,6 +513,9 @@ export function useBattleHandlers(battleState) {
       if (opPokeState.canTerastal)
         await checkOpTerastal(dangerousType.length > 0 || IsDangerousTerastal, dangerousType, safeType);
       await setOpWeapon();
+    }
+    else {
+      opSelectedWeapon.current = null;
     }
   }
 
@@ -532,9 +537,11 @@ export function useBattleHandlers(battleState) {
       }
       //どちらもテラスタルしない場合、先攻の技テキストをセット
       else {
-        await setWeaponText(iAmFirst.current);
-        await setCompatiText(iAmFirst.current);
-        await compatiFnc1(!iAmFirst.current);
+        await stopProcessing(1000)
+        // await setWeaponText(iAmFirst.current);
+        // await setCompatiText(iAmFirst.current);
+        // await compatiFnc1(!iAmFirst.current);
+        await atcFlowFnc(iAmFirst.current);
       }
     }
   }
@@ -993,7 +1000,10 @@ export function useBattleHandlers(battleState) {
     await processBurnedDamage(false);
     await processPoisonedDamage(true);  //毒ダメージの処理
     await processPoisonedDamage(false);
-    otherTextRef.current.content = "";
+    otherTextRef.current = { kind: "", content: "" };
+    myCantMoveFlg.current = false;
+    opCantMoveFlg.current = false;
+    updateTurnCnt();
 
     //ターン終了時に定数ダメージを受けても生存する場合にコマンドを表示
     if (myPokeState.hp > 0 && opPokeState.hp > 0 && !myDeathFlg.current && !opDeathFlg.current)
@@ -1161,10 +1171,12 @@ export function useBattleHandlers(battleState) {
                 : condition === "こおり" ? "frozen"
                   : null;
           soundList.general[conditionSe].play();
+          otherTextRef.current = { kind: "condition", content: conditionText };
           setPokeState(prev => ({ ...prev, [`poke${pokeNum}Condition`]: condition }));
         }
         //状態異常テキストをセット
-        otherTextRef.current = { kind: "condition", content: conditionText };
+        // otherTextRef.current = { kind: "condition", content: conditionText };
+        console.log(otherTextRef.current.content);
       }
       else if (effectiveness === "ひるみ") {
         //先攻の場合のみひるみの効果が発動する
@@ -1405,9 +1417,10 @@ export function useBattleHandlers(battleState) {
 
   const buffFnc = async () => {
     if ((iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0)) {
-      await setWeaponText(!iAmFirst.current);
-      await setCompatiText(!iAmFirst.current);
-      await compatiFnc1(iAmFirst.current);
+      // await setWeaponText(!iAmFirst.current);
+      // await setCompatiText(!iAmFirst.current);
+      // await compatiFnc1(iAmFirst.current);
+      await atcFlowFnc(!iAmFirst.current);
     }
     else if (iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0)
       await toDoWhenTurnEnd();
@@ -1415,9 +1428,10 @@ export function useBattleHandlers(battleState) {
 
   const healFnc = async () => {
     if ((iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0 && isHeal.current || !iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 && !isHeal.current)) {
-      await setWeaponText(!iAmFirst.current);
-      await setCompatiText(!iAmFirst.current);
-      await compatiFnc1(iAmFirst.current);
+      // await setWeaponText(!iAmFirst.current);
+      // await setCompatiText(!iAmFirst.current);
+      // await compatiFnc1(iAmFirst.current);
+      await atcFlowFnc(!iAmFirst.current);
     }
     else if (iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0)
       await toDoWhenTurnEnd();
@@ -1428,9 +1442,10 @@ export function useBattleHandlers(battleState) {
 
   const conditionFnc = async () => {
     if ((iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0 || !iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0)) {
-      await setWeaponText(!iAmFirst.current);
-      await setCompatiText(!iAmFirst.current);
-      await compatiFnc1(iAmFirst.current);
+      // await setWeaponText(!iAmFirst.current);
+      // await setCompatiText(!iAmFirst.current);
+      // await compatiFnc1(iAmFirst.current);
+      await atcFlowFnc(!iAmFirst.current);
     }
     else if (iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeState.hp > 0 || !iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeState.hp > 0)
       await toDoWhenTurnEnd();
@@ -1439,11 +1454,15 @@ export function useBattleHandlers(battleState) {
   const cantMoveFnc = async () => {
     //動けないのはどちらか取得
     const cantMoveIsMe = otherTextRef.current.content.includes(myPokeState.name);
+    (cantMoveIsMe ? myCantMoveFlg : opCantMoveFlg).current = true;
 
-    if ((iAmFirst.current === cantMoveIsMe)) {
-      await setWeaponText(!iAmFirst.current);
-      await setCompatiText(!iAmFirst.current);
-      await compatiFnc1(iAmFirst.current);
+    if (iAmFirst.current === cantMoveIsMe) {
+      //何のために初期化するか確認してコメント記載！！
+      otherTextRef.current.content = "";
+      // await setWeaponText(!iAmFirst.current);
+      // await setCompatiText(!iAmFirst.current);
+      // await compatiFnc1(iAmFirst.current);
+      await atcFlowFnc(!iAmFirst.current);
     }
     else if (iAmFirst.current !== cantMoveIsMe)
       await toDoWhenTurnEnd();
@@ -1451,7 +1470,7 @@ export function useBattleHandlers(battleState) {
 
   const displayOtherText = async () => {
     setOtherAreaVisible(prev => ({ ...prev, textArea: true }));
-    textAreaRef.current.textContent = otherTextRef.current.content;
+    delay(() => textAreaRef.current.textContent = otherTextRef.current.content, 1);
     await stopProcessing(2000);
   }
 
@@ -1469,6 +1488,35 @@ export function useBattleHandlers(battleState) {
     }
     return 0;
   };
+
+  const displayTextArea = () => {
+    const elm = document.querySelector(`.text-area`);
+    elm.classList.add("display-text-area");
+  }
+
+  const hideTextArea = () => {
+    const elm = document.querySelector(`.text-area`);
+    elm.classList.remove("display-text-area");
+  }
+
+  //cantMoveFlgを取得
+  const getCantMoveFlg = (isMe) => {
+    const flg = (isMe ? myCantMoveFlg : opCantMoveFlg).current;
+    return flg;
+  }
+
+  const atcFlowFnc = async (isMe) => {
+    await setWeaponText(isMe);
+    const cantMove = getCantMoveFlg(isMe);
+    if (!cantMove) {
+      await setCompatiText(isMe);
+      await compatiFnc1(!isMe);
+    }
+    else {
+      await displayOtherText();
+      await cantMoveFnc();
+    }
+  }
 
 
   return {
@@ -1510,6 +1558,8 @@ export function useBattleHandlers(battleState) {
     cantMoveFnc,
     displayOtherText,
     preloadSound,
+    getCantMoveFlg,
+    atcFlowFnc,
 
     //jsxや他jsで使用
     getPokeInfo,

@@ -14,6 +14,7 @@ export function useToDoWhenFnc(battleState) {
     myChangePokeName, opChangePokeName,
     iAmFirst, myChangeTurn, opChangeTurn,
     mySelectedWeapon, opSelectedWeapon,
+    turnCnt,
   } = battleState;
 
   const {
@@ -43,6 +44,8 @@ export function useToDoWhenFnc(battleState) {
     cantMoveFnc,
     displayOtherText,
     checkIsAttackWeapon,
+    getCantMoveFlg,
+    atcFlowFnc,
   } = useBattleHandlers(battleState);
 
 
@@ -54,7 +57,7 @@ export function useToDoWhenFnc(battleState) {
 
   //imgがセットされたらHPバーの制御とHPをセット
   const toDoWhenSetImg = async (isMe) => {
-    await stopProcessing(4000);
+    await stopProcessing(3000);
     if (!isMe) await stopProcessing(100);
     setHpOnEntry(isMe);
   }
@@ -86,9 +89,10 @@ export function useToDoWhenFnc(battleState) {
         }
         else {
           await stopProcessing(2000);
-          await setWeaponText(!isMe);
-          await setCompatiText(!isMe);
-          await compatiFnc1(isMe);
+          // await setWeaponText(!isMe);
+          // await setCompatiText(!isMe);
+          // await compatiFnc1(isMe);
+          await atcFlowFnc(!isMe);
         }
       }
       //どちらも交代するとき
@@ -124,9 +128,18 @@ export function useToDoWhenFnc(battleState) {
       else if (isMe === iAmFirst.current && !otherTextRef.current.content)
         await toDoWhenTurnEnd();
       else if (!otherTextRef.current.content) {
-        await setWeaponText(isMe);
-        await setCompatiText(isMe);
-        await compatiFnc1(!isMe);
+        // const turnCntCurrent = turnCnt.current;    //麻痺や氷で動けないときに続きへ行かない。
+        // await setWeaponText(isMe);
+        // const cantMove = getCantMoveFlg(isMe);
+        // if (!cantMove) {
+        //   await setCompatiText(isMe);
+        //   await compatiFnc1(!isMe);
+        // }
+        // else {
+        //   await displayOtherText();
+        //   await cantMoveFnc();
+        // }
+        await atcFlowFnc(isMe);
       }
       else if (otherTextRef.current.content) {
         const kind = otherTextRef.current.kind;
@@ -138,8 +151,11 @@ export function useToDoWhenFnc(battleState) {
           await conditionFnc();
         else if (kind === "cantMove") // ひるみ用
           await cantMoveFnc();
+
+        //何のために初期化するか確認しコメント記載！！
+        otherTextRef.current.content = "";
       }
-      otherTextRef.current.content = "";
+      
     }
     //死亡の場合、死亡テキストをセット
     else {
@@ -176,10 +192,18 @@ export function useToDoWhenFnc(battleState) {
     //一方のみテラスタルする場合、先攻の技テキストをセット
     if (isTerastalActive !== opTerastalFlg.current) {
       const atcIsMe = (iAmFirst.current || opChangeTurn.current) && !myChangeTurn.current;
+      // const turnCntCurrent = turnCnt.current;
       await setWeaponText(atcIsMe);
       isTerastalActive ? setIsTerastalActive(false) : opTerastalFlg.current = false;
-      await setCompatiText(atcIsMe);
-      await compatiFnc1(!atcIsMe);
+      const cantMove = getCantMoveFlg(isMe);
+      if (!cantMove) {
+        await setCompatiText(atcIsMe);
+        await compatiFnc1(!atcIsMe);
+      }
+      else {
+        await displayOtherText();
+        await cantMoveFnc();
+      }
     }
     else {
       //1周目は後攻のテラスタルテキストセット　2周目は先攻の技テキストをセット
@@ -188,9 +212,10 @@ export function useToDoWhenFnc(battleState) {
         terastalFnc1(!isMe);
       }
       else {
-        await setWeaponText(iAmFirst.current);
-        await setCompatiText(iAmFirst.current);
-        await compatiFnc1(!iAmFirst.current);
+        // await setWeaponText(iAmFirst.current);
+        // await setCompatiText(iAmFirst.current);
+        // await compatiFnc1(!iAmFirst.current);
+        await atcFlowFnc(iAmFirst.current);
       }
 
       setIsTerastalActive(false);

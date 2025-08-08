@@ -43,6 +43,7 @@ export function useBattleState() {
   const [mySelectedWeapon, opSelectedWeapon] = [useRef(null), useRef(null)];    //そのターンに選択した技
   const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];          //交代ターンフラグ
   const [myChangePokeName, opChangePokeName] = [useRef(null), useRef(null)];    //交代するポケモン
+  const [myCantMoveFlg, opCantMoveFlg] = [useRef(false), useRef(false)];              //
   const [myDeathFlg, opDeathFlg] = [useRef(false), useRef(false)];              //定数ダメージによって死亡する場合のフラグ
   const opTerastalFlg = useRef(false);                                          //
   const iAmFirst = useRef(false);                                               //先攻後攻
@@ -76,6 +77,7 @@ export function useBattleState() {
     isHeal, isHealAtc, healHp,
     iAmFirst, myChangeTurn, opChangeTurn,
     myChangePokeName, opChangePokeName,
+    myCantMoveFlg, opCantMoveFlg,
     myDeathFlg, opDeathFlg,
     resultText, turnCnt, loopAudioRef,
   };

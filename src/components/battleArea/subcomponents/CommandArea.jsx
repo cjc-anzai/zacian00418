@@ -97,7 +97,7 @@ const CommandArea = ({
     soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, weaponCmd: false }));
     resetChangeTurn();
-    updateTurnCnt();
+    // updateTurnCnt();
 
     const myWeaponInfo = await getWeaponInfo(weaponName);
     mySelectedWeapon.current = myWeaponInfo;
@@ -110,8 +110,9 @@ const CommandArea = ({
   const changeMyPoke = async (changePoke) => {
     soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, changeCmd: false }));
+    mySelectedWeapon.current = "";
     resetChangeTurn();
-    updateTurnCnt();
+    // updateTurnCnt();
 
     myChangeTurn.current = true;    //交代フラグ
     myChangePokeName.current = changePoke;    //交代するポケモンをrefに保存
@@ -165,13 +166,6 @@ const CommandArea = ({
 
   return (
     <div className="cmd-text-area">
-      {/* {(opAreaVisible.text || myAreaVisible.text || otherText.content) && (
-        <div className="text-area">
-          {opAreaVisible.text && <p>{opPokeState.text.content}</p>}
-          {myAreaVisible.text && <p>{myPokeState.text.content}</p>}
-          {otherText.content && <p>{otherText.content}</p>}
-        </div>
-      )} */}
       {otherAreaVisible.textArea && (
         <div ref={textAreaRef} className="text-area"></div>
       )}
