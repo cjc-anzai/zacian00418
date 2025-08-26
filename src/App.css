@@ -801,6 +801,10 @@
     gap: 3px;
   }
 
+  .status-area-wrapper{
+    margin-top: 40%;
+  }
+
   .status-area {
     display: flex;
     border-radius: 8px;
