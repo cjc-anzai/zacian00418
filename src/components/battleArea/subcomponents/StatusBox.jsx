@@ -7,20 +7,22 @@ const StatusBox = ({
 }) => {
 
     //インポートする変数や関数の取得
-    const { myPokeState,} = battleState;
-    const { getMaxHp, getPokeState, getAreaVisible, getPokeCondition } = battleHandlers;
+    const { myPokeStatics, opPokeStatics, myPokeDynamics, opPokeDynamics, myBattlePokeIndex } = battleState;
+    const { getAreaVisible, getBattlePokeStatics, getBattlePokeDynamics } = battleHandlers;
 
-    const [pokeState, areaVisible] = [getPokeState(isMe, true), getAreaVisible(isMe, true)];
-    const MaxHp = getMaxHp(pokeState, pokeState.name);
+    const areaVisible = getAreaVisible(isMe, true);
+    const battlePokeStatics = getBattlePokeStatics(isMe);
+    const pokeStatics = isMe ? myPokeStatics : opPokeStatics;
+    const pokeDynamics = isMe ? myPokeDynamics : opPokeDynamics;
     const who = isMe ? "my" : "op";
-    let pokeCondition = getPokeCondition(isMe);
+    let pokeCondition = getBattlePokeDynamics(isMe)?.condition || "";
     pokeCondition = pokeCondition === "もうどく" ? "どく" : pokeCondition;
 
     return (
         <div className="status-box" style={{ display: areaVisible.poke ? "block" : "none" }}>
             <div className="status-header">
                 <h1 className={`${who}-poke`}>
-                    <span>{pokeState.name}</span>
+                    <span>{battlePokeStatics?.name || ""}</span>
                     <span className="type-wrapper">
                         {pokeCondition !== "" && (
                             <span
@@ -33,11 +35,9 @@ const StatusBox = ({
                     </span>
                 </h1>
                 <div className="poke-indicators">
-                    {[0, 1, 2].map((index) => {
-                        const currentHp = pokeState[`poke${index + 1}Hp`];
-                        const MaxHp = pokeState[`poke${index + 1}MaxHp`];
-                        const color = getPokeIndicatorsColor(currentHp, MaxHp);
-                        return <div key={index} className={`poke-circle ${color}`}></div>;
+                    {[0, 1, 2].map((i) => {
+                        const color = getPokeIndicatorsColor(pokeDynamics[i]?.currentHp || "", pokeStatics.current[i]?.hp || "");
+                        return <div key={i} className={`poke-circle ${color}`}></div>;
                     })}
                 </div>
             </div>
@@ -45,7 +45,7 @@ const StatusBox = ({
                 <div className={`${who}-hp-bar`}></div>
                 {isMe && (
                     <span className="hp-text">
-                        {Math.round(myPokeState.hp)} / {MaxHp}
+                        {Math.round(myPokeDynamics[myBattlePokeIndex]?.currentHp || "")} / {battlePokeStatics?.hp || ""}
                     </span>
                 )}
             </div>

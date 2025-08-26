@@ -1,42 +1,32 @@
 import React, { useState } from "react";
-import {
-  soundList,
-  typeColors,
-  getCompatiTextForWeaponInfoList,
-  delay,
-} from "../../../model/model";
+import {soundList, typeColors, getCompatiTextForWeaponInfoList, delay,} from "../../../model/model";
 import PokesStatus from "./PokesStatus";
 
-const CommandArea = ({
-  battleState,
-  battleHandlers,
-}) => {
-
+const CommandArea = ({ battleState, battleHandlers,}) => {
   //インポートする変数や関数の取得
   const {
-    opPokeState, myPokeState,
-    setMyPokeState,
-    opAreaVisible, myAreaVisible,
     otherAreaVisible, setOtherAreaVisible,
-    otherText,
-    mySelectedWeapon,
+    mySelectedWeaponInfo,
     isTerastalActive, setIsTerastalActive,
     textAreaRef,
     iAmFirst,
-    myChangePokeName, opChangePokeName,
+    myChangePokeIndex,
     myChangeTurn,
+    myPokeStatics, opPokeStatics,
+    myPokeDynamics,
+    myBattlePokeIndex, opBattlePokeIndex,
+    myWeapons,
+    myTerastalState, 
   } = battleState;
 
   const {
-    resetChangeTurn,
-    updateTurnCnt,
     setMyTurn,
     setBackText,
-    getWeaponInfo,
     decideOpAction,
     setTextWhenClickWeaponBtn,
     checkIsTerastal,
     changeFnc1,
+    setBattlePokeIndex,
   } = battleHandlers;
 
   const [weaponInfoList, setWeaponInfoList] = useState(null);
@@ -69,12 +59,16 @@ const CommandArea = ({
   };
 
   //技ボタンマウスオーバー時に技情報をセットする
-  const handleMouseEnter = async (weaponName) => {
+  const handleMouseEnter = async (weaponIndex) => {
     //技の情報を取得
-    const { type, kind, power, hitrate, priority } = await getWeaponInfo(weaponName);
-    // 技相性を計算
-    const compatiText = getCompatiTextForWeaponInfoList(type, opPokeState.type1, opPokeState.type2);
-
+    const [type, kind, power, hitrate, priority] = [
+      myWeapons.current[myBattlePokeIndex][weaponIndex].type,
+      myWeapons.current[myBattlePokeIndex][weaponIndex].kind,
+      myWeapons.current[myBattlePokeIndex][weaponIndex].power,
+      myWeapons.current[myBattlePokeIndex][weaponIndex].hitrate,
+      myWeapons.current[myBattlePokeIndex][weaponIndex].priority,
+    ]
+    const compatiText = getCompatiTextForWeaponInfoList(type, opPokeStatics.current[opBattlePokeIndex].type1, opPokeStatics.current[opBattlePokeIndex].type2);
     //表示する技情報としてセットする
     setWeaponInfoList({ type, kind, power, hitrate, priority, compatiText });
   };
@@ -93,75 +87,34 @@ const CommandArea = ({
   }
 
   //技名ボタン押下時
-  const setWeapons = async (weaponName) => {
+  const setWeapons = async (weaponIndex) => {
     soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, weaponCmd: false }));
-    resetChangeTurn();
-    // updateTurnCnt();
-
-    const myWeaponInfo = await getWeaponInfo(weaponName);
-    mySelectedWeapon.current = myWeaponInfo;
+    mySelectedWeaponInfo.current = myWeapons.current[myBattlePokeIndex][weaponIndex];
     await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
     await setMyTurn();
     await setTextWhenClickWeaponBtn();
   };
 
   //〇〇に交代ボタン押下時、交代するポケモン名を保存し、交代フラグを立てる
-  const changeMyPoke = async (changePoke) => {
+  const changeMyPoke = async (changePokeIndex) => {
     soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, changeCmd: false }));
-    mySelectedWeapon.current = "";
-    resetChangeTurn();
-    // updateTurnCnt();
-
+    mySelectedWeaponInfo.current = null;
     myChangeTurn.current = true;    //交代フラグ
-    myChangePokeName.current = changePoke;    //交代するポケモンをrefに保存
+    myChangePokeIndex.current = changePokeIndex;    //交代するポケモンをrefに保存
     await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
     await setMyTurn();
     setBackText(iAmFirst.current);    //先攻のbackテキストをセット
-    console.log(`${changePoke}に交代を選択`);
     changeFnc1(iAmFirst.current);
   }
 
   //倒れた後、次に出すポケモンボタン押下時、次のポケモン名を保存し、HPをセット
-  const setNextMyPoke = (nextMyPoke) => {
+  const setNextMyPoke = (nextMyPokeIndex) => {
     soundList.general.decide.cloneNode().play();
     setOtherAreaVisible(prev => ({ ...prev, nextPokeCmd: false }));
-    myChangePokeName.current = nextMyPoke;
-    delay(() => setMyPokeState(p => ({ ...p, name: nextMyPoke })), 1000);
+    delay(() => setBattlePokeIndex(true, nextMyPokeIndex), 1000);
   }
-
-  //ステータス状況をUIに反映させる
-  const renderBuffShapes = (value) => {
-    const max = 6;
-    const up = Math.max(0, value);
-    const down = Math.max(0, -value);
-    const neutral = max - up - down;
-
-    const shapes = [];
-
-    for (let i = 0; i < up; i++) {
-      shapes.push(<span className="shape up" key={`up-${i}`}></span>);
-    }
-    for (let i = 0; i < down; i++) {
-      shapes.push(<span className="shape down" key={`down-${i}`}></span>);
-    }
-    for (let i = 0; i < neutral; i++) {
-      shapes.push(<span className="shape neutral" key={`neutral-${i}`}></span>);
-    }
-
-    return shapes;
-  };
-
-  const StatusRow = ({ label, value }) => (
-    <div className="status-row">
-      <span className="label">{label}</span>
-      <span className="colon">：</span>
-      <div className="buff-row">
-        {renderBuffShapes(value)}
-      </div>
-    </div>
-  );
 
 
   return (
@@ -173,7 +126,7 @@ const CommandArea = ({
       {otherAreaVisible.actionCmd && !otherAreaVisible.textArea && (
         <div className="cmd-area">
           <button className="weapon-cmd-btn" onClick={openBattleCmdArea}>たたかう</button>
-          {(myPokeState.poke1Hp !== 0 || myPokeState.poke2Hp !== 0 || myPokeState.poke3Hp !== 0) && (
+          {(myPokeDynamics[0].currentHp !== 0 || myPokeDynamics[1].currentHp !== 0 || myPokeDynamics[2].currentHp !== 0) && (
             <button className="change-cmd-btn" onClick={openChangeCmdArea}>交代</button>
           )}
           <button className="weapon-cmd-btn" onClick={openStatusArea}>ステータス</button>
@@ -184,47 +137,47 @@ const CommandArea = ({
         <div className="cmd-area weapon-cmd-area">
           <button
             className="weapon-cmd-btn"
-            onClick={async () => await setWeapons(myPokeState.weapon1)}
-            onMouseEnter={() => handleMouseEnter(myPokeState.weapon1)}
+            onClick={async () => await setWeapons(0)}
+            onMouseEnter={() => handleMouseEnter(0)}
             onMouseLeave={handleMouseLeave}
           >
-            {myPokeState.weapon1}
+            {myPokeStatics.current[myBattlePokeIndex].weapon1}
           </button>
 
           <button
             className="weapon-cmd-btn"
-            onClick={async () => await setWeapons(myPokeState.weapon2)}
-            onMouseEnter={() => handleMouseEnter(myPokeState.weapon2)}
+            onClick={async () => await setWeapons(1)}
+            onMouseEnter={() => handleMouseEnter(1)}
             onMouseLeave={handleMouseLeave}
           >
-            {myPokeState.weapon2}
+            {myPokeStatics.current[myBattlePokeIndex].weapon2}
           </button>
 
           <button
             onClick={() => togglTerastal()}
-            disabled={!myPokeState.canTerastal}
+            disabled={!myTerastalState.canTerastal}
             className={`terastal-cmd-btn ${isTerastalActive || isTerastal ? 'active' : ''}`}
-            style={isTerastalActive || isTerastal ? { backgroundColor: typeColors[myPokeState.terastal] } : undefined}
+            style={isTerastalActive || isTerastal ? { backgroundColor: typeColors[myPokeStatics.current[myBattlePokeIndex].terastal] } : undefined}
           >
-            {isTerastalActive || isTerastal ? myPokeState.terastal : "テラスタル"}
+            {isTerastalActive || isTerastal ? myPokeStatics.current[myBattlePokeIndex].terastal : "テラスタル"}
           </button>
 
           <button
             className="weapon-cmd-btn"
-            onClick={async () => await setWeapons(myPokeState.weapon3)}
-            onMouseEnter={() => handleMouseEnter(myPokeState.weapon3)}
+            onClick={async () => await setWeapons(2)}
+            onMouseEnter={() => handleMouseEnter(2)}
             onMouseLeave={handleMouseLeave}
           >
-            {myPokeState.weapon3}
+            {myPokeStatics.current[myBattlePokeIndex].weapon3}
           </button>
 
           <button
             className="weapon-cmd-btn"
-            onClick={async () => await setWeapons(myPokeState.weapon4)}
-            onMouseEnter={() => handleMouseEnter(myPokeState.weapon4)}
+            onClick={async () => await setWeapons(3)}
+            onMouseEnter={() => handleMouseEnter(3)}
             onMouseLeave={handleMouseLeave}
           >
-            {myPokeState.weapon4}
+            {myPokeStatics.current[myBattlePokeIndex].weapon4}
           </button>
 
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
@@ -244,17 +197,13 @@ const CommandArea = ({
 
       {otherAreaVisible.changeCmd && (
         <div className="cmd-area">
-          {[1, 2, 3].map(num => {
-            const name = myPokeState[`poke${num}Name`];
-            const hp = myPokeState[`poke${num}Hp`];
+          {[0, 1, 2].map(i => {
+            const name = myPokeStatics.current[i].name;
+            const hp = myPokeDynamics[i].currentHp;
 
             return (
-              name !== myPokeState.name && hp > 0 && (
-                <button
-                  key={name}
-                  className="change-cmd-btn"
-                  onClick={async () => await changeMyPoke(name)}
-                >
+              name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0 && (
+                <button key={name} className="change-cmd-btn" onClick={async () => await changeMyPoke(i)}>
                   {name}
                 </button>
               )
@@ -268,28 +217,27 @@ const CommandArea = ({
       {otherAreaVisible.status && (
         <div className="status-area-wrapper" style={{ display: "flex" }}>
           <div className="status-area">
-            <PokesStatus isMe={false} battleState={battleState} />
-            <PokesStatus isMe={true} battleState={battleState} />
+            <PokesStatus isMe={false} battleState={battleState} battleHandlers={battleHandlers} />
+            <PokesStatus isMe={true} battleState={battleState} battleHandlers={battleHandlers} />
           </div>
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>
       )}
 
-      {otherAreaVisible.nextPokeCmd && !otherText.content && (
+      {otherAreaVisible.nextPokeCmd && !otherAreaVisible.textArea && (
         <div className="cmd-area">
-          {[1, 2, 3].map(num => {
-            const name = myPokeState[`poke${num}Name`];
-            const hp = myPokeState[`poke${num}Hp`];
+          {[0, 1, 2].map(i => {
+            const name = myPokeStatics.current[i].name;
+            const hp = myPokeDynamics[i].currentHp;
 
             return (
-              name !== myPokeState.name && hp > 0 && (
-                <button key={name} className="change-cmd-btn" onClick={() => setNextMyPoke(name)}>
+              name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0 && (
+                <button key={name} className="change-cmd-btn" onClick={() => setNextMyPoke(i)}>
                   {name}
                 </button>
               )
             );
           })}
-
         </div>
       )}
     </div >

@@ -10,7 +10,6 @@ const BattleArea = ({
   return (
     <div className="battle-area-wrap">
       <div className="battle-area" style={{ display: "flex" }}>
-        {/* 相手のポケモンエリア */}
         <div className="op-poke-area-wrap">
           <PokeArea
             isMe={false}
@@ -24,7 +23,6 @@ const BattleArea = ({
           />
         </div>
 
-        {/* 自分のポケモンエリア */}
         <div className="my-poke-area-wrap">
           <PokeArea
             isMe={true}

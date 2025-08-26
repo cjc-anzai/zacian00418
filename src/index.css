@@ -13,14 +13,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html, body {
+html, body, #root {
+  width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: auto; /* ← スクロール可能にする */
-  overflow-y: auto; /* ← hiddenだとスクロールできなくなる */
-  overflow: hidden; /* ← スクロール可能にする */
-  overflow-y: hidden; /* ← hiddenだとスクロールできなくなる */
+  overflow: hidden; /* スクロールバーを非表示に */
 }
 
 h1 {
@@ -36,9 +34,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;

@@ -4,8 +4,10 @@ import { soundList, delay } from "../model/model";
 const SelectScreen = ({ battleState, battleHandlers, }) => {
 
   //インポートする変数や関数の取得
-  const { setOtherAreaVisible, selectedOrder, setSelectedOrder } = battleState;
-  const { setBgm, playBgm, getPokeInfo, setBattleInfo, selectBetterOpPokes } = battleHandlers;
+  const { setOtherAreaVisible, mySelectedOrder, setMySelectedOrder, setMyBattlePokeIndex } = battleState;
+  const { setBgm, playBgm, 
+    setPokeInfos, setWeaponInfos, chooseHowToSelectOpPoke, getPokeInfos,
+    getWeaponInfos, setBattlePokeIndex } = battleHandlers;
 
   const getPokeImg = (pokeName) => {
     const url = `https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/pokeImg/${pokeName}.png`
@@ -20,7 +22,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
   //選出画面のポケモン押下時
   const handleSelect = (pokeName) => {
     soundList.general.select.cloneNode().play();
-    setSelectedOrder((prev) => {
+    setMySelectedOrder((prev) => {
       if (prev.includes(pokeName))
         return prev.filter((name) => name !== pokeName); // クリックで解除
       if (prev.length < 3)
@@ -35,26 +37,12 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
     setOtherAreaVisible(prev => ({ ...prev, select: false, battle: true }));
     setBgm("battle");
     delay(() => playBgm(), 50);
-
-    //お互いの選出する３体をまとめる
-    const mySelectedOrder = selectedOrder;
-
-    //通常選出(相手は自分の６体に対して相性の良い３体を選ぶ)
-    // const opSelectedOrder = await selectBetterOpPokes(myPokesKanaName, opPokesKanaName);
-    
-    //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
-    const opSelectedOrder = await selectBetterOpPokes(mySelectedOrder, opPokesKanaName);
-    
-    //テスト用で相手の選出を固定
-    // const opSelectedOrder = ["ラプラス", "エルレイド", "エレキブル"];
-
-    //DBから6体のポケモンの最大HPを取得
-    const [myPokeInfos, opPokeInfos] = await Promise.all([
-      Promise.all(mySelectedOrder.map(getPokeInfo)),
-      Promise.all(opSelectedOrder.map(getPokeInfo))
-    ]);
-
-    setBattleInfo(myPokeInfos, opPokeInfos);
+    const opSelectedOrder = await chooseHowToSelectOpPoke(myPokesKanaName, opPokesKanaName, "hard");    //相手の選出方法を選択
+    const { myPokeInfos, opPokeInfos } = await getPokeInfos(opSelectedOrder);                           //DBからお互いのポケモン３体の情報を取得
+    const { myWeaponInfos, opWeaponInfos } = await getWeaponInfos(myPokeInfos, opPokeInfos);            //DBからお互いのポケモン３体の技情報を取得
+    setPokeInfos(myPokeInfos, opPokeInfos);
+    setWeaponInfos(myWeaponInfos, opWeaponInfos);
+    setBattlePokeIndex(true, 0);
   };
 
   return (
@@ -95,13 +83,13 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
           { name: myPokesKanaName[4], img: getPokeImg(myPokesRomaName[4]) }, { name: myPokesKanaName[5], img: getPokeImg(myPokesRomaName[5]) },].map((poke) => (
             <div
               key={poke.name}
-              className={`poke-option ${selectedOrder.includes(poke.name) ? "selected" : ""}`}
+              className={`poke-option ${mySelectedOrder.includes(poke.name) ? "selected" : ""}`}
               onClick={() => handleSelect(poke.name)}
             >
               <img src={poke.img} alt={poke.name} />
               <p>{poke.name}</p>
               <p className="order-num">
-                {selectedOrder.includes(poke.name) && <span>{selectedOrder.indexOf(poke.name) + 1}番目</span>}
+                {mySelectedOrder.includes(poke.name) && <span>{mySelectedOrder.indexOf(poke.name) + 1}番目</span>}
               </p>
             </div>
           ))}
@@ -109,9 +97,9 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
         <div className="select-actions">
           <button
-            className={selectedOrder.length === 3 ? "active" : "inactive"}
+            className={mySelectedOrder.length === 3 ? "active" : "inactive"}
             onClick={confirmSelection}
-            disabled={selectedOrder.length !== 3}
+            disabled={mySelectedOrder.length !== 3}
           >
             バトル開始！
           </button>

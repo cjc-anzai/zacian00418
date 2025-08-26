@@ -300,12 +300,6 @@ export const calcNewHp = (currentHp, damage) => {
   return newHp;
 }
 
-//Goテキストを取得する
-export const getGoText = (isMe, pokeName) => {
-  const goText = isMe ? `ゆけ！${pokeName}！` : `相手は${pokeName}をくりだした！`;
-  return goText;
-}
-
 //テラスタルテキストを取得する
 export const getTerastalText = (isMe, pokeName) => {
   const terastalText = isMe
@@ -511,7 +505,7 @@ export const getMostEffectiveWeaponLogic = (weaponInfos, atcInfos, defInfos) => 
   }));
 
   //与えるダメージが最も大きい技のインデックスを取得
-  const opWtrongestWeaponIndex = opWeapons
+  const opStrongestWeaponIndex = opWeapons
     .map((w, i) => ({ ...w, index: i }))
     .reduce((max, w) => w.damage > max.damage ? w : max)
     .index;
@@ -526,19 +520,17 @@ export const getMostEffectiveWeaponLogic = (weaponInfos, atcInfos, defInfos) => 
       ? highPriorityWeapons.reduce((max, w) => w.damage > max.damage ? w : max).index
       : null;
 
-  //最も与えるダメージが大きい技とダメージ
-  const [strongestWeapon, strongestWeaponDamage,] =
-    [opWeapons[opWtrongestWeaponIndex].name, Math.floor(opWeapons[opWtrongestWeaponIndex].damage * 0.85)];
+  //最も与えるダメージが大きい技のダメージ
+  const strongestWeaponDamage = Math.floor(opWeapons[opStrongestWeaponIndex].damage * 0.85);
   //最も与えるダメージが大きい先制技, 最も与えるダメージが大きい先制技(最低乱数)
-  let [strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage] = [null, null];
+  let strongestHighPriorityWeaponDamage = null;
   if (strongestHighPriorityWeaponIndex) {
-    strongestHighPriorityWeapon = opWeapons[strongestHighPriorityWeaponIndex].name;
     strongestHighPriorityWeaponDamage = Math.round(opWeapons[strongestHighPriorityWeaponIndex].damage * 0.85);
   }
 
   console.log(`最大火力\n${opWeapons[0].name}：${opWeapons[0].damage}\n${opWeapons[1].name}：${opWeapons[1].damage}\n${opWeapons[2].name}：${opWeapons[2].damage}\n${opWeapons[3].name}：${opWeapons[3].damage}`);
 
-  return { strongestWeapon, strongestWeaponDamage, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage }
+  return { opStrongestWeaponIndex, strongestWeaponDamage, strongestHighPriorityWeaponIndex, strongestHighPriorityWeaponDamage }
 }
 
 //predictMyAction()のロジック
@@ -552,33 +544,32 @@ export const predictMyActionLogic = (weaponInfos, atcInfos, defInfos, randomMult
   ];
 
   // 最大ダメージのインデックスを取得
-  const maxIndex = damageList.reduce((maxIdx, current, idx, arr) =>
+  const myStrongestWeaponIndex = damageList.reduce((maxIdx, current, idx, arr) =>
     current > arr[maxIdx] ? idx : maxIdx, 0
   );
+  
+  const myMaxDamage = damageList[myStrongestWeaponIndex] * randomMultiplier;
+  const myMaxDamageWeaponType = weaponInfos[myStrongestWeaponIndex].type;
 
-  const myStrongestWeapon = weaponInfos[maxIndex].name;
-  const myMaxDamage = damageList[maxIndex] * randomMultiplier;
-  const myMaxDamageWeaponType = weaponInfos[maxIndex].type;
-
-  return { myStrongestWeapon, myMaxDamage, myMaxDamageWeaponType };
+  return { myStrongestWeaponIndex, myMaxDamageWeaponType, myMaxDamage };
 }
 
 
 //相手目線で合理的な技を選択して返す
-export const choiseBetterWeapon = (strongestWeapon, strongestHighPriorityWeapon, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeSpeed, opPokeSpeed, myPokeHp, opPokeHp) => {
+export const choiseBetterWeapon = (strongestWeaponIndex, strongestHighPriorityWeaponIndex, strongestHighPriorityWeaponDamage, myMaxDamage, myPokeSpeed, opPokeSpeed, myPokeHp, opPokeHp) => {
   let betterWeapon = "";
   //先制技を持っていているとき
-  if (strongestHighPriorityWeapon) {
+  if (strongestHighPriorityWeaponIndex) {
     //相手の方が遅く、自分の攻撃の最低乱数で、相手が倒れる時は先制技を選択する(無効の場合を除く)
     if (myPokeSpeed > opPokeSpeed && opPokeHp <= myMaxDamage && strongestHighPriorityWeaponDamage !== 0)
-      betterWeapon = strongestHighPriorityWeapon;
+      betterWeapon = strongestHighPriorityWeaponIndex;
     //先制技(最低乱数)で自分を倒せる場合は先制技を選択する
     else
-      betterWeapon = strongestHighPriorityWeaponDamage >= myPokeHp ? strongestHighPriorityWeapon : strongestWeapon;
+      betterWeapon = strongestHighPriorityWeaponDamage >= myPokeHp ? strongestHighPriorityWeaponIndex : strongestWeaponIndex;
   }
   //通常は一番与えるダメージが大きい技を選択する
   else
-    betterWeapon = strongestWeapon;
+    betterWeapon = strongestWeaponIndex;
 
   return betterWeapon;
 }
@@ -624,18 +615,19 @@ export const damageEffectLogic = (isMe) => {
 //ダメージ計算　ダメージ数/命中判定/急所判定　を返す
 export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
   let trueDamage = 0;
-  const isHit = weaponInfo.hitrate ? Math.random() * 100 < weaponInfo.hitrate : true;    //命中判定
-  let isCriticalHit = false;   //急所フラグ
+  let realDamage = 0;
+  const isHit = weaponInfo.hitRate ? Math.random() * 100 < weaponInfo.hitRate : true;    //命中判定
+  let isCritical = false;   //急所フラグ
 
   //命中時のみダメージ計算する
   if (isHit && weaponInfo.kind !== "変化") {
     let { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier } = calcPureDamage(weaponInfo, atcInfo, defInfo);
     const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
-    isCriticalHit = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
-    // isCriticalHit = true;   //テスト用
+    isCritical = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
+    // isCritical = true;   //テスト用
 
     //急所に当たった際には攻撃系のデバフと防御系のバフを無視する
-    if (isCriticalHit) {
+    if (isCritical) {
       atcBuffMultiplier = atcBuffMultiplier >= 1 ? 1 : atcBuffMultiplier;
       defBuffMultiplier = defBuffMultiplier <= 1 ? 1 : defBuffMultiplier
       pureDamage = (pureDamage - 2) / atcBuffMultiplier * defBuffMultiplier + 2;
@@ -643,15 +635,16 @@ export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
     }
 
     trueDamage = Math.floor(pureDamage * randomMultiplier);    // 乱数
-    trueDamage = Math.floor(trueDamage * (isCriticalHit ? 1.5 : 1));   //急所
-    trueDamage = atcInfo.isBurned ? Math.floor(trueDamage * 0.5) : trueDamage;  //やけど補正
+    trueDamage = Math.floor(trueDamage * (isCritical ? 1.5 : 1));   //急所
+    trueDamage = weaponInfo.kind === "物理" && atcInfo.isBurned ? Math.floor(trueDamage * 0.5) : trueDamage;  //やけど補正
+    realDamage = trueDamage > defInfo.currentHp ? defInfo.currentHp : trueDamage;
 
-    console.log(`${defInfo.name}に${trueDamage}ダメージ\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCriticalHit ? 1.5 : 1}\nやけど：${atcInfo.isBurned ? 0.5 : 1}`);
+    console.log(`${defInfo.name}に${realDamage}ダメージ(${trueDamage})\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCritical ? 1.5 : 1}\nやけど：${weaponInfo.kind === "物理" && atcInfo.isBurned ? 0.5 : 1}`);
   }
   else if (!isHit && weaponInfo.kind !== "変化")
     console.log(`${atcInfo.name}の攻撃は当たらなかった`);
 
-  return { trueDamage, isHit, isCriticalHit };
+  return { realDamage, isHit, isCritical };
 }
 
 //adjustHpBar()のロジック HPバーの制御

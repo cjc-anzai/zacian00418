@@ -8,10 +8,11 @@ const PokeArea = ({
 }) => {
 
     //インポートする変数や関数の取得
-    const { opPokeState, myPokeState, opAreaVisible, myAreaVisible } = battleState;
-    const { checkIsTerastal, getPokeState, getAreaVisible } = battleHandlers;
+    const {  } = battleState;
+    const { checkIsTerastal, getBattlePokeStatics, getAreaVisible } = battleHandlers;
 
-    const [pokeState, areaVisible, pokeArea] = [getPokeState(isMe, true), getAreaVisible(isMe, true)];
+    const areaVisible = getAreaVisible(isMe, true);
+    const battlePokeStatics = getBattlePokeStatics(isMe);
     const isTerastal = checkIsTerastal(isMe);
     const who = isMe ? "my" : "op";
 
@@ -20,8 +21,8 @@ const PokeArea = ({
             <div className="poke-img-wrapper">
                 {areaVisible.poke && isTerastal && (
                     <img
-                        src={terastalImgList[pokeState.terastal]}
-                        alt={`${pokeState.terastal}テラスタル`}
+                        src={terastalImgList[battlePokeStatics.terastal]}
+                        alt={`${battlePokeStatics.terastal}テラスタル`}
                         className="terastal-img"
                     />
                 )}
@@ -29,7 +30,7 @@ const PokeArea = ({
                     {areaVisible.poke && (
                         <motion.img
                             key={`${who}PokeImg`}
-                            src={pokeState.img}
+                            src={battlePokeStatics.img}
                             alt="ポケモン画像"
                             className={`${who}-poke-img`}
                             initial={{ clipPath: "circle(0% at 50% 50%)" }}
@@ -41,7 +42,6 @@ const PokeArea = ({
                 </AnimatePresence>
             </div>
 
-            {/* 地面 */}
             <div className="poke-ground"></div>
         </div>
     );

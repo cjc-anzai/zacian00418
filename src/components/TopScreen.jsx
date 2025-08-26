@@ -10,7 +10,6 @@ const TopScreen = ({ battleHandlers, setOtherAreaVisible }) => {
     soundList.general.decide.cloneNode().play();
     soundList.general.start.play();
     setBgm("selection");
-
     soundList.general.start.onended = () => {
       setOtherAreaVisible(prev => ({ ...prev, top: false, select: true }));
       playBgm();

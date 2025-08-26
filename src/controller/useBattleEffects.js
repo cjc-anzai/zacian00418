@@ -4,116 +4,90 @@ import { useToDoWhenFnc } from "./useToDoWhenFnc";
 export function useBattleEffects(battleState) {
 
   const {
-    myPokeState, opPokeState,
-    myPokeStateTrigger, opPokeStateTrigger,
+    myBattlePokeIndex, opBattlePokeIndex,
+    myPokeDynamics, opPokeDynamics,
+    myTerastalState, opTerastalState,
+    myTextRef, opTextRef,
   } = battleState;
 
   const {
-    toDoWhenSetPokeName,
-    toDoWhenSetImg,
-    toDoWhenSetHp,
+    toDoWhenSetCurrentHp,
+    toDoWhenSetBattlePokeIndex,
     toDoWhenSetTerastalPokeNum,
     toDoWhenSetPokeCondition
   } = useToDoWhenFnc(battleState);
 
-  //name=============================================
+  // useEffect(() => {
+  //   const setVh = () => {
+  //     document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+  //   };
+  //   setVh();
+  //   window.addEventListener("resize", setVh);
+  //   return () => window.removeEventListener("resize", setVh);
+  // }, []);
+
+  //battlePokeIndex=============================================
   useEffect(() => {
-    if (!myPokeState.name) return;
-    const run = async () => {
-      await toDoWhenSetPokeName(true);
-    };
-    run();
-  }, [myPokeState.name]);
+    if (myBattlePokeIndex === -1) return;
+    (async () => {
+      await toDoWhenSetBattlePokeIndex(true);
+    })();
+  }, [myBattlePokeIndex]);
 
   useEffect(() => {
-    if (!opPokeState.name) return;
-    const run = async () => {
-      await toDoWhenSetPokeName(false);
-    };
-    run();
-  }, [opPokeState.name]);
+    if (opBattlePokeIndex === -1) return;
+    (async () => {
+      await toDoWhenSetBattlePokeIndex(false);
+    })();
+  }, [opBattlePokeIndex]);
 
 
-  //img===============================================
+  //currentHp=============================================
   useEffect(() => {
-    if (!myPokeState.img) return;
-    toDoWhenSetImg(true);
-  }, [myPokeState.img]);
-
-  useEffect(() => {
-    if (!opPokeState.img) return;
-    toDoWhenSetImg(false);
-  }, [opPokeState.img]);
-
-  //hp=============================================
-  useEffect(() => {
-    if (!myPokeState.name) return;
-    const run = async () => {
-      await toDoWhenSetHp(true);
-    };
-    run();
-  }, [myPokeState.hp]);
+    if (myBattlePokeIndex === -1 || myTextRef.current.kind === "go") return;
+    (async () => {
+      await toDoWhenSetCurrentHp(true);
+    })();
+  }, [myPokeDynamics[0].currentHp, myPokeDynamics[1].currentHp, myPokeDynamics[2].currentHp]);
 
   useEffect(() => {
-    if (!opPokeState.name) return;
-    const run = async () => {
-      await toDoWhenSetHp(false);
-    };
-    run();
-  }, [opPokeState.hp]);
-
-  //HpのuseEffect強制発火用のトリガー
-  useEffect(() => {
-    if (myPokeStateTrigger.hp == 0) return;
-    const run = async () => {
-      await toDoWhenSetHp(true);
-    };
-    run();
-  }, [myPokeStateTrigger.hp]);
-
-  useEffect(() => {
-    if (opPokeStateTrigger.hp == 0) return;
-    const run = async () => {
-      await toDoWhenSetHp(false);
-    };
-    run();
-  }, [opPokeStateTrigger.hp]);
+    if (opBattlePokeIndex === -1 || opTextRef.current.kind === "go") return;
+    (async () => {
+      await toDoWhenSetCurrentHp(false);
+    })();
+  }, [opPokeDynamics[0].currentHp, opPokeDynamics[1].currentHp, opPokeDynamics[2].currentHp]);
 
 
   //テラスタル======================================
   useEffect(() => {
-    if (!myPokeState.terastalPokeNum) return;
-    const run = async () => {
+    if (myTerastalState.terastalPokeNum === null) return;
+    (async () => {
       await toDoWhenSetTerastalPokeNum(true);
-    };
-    run();
-  }, [myPokeState.terastalPokeNum]);
+    })();
+  }, [myTerastalState.terastalPokeNum]);
 
   useEffect(() => {
-    if (!opPokeState.terastalPokeNum) return;
-    const run = async () => {
+    if (opTerastalState.terastalPokeNum === null) return;
+    (async () => {
       await toDoWhenSetTerastalPokeNum(false);
-    };
-    run();
-  }, [opPokeState.terastalPokeNum]);
+    })();
+  }, [opTerastalState.terastalPokeNum]);
 
 
   //condition　毒・火傷の１ターン目にダメージを入れるために必要================
   useEffect(() => {
-    if (myPokeState.poke1Condition === "" && myPokeState.poke2Condition === "" && myPokeState.poke3Condition === "") return;
-    const run = async () => {
+    if (!myPokeDynamics[0].condition && !myPokeDynamics[1].condition && !myPokeDynamics[2].condition) return;
+    (async () => {
       toDoWhenSetPokeCondition(true);
-    };
-    run();
-  }, [myPokeState.poke1Condition, myPokeState.poke2Condition, myPokeState.poke3Condition,]);
+    })();
+  }, [myPokeDynamics[0].condition, myPokeDynamics[1].condition, myPokeDynamics[2].condition]);
 
   useEffect(() => {
-    if (opPokeState.poke1Condition === "" && opPokeState.poke2Condition === "" && opPokeState.poke3Condition === "") return;
-    const run = async () => {
-      toDoWhenSetPokeCondition(false);
-    };
-    run();
-  }, [opPokeState.poke1Condition, opPokeState.poke2Condition, opPokeState.poke3Condition,]);
+    if (!opPokeDynamics[0].condition && !opPokeDynamics[1].condition && !opPokeDynamics[2].condition) return;
+    (async () => {
+      await toDoWhenSetPokeCondition(false);
+    })();
+  }, [opPokeDynamics[0].condition, opPokeDynamics[1].condition, opPokeDynamics[2].condition]);
 
 
   return {};

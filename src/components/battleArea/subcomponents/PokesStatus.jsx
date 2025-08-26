@@ -5,16 +5,16 @@ import {
 
 const PokesStatus = ({
   isMe,
-  battleState
+  battleState,
+  battleHandlers
 }) => {
 
   //インポートする変数や関数の取得
-  const {
-    opPokeState, myPokeState,
-  } = battleState;
+  const { } = battleState;
+  const { getBattlePokeStatics, getBattlePokeDynamics, } = battleHandlers;
 
-  const pokeState = isMe ? myPokeState : opPokeState;
-
+  const battlePokeStatics = getBattlePokeStatics(isMe);
+  const battlePokeDynamics = getBattlePokeDynamics(isMe);
 
   //ステータス状況をUIに反映させる
   const renderBuffShapes = (value) => {
@@ -22,19 +22,13 @@ const PokesStatus = ({
     const up = Math.max(0, value);
     const down = Math.max(0, -value);
     const neutral = max - up - down;
-
     const shapes = [];
-
-    for (let i = 0; i < up; i++) {
+    for (let i = 0; i < up; i++) 
       shapes.push(<span className="shape up" key={`up-${i}`}></span>);
-    }
-    for (let i = 0; i < down; i++) {
+    for (let i = 0; i < down; i++) 
       shapes.push(<span className="shape down" key={`down-${i}`}></span>);
-    }
-    for (let i = 0; i < neutral; i++) {
+    for (let i = 0; i < neutral; i++) 
       shapes.push(<span className="shape neutral" key={`neutral-${i}`}></span>);
-    }
-
     return shapes;
   };
 
@@ -52,27 +46,27 @@ const PokesStatus = ({
   return (
     <div className="poke-status">
       <span className="type-wrapper">
-        <p>{pokeState.name}</p>
+        <p>{battlePokeStatics.name}</p>
         <span
           className="type-box"
-          style={{ backgroundColor: typeColors[pokeState.type1], borderColor: typeColors[pokeState.type1] }}
+          style={{ backgroundColor: typeColors[battlePokeStatics.type1], borderColor: typeColors[battlePokeStatics.type1] }}
         >
-          {pokeState.type1}
+          {battlePokeStatics.type1}
         </span>
-        {pokeState.type2 !== "なし" && (
+        {battlePokeStatics.type2 !== "なし" && (
           <span
             className="type-box"
-            style={{ backgroundColor: typeColors[pokeState.type2], borderColor: typeColors[pokeState.type2] }}
+            style={{ backgroundColor: typeColors[battlePokeStatics.type2], borderColor: typeColors[battlePokeStatics.type2] }}
           >
-            {pokeState.type2}
+            {battlePokeStatics.type2}
           </span>
         )}
       </span>
-      <StatusRow label="攻撃" value={pokeState.aBuff} />
-      <StatusRow label="防御" value={pokeState.bBuff} />
-      <StatusRow label="特攻" value={pokeState.cBuff} />
-      <StatusRow label="特防" value={pokeState.dBuff} />
-      <StatusRow label="素早さ" value={pokeState.sBuff} />
+      <StatusRow label="攻撃" value={battlePokeDynamics.aBuff} />
+      <StatusRow label="防御" value={battlePokeDynamics.bBuff} />
+      <StatusRow label="特攻" value={battlePokeDynamics.cBuff} />
+      <StatusRow label="特防" value={battlePokeDynamics.dBuff} />
+      <StatusRow label="素早さ" value={battlePokeDynamics.sBuff} />
     </div>
   );
 };
