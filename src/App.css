@@ -785,7 +785,7 @@
   /* コマンドエリア======================================================= */
   .cmd-text-area {
     height: 50px;
-    margin-top: 8px;
+    margin-top: 15%;
   }
 
   .text-area {
