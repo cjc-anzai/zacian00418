@@ -666,11 +666,11 @@
 
   /* ============================================= */
   .select-area {
-    padding: 4% 2%;
+    padding: 5vh 2%;
   }
 
   .select-screen-text {
-    height: 5%;
+    height: 5vh;
     font-size: 1.5rem;
   }
 
@@ -683,12 +683,12 @@
   }
 
   .op-pokes-wrap {
-    height: 30%;
+    height: 30vh;
     padding: 0 5%;
   }
 
   .my-pokes-wrap {
-    height: 42%;
+    height: 42vh;
     padding: 0;
   }
 
@@ -726,7 +726,7 @@
 
   .select-area button {
     width: 70%;
-    height: 8%;
+    height: 8vh;
     padding: 0 1%;
     font-size: 1.5rem;
   }
