@@ -4,7 +4,7 @@
 }
 
 .App {
-  height: calc(var(--vh, 1vh) * 100);
+  height: calc(var(--vh, 1vh) * 100 - 5vh);
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -666,11 +666,11 @@
 
   /* ============================================= */
   .select-area {
-    padding: 2vh 2%;
+    padding: 2%;
   }
 
   .select-screen-text {
-    height: 5vh;
+    height: 5%;
     font-size: 1.5rem;
   }
 
@@ -685,12 +685,12 @@
   }
 
   .op-pokes-wrap {
-    height: 30vh;
+    height: 30%;
     padding: 0 5%;
   }
 
   .my-pokes-wrap {
-    height: 42vh;
+    height: 42%;
     padding: 0;
   }
 
@@ -727,7 +727,7 @@
 
   .select-area button {
     width: 70%;
-    height: 8vh;
+    height: 8%;
     padding: 0 1%;
     font-size: 1.5rem;
   }
