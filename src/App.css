@@ -666,7 +666,7 @@
 
   /* ============================================= */
   .select-area {
-    padding: 5vh 2%;
+    padding: 2vh 2%;
   }
 
   .select-screen-text {
@@ -676,10 +676,12 @@
 
   .op-pokes-wrap,
   .my-pokes-wrap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
     width: 100%;
     gap: 1%;
     margin: 1% 0 4% 0;
-    flex-wrap: wrap;
   }
 
   .op-pokes-wrap {
