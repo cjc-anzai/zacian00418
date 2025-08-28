@@ -37,7 +37,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
     setOtherAreaVisible(prev => ({ ...prev, select: false, battle: true }));
     setBgm("battle");
     delay(() => playBgm(), 50);
-    const opSelectedOrder = await chooseHowToSelectOpPoke(myPokesKanaName, opPokesKanaName, "free");    //相手の選出方法を選択
+    const opSelectedOrder = await chooseHowToSelectOpPoke(myPokesKanaName, opPokesKanaName, "hard");    //相手の選出方法を選択
     const { myPokeInfos, opPokeInfos } = await getPokeInfos(opSelectedOrder);                           //DBからお互いのポケモン３体の情報を取得
     const { myWeaponInfos, opWeaponInfos } = await getWeaponInfos(myPokeInfos, opPokeInfos);            //DBからお互いのポケモン３体の技情報を取得
     setPokeInfos(myPokeInfos, opPokeInfos);
