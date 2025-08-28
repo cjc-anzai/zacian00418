@@ -696,16 +696,15 @@
 
   .op-poke,
   .my-poke {
-    width: auto;
+    width: 100%;
+    height: auto;
   }
 
   .op-poke {
-    height: 50%;
     padding: 0;
   }
 
   .my-poke {
-    height: 45%;
     padding: 1% 0;
   }
 
