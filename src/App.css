@@ -4,7 +4,7 @@
 }
 
 .App {
-  height: calc(var(--vh, 1vh) * 100 - 5vh);
+  height: calc(var(--vh, 1vh) * 100 - 3vh);
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -411,13 +411,13 @@
   background-color: #e0e0e0;
 }
 
+.cancel-cmd-btn {
+  background-color: white;
+}
+
 .cmd-area button:hover {
   transform: scale(1.1);
   font-weight: bold;
-}
-
-.cancel-cmd-btn {
-  background-color: white;
 }
 
 .action-cmd-area,
@@ -646,6 +646,32 @@
 }
 
 /* レスポンシブ======================================================= */
+
+@media (hover: none) and (pointer: coarse) {
+  .top-screen button:hover {
+    background-color: initial;
+    color: initial;
+    transform: none;
+  }
+
+  .select-area button.active:hover {
+    background-color: #94f097;
+    transform: none;
+  }
+
+  .cmd-area button:hover {
+    transform: none;
+  }
+
+  .weapon-cmd-btns button:hover {
+    background-color: #4CAF50;
+  }
+
+  .result-screen button:hover {
+    transform: none;
+  }
+}
+
 @media screen and (max-width: 450px) {
   .top-screen {
     width: 100%;
