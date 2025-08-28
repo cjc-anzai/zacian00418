@@ -1,42 +1,42 @@
-import PokeArea from "./subcomponents/PokeArea";
-import StatusBox from "./subcomponents/StatusBox";
-import CommandArea from "./subcomponents/CommandArea";
+import BattleArea from "./subcomponents/BattleArea";
+import HpArea from "./subcomponents/HpArea";
+import CommandTextArea from "./subcomponents/CommandTextArea";
 
-const BattleArea = ({
+const BattleCommandArea = ({
   battleState,
   battleHandlers,
 }) => {
 
   return (
-    <div className="battle-area-wrap">
-      <div className="battle-area" style={{ display: "flex" }}>
-        <div className="op-poke-area-wrap">
-          <PokeArea
+    <div className="battle-command-area-wrap">
+      <div className="battle-hp-area">
+        <div className="op-area">
+          <BattleArea
             isMe={false}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
-          <StatusBox
+          <HpArea
             isMe={false}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
         </div>
 
-        <div className="my-poke-area-wrap">
-          <PokeArea
+        <div className="my-area">
+          <BattleArea
             isMe={true}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
-          <StatusBox
+          <HpArea
             isMe={true}
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
         </div>
       </div>
-      <CommandArea
+      <CommandTextArea
         battleState={battleState}
         battleHandlers={battleHandlers}
       />
@@ -44,4 +44,4 @@ const BattleArea = ({
   );
 };
 
-export default BattleArea;
+export default BattleCommandArea;

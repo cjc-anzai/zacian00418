@@ -3,7 +3,7 @@ import {
   typeColors,
 } from "../../../model/model";
 
-const PokesStatus = ({
+const StatusArea = ({
   isMe,
   battleState,
   battleHandlers
@@ -34,8 +34,8 @@ const PokesStatus = ({
 
   const StatusRow = ({ label, value }) => (
     <div className="status-row">
-      <span className="label">{label}</span>
-      <span className="colon">：</span>
+      <p className="label">{label}</p>
+      <p className="colon">：</p>
       <div className="buff-row">
         {renderBuffShapes(value)}
       </div>
@@ -44,24 +44,24 @@ const PokesStatus = ({
 
 
   return (
-    <div className="poke-status">
-      <span className="type-wrapper">
-        <p>{battlePokeStatics.name}</p>
-        <span
-          className="type-box"
+    <div className="status">
+      <div className="poke-name-type">
+        <p className="poke-name">{battlePokeStatics.name}</p>
+        <p
+          className="type"
           style={{ backgroundColor: typeColors[battlePokeStatics.type1], borderColor: typeColors[battlePokeStatics.type1] }}
         >
           {battlePokeStatics.type1}
-        </span>
+        </p>
         {battlePokeStatics.type2 !== "なし" && (
-          <span
-            className="type-box"
+          <p
+            className="type"
             style={{ backgroundColor: typeColors[battlePokeStatics.type2], borderColor: typeColors[battlePokeStatics.type2] }}
           >
             {battlePokeStatics.type2}
-          </span>
+          </p>
         )}
-      </span>
+      </div>
       <StatusRow label="攻撃" value={battlePokeDynamics.aBuff} />
       <StatusRow label="防御" value={battlePokeDynamics.bBuff} />
       <StatusRow label="特攻" value={battlePokeDynamics.cBuff} />
@@ -71,4 +71,4 @@ const PokesStatus = ({
   );
 };
 
-export default PokesStatus;
+export default StatusArea;

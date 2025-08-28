@@ -1,6 +1,6 @@
 import { typeColors, conditionColors, getPokeIndicatorsColor } from "../../../model/model";
 
-const StatusBox = ({
+const HpArea = ({
     isMe,
     battleState,
     battleHandlers,
@@ -19,21 +19,19 @@ const StatusBox = ({
     pokeCondition = pokeCondition === "もうどく" ? "どく" : pokeCondition;
 
     return (
-        <div className="status-box" style={{ display: areaVisible.poke ? "block" : "none" }}>
-            <div className="status-header">
-                <h1 className={`${who}-poke`}>
-                    <span>{battlePokeStatics?.name || ""}</span>
-                    <span className="type-wrapper">
-                        {pokeCondition !== "" && (
-                            <span
-                                className="condition"
-                                style={{ backgroundColor: conditionColors[pokeCondition], borderColor: conditionColors[pokeCondition] }}
-                            >
-                                {pokeCondition}
-                            </span>
-                        )}
-                    </span>
-                </h1>
+        <div className="hp-area" style={{ opacity: areaVisible.poke ? 1 : 0 }}>
+            <div className="hp-area-header">
+                <p className={`${who}-poke-name`}>
+                    {battlePokeStatics?.name || ""}
+                </p>
+                {pokeCondition !== "" && (
+                    <p
+                        className="condition"
+                        style={{ backgroundColor: conditionColors[pokeCondition], borderColor: conditionColors[pokeCondition] }}
+                    >
+                        {pokeCondition}
+                    </p>
+                )}
                 <div className="poke-indicators">
                     {[0, 1, 2].map((i) => {
                         const color = getPokeIndicatorsColor(pokeDynamics[i]?.currentHp || "", pokeStatics.current[i]?.hp || "");
@@ -44,13 +42,13 @@ const StatusBox = ({
             <div className={`${who}-hp-container`}>
                 <div className={`${who}-hp-bar`}></div>
                 {isMe && (
-                    <span className="hp-text">
+                    <p className="hp-text">
                         {Math.round(myPokeDynamics[myBattlePokeIndex]?.currentHp || "")} / {battlePokeStatics?.hp || ""}
-                    </span>
+                    </p>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
-export default StatusBox;
+export default HpArea;

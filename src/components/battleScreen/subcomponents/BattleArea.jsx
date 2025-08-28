@@ -1,14 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { terastalImgList, } from "../../../model/model";
 
-const PokeArea = ({
+const BattleArea = ({
     isMe,
     battleState,
     battleHandlers,
 }) => {
 
     //インポートする変数や関数の取得
-    const {  } = battleState;
+    const { } = battleState;
     const { checkIsTerastal, getBattlePokeStatics, getAreaVisible } = battleHandlers;
 
     const areaVisible = getAreaVisible(isMe, true);
@@ -18,7 +18,7 @@ const PokeArea = ({
 
     return (
         <div className={`${who}-poke-area`}>
-            <div className="poke-img-wrapper">
+            <div className="terastal-img-area">
                 {areaVisible.poke && isTerastal && (
                     <img
                         src={terastalImgList[battlePokeStatics.terastal]}
@@ -26,6 +26,8 @@ const PokeArea = ({
                         className="terastal-img"
                     />
                 )}
+            </div>
+            <div className="poke-img-area">
                 <AnimatePresence>
                     {areaVisible.poke && (
                         <motion.img
@@ -41,11 +43,10 @@ const PokeArea = ({
                     )}
                 </AnimatePresence>
             </div>
-
             <div className="poke-ground"></div>
         </div>
     );
 
 };
 
-export default PokeArea;
+export default BattleArea;

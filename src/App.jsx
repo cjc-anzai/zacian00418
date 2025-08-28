@@ -2,7 +2,7 @@ import "./App.css";
 import { useEffect } from 'react';
 import TopScreen from './components/TopScreen';
 import SelectScreen from "./components/SelectScreen";
-import BattleArea from "./components/battleArea/BattleArea";
+import BattleCommandArea from "./components/battleScreen/BattleCommandArea";
 import ResultScreen from "./components/ResultScreen";
 import { useBattleState } from "./controller/useBattleState";
 import { useBattleEffects } from "./controller/useBattleEffects";
@@ -41,7 +41,7 @@ function App() {
           />
         )}
         {battleState.otherAreaVisible.battle && (
-          <BattleArea
+          <BattleCommandArea
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
