@@ -4,7 +4,7 @@
 }
 
 .App {
-  height: calc(var(--vh, 1vh) * 100 - 3vh);
+  height: calc(var(--vh, 1vh) * 100);
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -59,9 +59,12 @@
 /* 選出画面============================================================================ */
 
 .select-area {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   padding: 4% 8%;
+  align-items: center;
   background-color: #e6f7ff;
   background-image:
     linear-gradient(to right, rgba(0, 0, 0, 0.05) 0.05rem, transparent 0.05rem),
@@ -401,6 +404,10 @@
   background-color: lightblue;
 }
 
+.white {
+  background-color: white;
+}
+
 .cmd-area {
   display: flex;
   width: 80%;
@@ -692,12 +699,13 @@
 
   /* ============================================= */
   .select-area {
-    padding: 2%;
+    padding: 4% 2% 2% 2%;
   }
 
   .select-screen-text {
     height: 5%;
     font-size: 1.5rem;
+    color: black;
   }
 
   .op-pokes-wrap,
@@ -705,19 +713,19 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(2, 1fr);
-    width: 100%;
     gap: 1%;
-    margin: 1% 0 4% 0;
   }
 
   .op-pokes-wrap {
+    width: 75%;
     height: 30%;
-    padding: 0 5%;
+    margin-bottom: 12%;
   }
 
   .my-pokes-wrap {
-    height: 42%;
-    padding: 0;
+    width: 80%;
+    height: 45%;
+    margin-bottom: 5%;
   }
 
   .op-poke,
@@ -736,19 +744,17 @@
 
   .op-poke img {
     width: 100%;
-    height: 85%;
+    height: auto;
   }
 
   .my-poke img {
     width: 95%;
-    height: 75%;
+    height: auto;
   }
 
   .op-poke p,
   .my-poke p {
-    height: 11.5%;
     margin: 0;
-    font-size: 10%;
   }
 
   .select-area button {
@@ -767,7 +773,7 @@
 
   .battle-hp-area {
     width: 100%;
-    height: 32%;
+    height: 40%;
   }
 
   .op-area,
@@ -934,6 +940,7 @@
 
   .poke-name-type .poke-name {
     margin-right: 3%;
+    color: black;
   }
 
   .type {
@@ -946,6 +953,7 @@
 
   .label {
     width: 30%;
+    color: black;
   }
 
   .buff-row {

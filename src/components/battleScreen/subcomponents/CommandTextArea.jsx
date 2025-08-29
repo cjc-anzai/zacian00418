@@ -129,7 +129,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
             <div className="action-cmd-area">
               <button className="green" onClick={openBattleCmdArea}>たたかう</button>
               <button className="light-blue" onClick={openChangeCmdArea}>交代</button>
-              <button className="" onClick={openStatusArea}>ステータス</button>
+              <button className="white" onClick={openStatusArea}>ステータス</button>
             </div>
           )}
           {otherAreaVisible.weaponCmd && (
