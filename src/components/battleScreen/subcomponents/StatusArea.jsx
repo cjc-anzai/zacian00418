@@ -10,11 +10,11 @@ const StatusArea = ({
 }) => {
 
   //インポートする変数や関数の取得
-  const { } = battleState;
-  const { getBattlePokeStatics, getBattlePokeDynamics, } = battleHandlers;
+  const { myPokeBuff, opPokeBuff } = battleState;
+  const { getBattlePokeStatics} = battleHandlers;
 
   const battlePokeStatics = getBattlePokeStatics(isMe);
-  const battlePokeDynamics = getBattlePokeDynamics(isMe);
+  const pokeBuff = isMe ? myPokeBuff : opPokeBuff;
 
   //ステータス状況をUIに反映させる
   const renderBuffShapes = (value) => {
@@ -62,11 +62,11 @@ const StatusArea = ({
           </p>
         )}
       </div>
-      <StatusRow label="攻撃" value={battlePokeDynamics.aBuff} />
-      <StatusRow label="防御" value={battlePokeDynamics.bBuff} />
-      <StatusRow label="特攻" value={battlePokeDynamics.cBuff} />
-      <StatusRow label="特防" value={battlePokeDynamics.dBuff} />
-      <StatusRow label="素早さ" value={battlePokeDynamics.sBuff} />
+      <StatusRow label="攻撃" value={pokeBuff.a} />
+      <StatusRow label="防御" value={pokeBuff.b} />
+      <StatusRow label="特攻" value={pokeBuff.c} />
+      <StatusRow label="特防" value={pokeBuff.d} />
+      <StatusRow label="素早さ" value={pokeBuff.s} />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import { soundList } from "../model/model";
 
-const TopScreen = ({ battleHandlers, setOtherAreaVisible }) => {
+const TopScreen = ({ battleHandlers, setAreaVisible }) => {
   
   //インポートする変数や関数の取得
   const { setBgm, playBgm } = battleHandlers;
@@ -11,7 +11,7 @@ const TopScreen = ({ battleHandlers, setOtherAreaVisible }) => {
     soundList.general.start.play();
     setBgm("selection");
     soundList.general.start.onended = () => {
-      setOtherAreaVisible(prev => ({ ...prev, top: false, select: true }));
+      setAreaVisible(prev => ({ ...prev, top: false, select: true }));
       playBgm();
     };
   }

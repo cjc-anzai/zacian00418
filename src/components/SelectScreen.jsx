@@ -4,7 +4,7 @@ import { soundList, delay } from "../model/model";
 const SelectScreen = ({ battleState, battleHandlers, }) => {
 
   //インポートする変数や関数の取得
-  const { setOtherAreaVisible, mySelectedOrder, setMySelectedOrder, setMyBattlePokeIndex } = battleState;
+  const { setAreaVisible, mySelectedOrder, setMySelectedOrder, setMyBattlePokeIndex } = battleState;
   const { setBgm, playBgm,
     setPokeInfos, setWeaponInfos, chooseHowToSelectOpPoke, getPokeInfos,
     getWeaponInfos, setBattlePokeIndex } = battleHandlers;
@@ -34,7 +34,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
   //選出確定ボタン
   const confirmSelection = async () => {
     soundList.general.decide.cloneNode().play();
-    setOtherAreaVisible(prev => ({ ...prev, select: false, battle: true }));
+    setAreaVisible(prev => ({ ...prev, select: false, battle: true }));
     setBgm("battle");
     delay(() => playBgm(), 50);
     const opSelectedOrder = await chooseHowToSelectOpPoke(myPokesKanaName, opPokesKanaName, "hard");    //相手の選出方法を選択
@@ -88,7 +88,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
             <img src={poke.img} alt={poke.name} />
             <p>{poke.name}</p>
             <p className="order-num">
-              {mySelectedOrder.includes(poke.name) && <p>{mySelectedOrder.indexOf(poke.name) + 1}番目</p>}
+              {mySelectedOrder.includes(poke.name) && `${mySelectedOrder.indexOf(poke.name) + 1}番目`}
             </p>
           </div>
         ))}

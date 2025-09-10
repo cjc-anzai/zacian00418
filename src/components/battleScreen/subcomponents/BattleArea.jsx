@@ -8,18 +8,18 @@ const BattleArea = ({
 }) => {
 
     //インポートする変数や関数の取得
-    const { } = battleState;
-    const { checkIsTerastal, getBattlePokeStatics, getAreaVisible } = battleHandlers;
+    const { areaVisible } = battleState;
+    const { checkIsTerastal, getBattlePokeStatics, getBattlePokeDynamics } = battleHandlers;
 
-    const areaVisible = getAreaVisible(isMe, true);
     const battlePokeStatics = getBattlePokeStatics(isMe);
+    const battlePokeDynamics = getBattlePokeDynamics(isMe);
     const isTerastal = checkIsTerastal(isMe);
     const who = isMe ? "my" : "op";
 
     return (
         <div className={`${who}-poke-area`}>
             <div className="terastal-img-area">
-                {areaVisible.poke && isTerastal && (
+                {areaVisible[isMe ? "myPoke" : "opPoke"] && isTerastal && battlePokeDynamics.currentHp > 0 && (
                     <img
                         src={terastalImgList[battlePokeStatics.terastal]}
                         alt={`${battlePokeStatics.terastal}テラスタル`}
@@ -29,7 +29,7 @@ const BattleArea = ({
             </div>
             <div className="poke-img-area">
                 <AnimatePresence>
-                    {areaVisible.poke && (
+                    {areaVisible[isMe ? "myPoke" : "opPoke"] && (
                         <motion.img
                             key={`${who}PokeImg`}
                             src={battlePokeStatics.img}

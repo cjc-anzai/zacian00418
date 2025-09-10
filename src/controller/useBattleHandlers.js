@@ -7,7 +7,7 @@ import {
   getMostEffectiveWeaponLogic, predictMyActionLogic,
   choiseBetterWeapon, getDamageEffectElem,
   jumpEffect, attackEffectLogic, damageEffectLogic,
-  calcTrueDamage, adjustHpBarLogic,
+  adjustHpBarLogic,
   selectNextOpPokeLogic, delay,
   calcPureDamage, getCompati,
 } from "../model/model";
@@ -17,9 +17,8 @@ export function useBattleHandlers(battleState) {
 
   //インポートの取得===========================================================
   const {
-    myAreaVisible, opAreaVisible, otherAreaVisible,
-    setMyAreaVisible, setOpAreaVisible, setOtherAreaVisible,
-    mySelectedOrder, setMySelectedOrder,
+    areaVisible, setAreaVisible,
+    mySelectedOrder,
     isTerastalActive,
     myTextRef, opTextRef, otherTextRef, textAreaRef,
     myLife, opLife,
@@ -41,9 +40,13 @@ export function useBattleHandlers(battleState) {
     damage, newHp,
     myTerastalState, opTerastalState,
     setMyTerastalState, setOpTerastalState,
-    defaultPokeStatic, defaultPokeDynamic, defaultWeapons, defaultTerastalState, setIsTerastalActive,
     myChangePokeIndex, opChangePokeIndex,
     isIncident,
+    myPokeBuff, opPokeBuff, setMyPokeBuff, setOpPokeBuff,
+    moveFailed,
+    atcPokeInfo, defPokeInfo,
+    secondaryTextRef, newBuff,
+    multiplierRef,
   } = battleState;
 
   //DBアクセス========================================================================================================================
@@ -103,7 +106,7 @@ export function useBattleHandlers(battleState) {
     }
     //テスト用で相手の選出を固定
     else {
-      opSelectedOrder = ["ラプラス", "エルレイド", "ハピナス"];
+      opSelectedOrder = ["グライオン", "マンムー", "ラプラス"];
     }
     return opSelectedOrder;
   }
@@ -153,19 +156,20 @@ export function useBattleHandlers(battleState) {
     else
       textRef = getTextRef(who);
 
-    setOtherAreaVisible(prev => ({ ...prev, textArea: true }));
+    await stopProcessing(100);
+    setAreaVisible(prev => ({ ...prev, textArea: true }));
     delay(() => textAreaRef.current.textContent = textRef.current.content, 1);
     await stopProcessing(stopTime);
   };
 
   //ポケモン登場の表示制御
   const controllAreaVisibleForApp = async (isMe) => {
-    const setAreaVisible = getSetAreaVisible(isMe, true);
+    await stopProcessing(100);
     const textRef = getTextRef(isMe);
 
-    setOtherAreaVisible(prev => ({ ...prev, textArea: true }));    //Goテキストの表示
+    setAreaVisible(prev => ({ ...prev, textArea: true }));    //Goテキストの表示
     delay(() => textAreaRef.current.textContent = textRef.current.content, 1);
-    delay(() => setAreaVisible(prev => ({ ...prev, poke: true })), 1000);       //ポケモンの表示
+    delay(() => setAreaVisible(prev => ({ ...prev, [isMe ? "myPoke" : "opPoke"]: true })), 1000);       //ポケモンの表示
     delay(async () => await playPokeVoice(isMe), 1000);                     //鳴き声再生
     await stopProcessing(2000);
   };
@@ -201,14 +205,12 @@ export function useBattleHandlers(battleState) {
   }
 
   const setWeaponText = async (isMe) => {
-    const pokeName = getBattlePokeStatics(isMe).name;
-    const pokeDynamics = getPokeDynamics(isMe);
-    const battlePokeIndex = getBattlePokeIndex(isMe);
+    const pokeName = atcPokeInfo.current.name;
+    const pokeCondition = atcPokeInfo.current.condition;
     let canMove = true;
     let cantMoveText = "";
 
     //麻痺チェック
-    const pokeCondition = pokeDynamics[battlePokeIndex].condition;
     if (pokeCondition === "まひ") {
       canMove = Math.random() >= 0.25;
       // canMove = Math.random() >= 1;   //テスト用
@@ -223,11 +225,11 @@ export function useBattleHandlers(battleState) {
 
     if (canMove) {
       if (pokeCondition === "こおり") {
-        await setBattlePokeDynamics(isMe, "condition", "");
+        setBattlePokeDynamics(isMe, "condition", "");
         otherTextRef.current = { kind: "general", content: `${pokeName}は氷が溶けた` };
-        await displayTextArea("other", 2000);
+        await displayTextArea("other", 1500);
       }
-      const weaponName = getSelectedWeaponInfo(isMe).name;
+      const weaponName = atcPokeInfo.current.selectedWeapon.name;
       const weaponText = isMe ? `${pokeName}！${weaponName}！` : `相手の${pokeName}の${weaponName}`;
       setTextRef(isMe, "weapon", weaponText);
     }
@@ -237,41 +239,35 @@ export function useBattleHandlers(battleState) {
         : pokeCondition === "こおり" ? "frozen" : null;
       soundList.general[conditionSe].play();
       otherTextRef.current = { kind: "cantMove", content: cantMoveText };
-      // await displayTextArea("other", 2000);
-      // await cantMoveFnc();
+      // await displayTextArea("other", 1500);
+      // await cantMoveFnc(isMe);
     }
   }
 
   //相性倍率を受け取って、相性テキストを返す
-  const getCompatiText = async (atcIsMe) => {
-    const weaponInfo = getSelectedWeaponInfo(atcIsMe);
-    const atcBattlePokeStatics = getBattlePokeStatics(atcIsMe);
-    const defBattlePokeStatics = getBattlePokeStatics(!atcIsMe);
-    let weaponType = weaponInfo.type;
-    if (checkIsTerastal(atcIsMe) && weaponInfo.name === "テラバースト") {
-      weaponType = atcBattlePokeStatics.terastal;
-    }
+  const getCompatiText = (atcIsMe) => {
+    let weaponType = atcPokeInfo.current.selectedWeapon.type;
+    if (checkIsTerastal(atcIsMe) && atcPokeInfo.current.selectedWeapon.name === "テラバースト")
+      weaponType = atcPokeInfo.current.terastal;
 
     const [defType1, defType2] = checkIsTerastal(!atcIsMe)
-      ? [defBattlePokeStatics.terastal, "なし"] : [defBattlePokeStatics.type1, defBattlePokeStatics.type2];
+      ? [defPokeInfo.current.terastal, "なし"] : [defPokeInfo.current.type1, defPokeInfo.current.type2];
     const multiplier = calcMultiplier(weaponType, defType1, defType2);
     const compatiText = getCompatiTextLogic(multiplier);
     return compatiText;
   }
 
-  const setCompatiText = async (atcIsMe) => {
-    const weaponKind = getSelectedWeaponInfo(atcIsMe).kind;
-    let compatiText = await getCompatiText(atcIsMe);
+  const setCompatiText = (atcIsMe) => {
+    const weaponKind = atcPokeInfo.current.selectedWeapon.kind;
+    let compatiText = getCompatiText(atcIsMe);
     if (weaponKind === "変化")
       compatiText = compatiTexts.mukou ? compatiText : compatiTexts.toubai;
     setTextRef(!atcIsMe, "compati", compatiText)
   }
 
-  const setDeadText = async (isMe) => {
-    const pokeName = getBattlePokeStatics(isMe).name;
+  const setDeadText = (isMe) => {
+    const pokeName = defPokeInfo.current.name;
     const deadText = isMe ? `${pokeName}は倒れた` : `相手の${pokeName}は倒れた`;
-    if (otherAreaVisible.textArea)
-      await stopProcessing(2000);
     setTextRef(isMe, "dead", deadText);
   }
 
@@ -368,16 +364,6 @@ export function useBattleHandlers(battleState) {
     });
   };
 
-  const getAreaVisible = (isMe) => {
-    const areaVisible = isMe ? myAreaVisible : opAreaVisible;
-    return areaVisible;
-  }
-
-  const getSetAreaVisible = (isMe, simple) => {
-    const setAreaVisible = isMe === simple ? setMyAreaVisible : setOpAreaVisible;
-    return setAreaVisible;
-  }
-
   const getBattlePokeIndex = (isMe) => {
     const battlePokeIndex = isMe ? myBattlePokeIndex : opBattlePokeIndex;
     return battlePokeIndex;
@@ -398,7 +384,7 @@ export function useBattleHandlers(battleState) {
     return pokeDynamics;
   }
 
-  const setBattlePokeDynamics = async (isMe, key, value) => {
+  const setBattlePokeDynamics = (isMe, key, value) => {
     const battlePokeIndex = getBattlePokeIndex(isMe);
     const setBattlePokeDynamics = isMe ? setMyPokeDynamics : setOpPokeDynamics;
     setBattlePokeDynamics(prev => {
@@ -430,15 +416,13 @@ export function useBattleHandlers(battleState) {
     return selectedWeaponInfo;
   }
 
-  const setMyTurn = async () => {
+  const setMyTurn = () => {
     const [myPokeSpeed, opPokeSpeed] = [calcActualStatus(true, "s"), calcActualStatus(false, "s")];
     consoleSpeed(myPokeSpeed, opPokeSpeed);
 
     //どちらも交換しない場合、優先度と素早さを比較して先攻後攻を決める
-    if (!myChangeTurn.current && !opChangeTurn.current) {
-      console.log(mySelectedWeaponInfo.current);
+    if (!myChangeTurn.current && !opChangeTurn.current)
       iAmFirst.current = checkIsFirst(myPokeSpeed, opPokeSpeed, mySelectedWeaponInfo.current.priority, opSelectedWeaponInfo.current.priority);
-    }
     //一方が交代する場合、交代する方が先攻
     else if (!!myChangeTurn.current !== !!opChangeTurn.current)
       iAmFirst.current = myChangeTurn.current;
@@ -447,10 +431,10 @@ export function useBattleHandlers(battleState) {
       iAmFirst.current = myPokeSpeed >= opPokeSpeed;
   }
 
-  const setHpOnHeal = async (isMe) => {
+  const setHpOnHeal = (isMe) => {
     adjustHpBar(isMe, "heal");
     isHealAtc.current = false;    //回復後のHPのuseEffectの分岐制御のため
-    await setBattlePokeDynamics(isMe, "currentHp", newHp.current);
+    setBattlePokeDynamics(isMe, "currentHp", newHp.current);
   }
 
   //HPバーの幅や色の制御
@@ -473,10 +457,10 @@ export function useBattleHandlers(battleState) {
       const currentHp = battlePokeDynamics.currentHp;
       const pokeCondition = battlePokeDynamics.condition;
       const kind = pokeCondition === "やけど" ? "burned"
-        : pokeCondition.includes("どく") ? "poisoned" : null;
+        : pokeCondition?.includes("どく") ? "poisoned" : null;
 
       //火傷・毒チェック
-      if ((pokeCondition === "やけど" || pokeCondition.includes("どく")) && currentHp > 0) {
+      if ((pokeCondition === "やけど" || pokeCondition?.includes("どく")) && currentHp > 0) {
         (kind === "burned" ? burned : poisoned).current = true;
         damage.current = calcConstantDamage(isMe, kind);
         (isMe ? myDeathFlg : opDeathFlg).current = damage.current >= currentHp;
@@ -484,7 +468,7 @@ export function useBattleHandlers(battleState) {
         adjustHpBar(isMe, "damage");
         setBattlePokeDynamics(isMe, "currentHp", newHp.current);
         setConstantDamageText(isMe, kind);
-        await displayTextArea("other", 2000);
+        await displayTextArea("other", 1500);
         if (isMe)
           await stopProcessing(2500);
       }
@@ -499,7 +483,7 @@ export function useBattleHandlers(battleState) {
   const setWinner = (isMe) => {
     stopBgm();
     resultText.current = isMe ? "WIN" : "LOSE";
-    setOtherAreaVisible(prev => ({ ...prev, battle: false }));
+    setAreaVisible(prev => ({ ...prev, battle: false }));
     soundList.general[resultText.current.toLowerCase()].play();
   };
 
@@ -508,86 +492,16 @@ export function useBattleHandlers(battleState) {
     return flg;
   }
 
-  //全てのstateを初期化する
-  const initializeState = () => {
-    setMyAreaVisible({ poke: false });
-    setOpAreaVisible({ poke: false });
-    setOtherAreaVisible({
-      top: true, select: false, battle: false, textArea: false,
-      actionCmd: false, weaponCmd: false, changeCmd: false, status: false, nextPokeCmd: false
-    });
-    setMyBattlePokeIndex(-1);
-    setOpBattlePokeIndex(-1);
-    myPokeStatics.current =([
-      { ...defaultPokeStatic },
-      { ...defaultPokeStatic },
-      { ...defaultPokeStatic },
-    ]);
-    opPokeStatics.current =([
-      { ...defaultPokeStatic },
-      { ...defaultPokeStatic },
-      { ...defaultPokeStatic },
-    ]);
-    setMyPokeDynamics([
-      { ...defaultPokeDynamic },
-      { ...defaultPokeDynamic },
-      { ...defaultPokeDynamic },
-    ]);
-    setOpPokeDynamics([
-      { ...defaultPokeDynamic },
-      { ...defaultPokeDynamic },
-      { ...defaultPokeDynamic },
-    ]);
-    myWeapons.current =([
-      [{ ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }],
-      [{ ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }],
-      [{ ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }],
-    ]);
-    opWeapons.current =([
-      [{ ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }],
-      [{ ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }],
-      [{ ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }, { ...defaultWeapons }],
-    ]);
-    [mySelectedWeaponInfo.current, opSelectedWeaponInfo.current] = [null, null];    //そのターンに選択した技
-    setMyTerastalState({ ...defaultTerastalState });
-    setOpTerastalState({ ...defaultTerastalState });
-    setIsTerastalActive(false);         //テラスタルボタン
-    opTerastalFlg.current = false;
-    setMySelectedOrder([]);                  //自分が選出するポケモン3体
-    myTextRef.current = { kind: "", content: "" };                          //自分向けの一般のテキスト
-    opTextRef.current = { kind: "", content: "" };                          //相手向けの一般のテキスト
-    otherTextRef.current = { kind: "", content: "" };                       //イレギュラーなテキスト
-    textAreaRef.current = "";                                               //テキストエリアに表示するテキスト
-    [myLife.current, opLife.current] = [3, 3];                              //手持ち3体のライフ
-    [myChangeTurn.current, opChangeTurn.current] = [false, false];          //交代ターンフラグ
-    [myChangePokeIndex.current, opChangePokeIndex.current] = [null, null];    //交代するポケモン
-    [myCantMoveFlg.current, opCantMoveFlg.current] = [false, false];              //
-    [myDeathFlg.current, opDeathFlg.current] = [false, false];              //定数ダメージによって死亡する場合のフラグ
-    iAmFirst.current = false;                                               //先攻後攻
-    newHp.current = 0;
-    damage.current = 0;
-    isIncident.current = false;
-    isHeal.current = false;                                                 //回復の変化技or回復の攻撃技
-    isHealAtc.current = false;                                              //回復の攻撃技
-    healHp.current = 0;                                                 //回復技によって回復するHP
-    burned.current = false;                                                 //火傷ダメージをセットしたフラグ
-    poisoned.current = false;                                               //毒ダメージをセットしたフラグ
-    [myPoisonedCnt.current, opPoisonedCnt.current] = [1, 1];                //猛毒状態のカウント
-    resultText.current = null;                                              //勝敗
-    turnCnt.current = 1;                                                    //デバッグ用ターンカウント    
-    loopAudioRef.current = null;
-  }
-
 
   //calc系=====================================================================================
 
   //バフ込みの実数値を取得する
   const calcActualStatus = (isMe, status) => {
     const battlePokeStatics = getBattlePokeStatics(isMe);
-    const battlePokeDynamics = getBattlePokeDynamics(isMe);
 
     const beforeStatus = battlePokeStatics[status];
-    const buff = battlePokeDynamics[`${status}Buff`];
+    const pokeBuff = isMe ? myPokeBuff : opPokeBuff;
+    const buff = pokeBuff[status];
     const buffMultiplier = buff > 0 ? buff * 0.5 + 1 : 2 / (2 - buff);
     let actualStatus = beforeStatus * buffMultiplier;
 
@@ -615,7 +529,7 @@ export function useBattleHandlers(battleState) {
     //未テラス状態で自分からの最大打点の技名とダメージ数を取得
     const { myStrongestWeaponIndex, myMaxDamage: maxDamage1 } = await predictMyAction(1);
     //テラス状態で、未テラス状態時の最大打点の技を受けた際の被ダメージを計算する
-    const { weaponInfo, atcInfo, defInfo } = await getUseInCalcDamageInfo(true, myStrongestWeaponIndex, true);
+    const { weaponInfo, atcInfo, defInfo } = getUseInCalcDamageInfo(true, myStrongestWeaponIndex, true);
     const { pureDamage: damage1 } = calcPureDamage(weaponInfo, atcInfo, defInfo);
     //テラス状態の相手への自分の最大打点のダメージを計算する。
     const { weaponInfos, atcInfos, defInfos } = await getUseInCalcDamageInfos(true, true);
@@ -626,6 +540,44 @@ export function useBattleHandlers(battleState) {
       ? Math.floor((opPokeDynamics[opBattlePokeIndex].currentHp - damage1) / damage2) + 1 : 0;
 
     return { cnt1, cnt2 };
+  }
+
+  //ダメージ計算　ダメージ数/命中判定/急所判定　を返す
+  const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
+    let trueDamage = 0;
+    let realDamage = 0;
+    const isHit = weaponInfo.hitRate ? Math.random() * 100 < weaponInfo.hitRate : true;    //命中判定
+    let isCritical = false;
+
+    //命中時のみダメージ計算する
+    if (weaponInfo.kind !== "変化") {
+      if (isHit) {
+        let { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier } = calcPureDamage(weaponInfo, atcInfo, defInfo);
+        multiplierRef.current = multiplier;
+        const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
+        isCritical = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
+        // isCritical = true;   //テスト用
+
+        //急所に当たった際には攻撃系のデバフと防御系のバフを無視する
+        if (isCritical) {
+          atcBuffMultiplier = atcBuffMultiplier >= 1 ? 1 : atcBuffMultiplier;
+          defBuffMultiplier = defBuffMultiplier <= 1 ? 1 : defBuffMultiplier
+          pureDamage = (pureDamage - 2) / atcBuffMultiplier * defBuffMultiplier + 2;
+          atcInfo.isBurned = false;
+        }
+
+        trueDamage = Math.floor(pureDamage * randomMultiplier);    // 乱数
+        trueDamage = Math.floor(trueDamage * (isCritical ? 1.5 : 1));   //急所
+        trueDamage = weaponInfo.kind === "物理" && atcInfo.isBurned ? Math.floor(trueDamage * 0.5) : trueDamage;  //やけど補正
+        realDamage = trueDamage > defInfo.currentHp ? defInfo.currentHp : trueDamage;
+        damage.current = realDamage;
+
+        console.log(`${defInfo.name}に${realDamage}ダメージ(${trueDamage})\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCritical ? 1.5 : 1}\nやけど：${weaponInfo.kind === "物理" && atcInfo.isBurned ? 0.5 : 1}`);
+      }
+      else
+        console.log(`${atcInfo.name}の攻撃は当たらなかった`);
+    }
+    return { isHit, isCritical };
   }
 
   //定数ダメージ計算(火傷・毒)
@@ -653,28 +605,36 @@ export function useBattleHandlers(battleState) {
 
   //技の分類によって変わるAorCとBorDを返す
   const getAtcDefPower = (atcIsMe, weaponInfo) => {
-    const atcPokeStatics = getBattlePokeStatics(atcIsMe);
-    const defPokeStatics = getBattlePokeStatics(!atcIsMe);
-    const [atcPower, defPower] = weaponInfo.name !== "テラバースト"
-      ? weaponInfo.kind === "物理" ? [atcPokeStatics.a, defPokeStatics.b] : [atcPokeStatics.c, defPokeStatics.d]
-      : atcPokeStatics.a > defPokeStatics.c ? [atcPokeStatics.a, defPokeStatics.b] : [atcPokeStatics.c, defPokeStatics.d];
+    let [atcPower, defPower] = [0, 0];
+    if (atcPokeInfo.current.a === null) {
+      if (atcIsMe) {
+        [atcPower, defPower] = weaponInfo.name !== "テラバースト"
+          ? weaponInfo.kind === "物理" ? [myPokeStatics.current[myBattlePokeIndex].a, opPokeStatics.current[opBattlePokeIndex].b] : [myPokeStatics.current[myBattlePokeIndex].c, opPokeStatics.current[opBattlePokeIndex].d]
+          : myPokeStatics.current[myBattlePokeIndex].a > myPokeStatics.current[myBattlePokeIndex].c ? [myPokeStatics.current[myBattlePokeIndex].a, opPokeStatics.current[opBattlePokeIndex].b] : [myPokeStatics.current[myBattlePokeIndex].c, opPokeStatics.current[opBattlePokeIndex].d];
+      }
+      else {
+        [atcPower, defPower] = weaponInfo.name !== "テラバースト"
+          ? weaponInfo.kind === "物理" ? [opPokeStatics.current[opBattlePokeIndex].a, myPokeStatics.current[myBattlePokeIndex].b] : [opPokeStatics.current[opBattlePokeIndex].c, myPokeStatics.current[myBattlePokeIndex].d]
+          : opPokeStatics.current[opBattlePokeIndex].a > opPokeStatics.current[opBattlePokeIndex].c ? [opPokeStatics.current[opBattlePokeIndex].a, myPokeStatics.current[myBattlePokeIndex].b] : [opPokeStatics.current[opBattlePokeIndex].c, myPokeStatics.current[myBattlePokeIndex].d];
+      }
+    }
+    else {
+      [atcPower, defPower] = weaponInfo.name !== "テラバースト"
+        ? weaponInfo.kind === "物理" ? [atcPokeInfo.current.a, defPokeInfo.current.b] : [atcPokeInfo.current.c, defPokeInfo.current.d]
+        : atcPokeInfo.current.a > atcPokeInfo.current.c ? [atcPokeInfo.current.a, defPokeInfo.current.b] : [atcPokeInfo.current.c, defPokeInfo.current.d];
+    }
     return { atcPower, defPower }
   }
 
   //技の分類にあったAorCとBorDのバフを取得する
   const getAtcDefBuff = (atcIsMe, weaponInfo) => {
-    const atcPokeDynamics = getBattlePokeDynamics(atcIsMe);
-    const defPokeDynamics = getBattlePokeDynamics(!atcIsMe);
-    const atcPokeStatics = getBattlePokeStatics(atcIsMe);
-    const defPokeStatics = getBattlePokeStatics(!atcIsMe);
-
     const atcBuff = weaponInfo.name !== "テラバースト"
-      ? (weaponInfo.kind === "物理" ? atcPokeDynamics.aBuff : atcPokeDynamics.cBuff)
-      : (atcPokeStatics.a > atcPokeStatics.c ? atcPokeDynamics.aBuff : atcPokeDynamics.cBuff);
+      ? (weaponInfo.kind === "物理" ? atcPokeInfo.current.aBuff : atcPokeInfo.current.cBuff)
+      : (atcPokeInfo.current.a > atcPokeInfo.current.c ? atcPokeInfo.current.aBuff : atcPokeInfo.current.cBuff);
 
     const defBuff = weaponInfo.name !== "テラバースト"
-      ? (weaponInfo.kind === "物理" ? defPokeDynamics.bBuff : defPokeDynamics.dBuff)
-      : (atcPokeStatics.a > atcPokeStatics.c ? defPokeDynamics.bBuff : defPokeDynamics.dBuff);
+      ? (weaponInfo.kind === "物理" ? defPokeInfo.current.bBuff : defPokeInfo.current.dBuff)
+      : (atcPokeInfo.current.a > atcPokeInfo.current.c ? defPokeInfo.current.bBuff : defPokeInfo.current.dBuff);
 
     return { atcBuff, defBuff };
   }
@@ -724,7 +684,7 @@ export function useBattleHandlers(battleState) {
   }
 
   //指定した技番号のダメ計に必要な情報を取得して返す
-  const getUseInCalcDamageInfo = async (atcIsMe, weaponIndex, terastalCheckFlg) => {
+  const getUseInCalcDamageInfo = (atcIsMe, weaponIndex, terastalCheckFlg) => {
     const atcBattlePokeIndex = getBattlePokeIndex(atcIsMe);
     const atcBattlePokeStatics = getBattlePokeStatics(atcIsMe);
     const defBattlePokeStatics = getBattlePokeStatics(!atcIsMe);
@@ -738,8 +698,8 @@ export function useBattleHandlers(battleState) {
     let isTerastalDef = checkIsTerastal(!atcIsMe);
 
     //火傷状態で物理技を選択したらフラグを立てる
-    const pokeCondition = getBattlePokeDynamics(atcIsMe).condition;
-    const isBurned = pokeCondition === "やけど" && atcPower === atcBattlePokeStatics.a;
+    const pokeCondition = atcPokeInfo.current.condition;
+    const isBurned = pokeCondition === "やけど" && atcPower === atcPokeInfo.current.a;
 
     //相手のテラス判断のための値変更
     if (atcIsMe && terastalCheckFlg)
@@ -759,7 +719,7 @@ export function useBattleHandlers(battleState) {
   }
 
   //相手は自分のポケモンとの相性を考慮した、最適なポケモンを選択して返す
-  const selectNextOpPoke = async () => {
+  const selectNextOpPoke = () => {
     let nextOpPoke = -1;
     if (opLife.current === 2) {
       const myBattlePokeStatics = myPokeStatics.current[myBattlePokeIndex];
@@ -806,45 +766,33 @@ export function useBattleHandlers(battleState) {
     return isTerastal;
   }
 
-  //攻撃技か否か返す
-  const checkIsAttackWeapon = async (isMe) => {
-    const weaponKind = getSelectedWeaponInfo(isMe).kind;
-    const isAttackWeapon = weaponKind === "物理" || weaponKind === "特殊";
-    return isAttackWeapon;
-  }
-
-
   //エフェクト系==============================================================
 
   //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
   const attackEffect = async (atcIsMe, isHit, atcTarget) => {
-    const defTextRef = getTextRef(!atcIsMe);
-
     jumpEffect(atcIsMe);
     await new Promise((resolve) => {
       playPokeVoice(atcIsMe, () => resolve());
     });
 
     //技が命中してて、相性が無効ではない場合に攻撃エフェクトを入れる
-    if (isHit && defTextRef.current.content !== compatiTexts.mukou && atcTarget === "相手")
+    if (isHit && multiplierRef.current && atcTarget === "相手" && !moveFailed.current)
       attackEffectLogic(atcIsMe);
-    else if (isHit && atcTarget === "自分")
+    else if (isHit && atcTarget === "自分" && !moveFailed.current)
       jumpEffect(atcIsMe);
 
-    if (isHit && defTextRef.current.content !== compatiTexts.mukou) {
+    if (isHit && multiplierRef.current && !moveFailed.current) {
       await new Promise((resolve) => {
         playWeaponSound(atcIsMe, () => resolve());
       });
     }
-
   };
 
   //ダメージエフェクト
   const damageEffect = async (isMe) => {
-    const defTextRef = getTextRef(isMe);
     damageEffectLogic(isMe);
     await new Promise((resolve) => {
-      playDamageSound(defTextRef.current.content, resolve);
+      playDamageSound(multiplierRef.current, resolve);
     });
   };
 
@@ -904,13 +852,13 @@ export function useBattleHandlers(battleState) {
   };
 
   //技相性にあったダメージSEを再生
-  const playDamageSound = (text, onEnded) => {
+  const playDamageSound = (multiplier, onEnded) => {
     let sound = null;
-    if (text === compatiTexts.batsugun)
+    if (multiplier >= 2)
       sound = soundList.damage.batsugun;
-    else if (text === compatiTexts.toubai)
+    else if (multiplier === 1)
       sound = soundList.damage.toubai;
-    else if (text === compatiTexts.imahitotsu)
+    else if (multiplier <= 0.5)
       sound = soundList.damage.imahitotsu;
 
     if (sound) {
@@ -1080,46 +1028,47 @@ export function useBattleHandlers(battleState) {
     console.log(`相手は相性が悪い${opChangePokeIndex.current ? "ために交代する" : "が交代できるポケモンがいない"}`);
   }
 
-  //追加効果を読み解いて発動する
-  const doSecondaryEffect = async (atcIsMe) => {
-    const atcBattlePokeStatics = getBattlePokeStatics(atcIsMe);
-    const defBattlePokeStatics = getBattlePokeStatics(!atcIsMe);
-    const atcBattlePokeDynamics = getBattlePokeDynamics(atcIsMe);
-    const defBattlePokeDynamics = getBattlePokeDynamics(!atcIsMe);
-    const weaponInfo = getSelectedWeaponInfo(atcIsMe);
-    const [effTarget, isAtcWeapon] = [weaponInfo.effTarget, weaponInfo.kind !== "変化"];
-    let effectiveness = isIncident.current ? weaponInfo.effectiveness : null;
-    const defTextRef = getTextRef(!atcIsMe);
-    isIncident.current = false;
+  //追加効果を確認する
+  const checkSecondaryEffect = (atcIsMe) => {
+    const [isSelfEffect, isAtcWeapon] = [atcPokeInfo.current.selectedWeapon.effTarget === "自分", atcPokeInfo.current.selectedWeapon.kind !== "変化"];
+    let effectiveness = isIncident.current ? atcPokeInfo.current.selectedWeapon.effectiveness : null;
 
+    const isAlive = defPokeInfo.current.currentHp - damage.current > 0;
+    const isGameSet = atcIsMe ?
+      opLife.current === 1 && defPokeInfo.current.currentHp <= 0
+      : myLife.current === 1 && defPokeInfo.current.currentHp <= 0;
+
+    //相手のポケモンが全て倒されたとき、自分への追加効果は発動しない
+    if (isSelfEffect)
+      effectiveness = isGameSet ? null : effectiveness;
     //相手が死亡した際は、相手への追加効果は発動しない
-    const isAlive = defBattlePokeDynamics.currentHp > 0;
-    effectiveness = effTarget === "相手" && !isAlive ? null : effectiveness;
+    else if (!isSelfEffect)
+      effectiveness = !isAlive ? null : effectiveness;
 
     if (effectiveness) {
-      const myEffectiveness = atcIsMe && effTarget === "自分" || !atcIsMe && effTarget === "相手";
-      const effTargetName = effTarget === "自分" ? atcBattlePokeStatics.name : defBattlePokeStatics.name;
-      const battlePokeDynamics = getBattlePokeDynamics(myEffectiveness);
+      const myEffectiveness = atcIsMe && isSelfEffect || !atcIsMe && !isSelfEffect;
+      const effTargetName = isSelfEffect ? atcPokeInfo.current.name : defPokeInfo.current.name;
 
       if (effectiveness.includes("buff")) {
+        const pokeBuff = myEffectiveness ? myPokeBuff : opPokeBuff;
         const statusTextMap = { a: "攻撃", b: "防御", c: "特攻", d: "特防", s: "素早さ" };
+        let newBuffState = { ...pokeBuff };
         let textArray = [`${effTargetName}の`];
 
         effectiveness = effectiveness.slice(5);
         for (let i = 0; i < effectiveness.length; i += 3) {
           const status = effectiveness[i];
           const buff = Number(effectiveness.slice(i + 1, i + 3));
-          const key = `${status}Buff`;
-          const currentBuff = battlePokeDynamics[key] ?? 0;
+          const currentBuff = pokeBuff[status] ?? 0;
           const clampedBuff = Math.max(-6, Math.min(6, currentBuff + buff));
           const actualChange = clampedBuff - currentBuff;
 
           let text1 = statusTextMap[status] || "不明";
           let text2 = "";
 
+          // 実際に変化があった場合のみ state 更新
           if (actualChange !== 0) {
-            // 実際に変化があった場合のみ state 更新
-            setBattlePokeDynamics(myEffectiveness, [key], clampedBuff);
+            newBuffState[status] = clampedBuff;
 
             text2 = actualChange > 0
               ? actualChange >= 2 ? "がぐーんと上がった" : "が上がった"
@@ -1133,34 +1082,32 @@ export function useBattleHandlers(battleState) {
         }
 
         const buffText = textArray.join("\n");
-        otherTextRef.current = { kind: "buff", content: buffText };
-
-        if (buffText.includes("上がった"))
-          soundList.general.statusUp.play();
-        if (buffText.includes("下がった"))
-          soundList.general.statusDown.play();
-
-        await displayTextArea("other", 2000);
-        if (isAlive)
-          await buffFnc();
+        secondaryTextRef.current = { kind: "buff", content: buffText };
+        newBuff.current = newBuffState;
       }
       else if (effectiveness.includes("heal")) {
         effectiveness = effectiveness.slice(5);
         const target = effectiveness.slice(0, 1);   //h or d
         const ratio = effectiveness.slice(1);
         //hとdの場合の数値を取得
-        const maxHp = atcBattlePokeStatics.hp;
-        const [atcCurrentHp, defCurrentHp] = [atcBattlePokeDynamics.currentHp, defBattlePokeDynamics.currentHp];
+        const maxHp = atcPokeInfo.current.hp;
+        const currentHp = atcPokeInfo.current.currentHp;
         const base = target === "h" ? maxHp : damage.current;
         //回復量を計算
         isHealAtc.current = isAtcWeapon;
         isHeal.current = true;
         healHp.current = Math.floor(base * ratio);
-        healHp.current = atcCurrentHp + healHp.current < maxHp ? healHp.current : maxHp - atcCurrentHp;
-        //攻撃しない回復技の場合は、ここでHPセット。　攻撃回復技は相手へのダメージをセット後に回復
-        // if (isHeal.current && !isHealAtc.current) {
-        setHpOnHeal(atcIsMe);
-        // }
+        healHp.current = currentHp + healHp.current < maxHp ? healHp.current : maxHp - currentHp;
+        const healText = healHp.current ? `${atcPokeInfo.current.name}の体力が回復した` : `しかしうまく決まらなかった`;
+        secondaryTextRef.current = { kind: "heal", content: healText };
+
+        //自己再生時に体力が満タンなら技動作をしない
+        if (target === "h" && healHp.current === 0)
+          moveFailed.current = true;
+        if (target === "d" && healHp.current === 0) {
+          isIncident.current = false;
+          isHeal.current = false;
+        }
       }
       else if (effectiveness.includes("condition")) {
         const condition = effectiveness.slice(10);  //まひ
@@ -1168,77 +1115,119 @@ export function useBattleHandlers(battleState) {
         let conditionFlg = true;
 
         //無効タイプなら状態異常にならない。
-        if (defTextRef.current.content === compatiTexts.mukou) {
+        if (!multiplierRef.current) {
           conditionText = `${effTargetName}には効果がないようだ`;
           conditionFlg = false;
         }
         //既に状態異常になっているなら他の状態異常にならない
-        const defPokeCondition = getBattlePokeDynamics(!atcIsMe).condition;
-        if (defPokeCondition !== "") {
+        if (defPokeInfo.current.condition) {
+          moveFailed.current = true;
           conditionText = isAtcWeapon ? "" : `しかしうまく決まらなかった`;
           conditionFlg = false;
         }
 
         if (condition === "まひ") {
           //電気タイプは麻痺しない
-          if (defBattlePokeStatics.type1 === "でんき" || defBattlePokeStatics.type2 === "でんき") {
+          if (defPokeInfo.current.type1 === "でんき" || defPokeInfo.current.type2 === "でんき" || defPokeInfo.current.type1 === "じめん" || defPokeInfo.current.type2 === "じめん") {
             conditionText = `${effTargetName}には効果がないようだ`;
             conditionFlg = false;
+            moveFailed.current = true;
           }
-          conditionText = conditionFlg ? `${defBattlePokeStatics.name}はまひして技が出にくくなった` : conditionText;
+          conditionText = conditionFlg ? `${defPokeInfo.current.name}はまひして技が出にくくなった` : conditionText;
         }
         else if (condition === "やけど") {
           //炎タイプは火傷しない
-          if (defBattlePokeStatics.type1 === "ほのお" || defBattlePokeStatics.type2 === "ほのお") {
+          if (defPokeInfo.current.type1 === "ほのお" || defPokeInfo.current.type2 === "ほのお") {
             conditionText = `${effTargetName}には効果がないようだ`;
             conditionFlg = false;
+            moveFailed.current = true;
           }
           conditionText = conditionFlg ? `${effTargetName}はやけどを負った` : conditionText;
         }
         else if (condition.includes("どく")) {
           const isBadlyPoisoned = condition === "もうどく";
           //どくタイプは毒状態にならない
-          if (defBattlePokeStatics.type1 === "どく" || defBattlePokeStatics.type2 === "どく") {
+          if (defPokeInfo.current.type1 === "どく" || defPokeInfo.current.type2 === "どく" || defPokeInfo.current.type1 === "はがね" || defPokeInfo.current.type2 === "はがね") {
             conditionText = `${effTargetName}には効果がないようだ`;
             conditionFlg = false;
+            moveFailed.current = true;
           }
           conditionText = conditionFlg ? `${effTargetName}は${isBadlyPoisoned ? "猛" : ""}毒状態になった` : conditionText;
         }
         else if (condition === "こおり") {
           //氷タイプは凍らない
-          if (defBattlePokeStatics.type1 === "こおり" || defBattlePokeStatics.type2 === "こおり")
+          if (defPokeInfo.current.type1 === "こおり" || defPokeInfo.current.type2 === "こおり")
             conditionFlg = false;
           conditionText = conditionFlg ? `${effTargetName}は凍ってしまった` : conditionText;
         }
-
-        //stateに状態異常をセット
-        if (conditionFlg) {
-          const conditionSe = condition === "まひ" ? "paralyzed"
-            : condition === "やけど" ? "burned"
-              : condition.includes("どく") ? "poisoned"
-                : condition === "こおり" ? "frozen"
-                  : null;
-          soundList.general[conditionSe].play();
-          otherTextRef.current = { kind: "condition", content: conditionText };
-          setBattlePokeDynamics(myEffectiveness, "condition", condition);
-        }
-        else {
-          otherTextRef.current = { kind: "condition", content: conditionText };
-          await displayTextArea("other", 2000);
-          await conditionFnc();
-        }
-        console.log(otherTextRef.current.content);
+        secondaryTextRef.current = { kind: "condition", content: conditionText };
       }
       else if (effectiveness === "ひるみ") {
         //先攻の場合のみひるみの効果が発動する
         const isFlinch = atcIsMe === iAmFirst.current;
         if (isFlinch) {
           const flinchText = `${effTargetName}はひるんで動けない`;
-          otherTextRef.current = { kind: "cantMove", content: flinchText };
-          await displayTextArea("other", 2000);
+          secondaryTextRef.current = { kind: "cantMove", content: flinchText };
         }
-        await toDoWhenTurnEnd();
+        else
+          isIncident.current = false;
       }
+    }
+  }
+
+  //追加効果を読み解いて発動する
+  const doSecondaryEffect = async (atcIsMe) => {
+    isIncident.current = false;
+    if (secondaryTextRef.current.kind === "buff") {
+      const setPokeBuff = atcIsMe === (atcPokeInfo.current.selectedWeapon.effTarget === "自分") ? setMyPokeBuff : setOpPokeBuff;
+
+      otherTextRef.current = { kind: "buff", content: secondaryTextRef.current.content };
+      if (secondaryTextRef.current.content.includes("上がった"))
+        soundList.general.statusUp.play();
+      if (secondaryTextRef.current.content.includes("下がった"))
+        soundList.general.statusDown.play();
+
+      await displayTextArea("other", 1500);
+      setPokeBuff(newBuff.current);
+    }
+    else if (secondaryTextRef.current.kind === "heal") {
+      if (!moveFailed.current)
+        setHpOnHeal(atcIsMe);
+      else {
+        otherTextRef.current = { kind: "heal", content: secondaryTextRef.current.content };
+        await displayTextArea("other", 1500);
+        // await healFnc();
+      }
+    }
+    else if (secondaryTextRef.current.kind === "condition") {
+      if (!moveFailed.current) {
+        //stateに状態異常をセット
+        const condition = secondaryTextRef.current.content.includes("まひ") ? "まひ"
+          : secondaryTextRef.current.content.includes("やけど") ? "やけど"
+            : secondaryTextRef.current.content.includes("猛毒") ? "もうどく"
+              : secondaryTextRef.current.content.includes("毒") ? "どく"
+                : secondaryTextRef.current.content.includes("凍") ? "こおり"
+                  : null;
+        const myEffectiveness = secondaryTextRef.current.content.includes(myPokeStatics.current[myBattlePokeIndex].name);
+        const conditionSe = condition === "まひ" ? "paralyzed"
+          : condition === "やけど" ? "burned"
+            : condition === "どく" || "もうどく" ? "poisoned"
+              : condition === "こおり" ? "frozen"
+                : null;
+        soundList.general[conditionSe].play();
+        otherTextRef.current = { kind: "condition", content: secondaryTextRef.current.content };
+        setBattlePokeDynamics(myEffectiveness, "condition", condition);
+      }
+      else {
+        otherTextRef.current = { kind: "condition", content: secondaryTextRef.current.content };
+        await displayTextArea("other", 1500);
+        await conditionFnc();
+      }
+    }
+    else if (secondaryTextRef.current.content.includes("ひるんで")) {
+      otherTextRef.current = { kind: "cantMove", content: secondaryTextRef.current.content };
+      await displayTextArea("other", 1500);
+      await toDoWhenTurnEnd();
     }
   }
 
@@ -1274,35 +1263,35 @@ export function useBattleHandlers(battleState) {
     opChangePokeIndex.current = null;
     myDeathFlg.current = false;
     opDeathFlg.current = false;
-    isHeal.current= false;
+    isHeal.current = false;
     turnCnt.current++;
     console.log(turnCnt.current + "ターン目================================================");
 
     //ターン終了時に定数ダメージを受けても生存する場合にコマンドを表示
     if (myPokeDynamics[myBattlePokeIndex].currentHp > 0 && opPokeDynamics[opBattlePokeIndex].currentHp > 0 && !myDeathFlg.current && !opDeathFlg.current)
-      setOtherAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
+      setAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
   }
 
 
   const atcFlowFnc = async (atcIsMe) => {
+    toDoWhenTurnStart(atcIsMe);
     await setWeaponText(atcIsMe);
     const cantMove = getCantMoveFlg(atcIsMe);
     if (!cantMove) {
-      await setCompatiText(atcIsMe);
+      setCompatiText(atcIsMe);
       await compatiFnc1(atcIsMe);
     }
     else {
-      await displayTextArea("other", 2000);
+      await displayTextArea("other", 1500);
       await cantMoveFnc(atcIsMe);
     }
   }
 
   const changeFnc1 = async (isMe) => {
-    const setAreaVisible = getSetAreaVisible(isMe, true);
     const changePokeIndex = (isMe ? myChangePokeIndex : opChangePokeIndex).current;
     soundList.general.back.cloneNode().play();
     await displayTextArea(isMe, 1000);
-    setAreaVisible(prev => ({ ...prev, poke: false }));
+    setAreaVisible(prev => ({ ...prev, [isMe ? "myPoke" : "opPoke"]: false }));
     await stopProcessing(1000);
     setBattlePokeIndex(isMe, changePokeIndex);
   }
@@ -1315,29 +1304,28 @@ export function useBattleHandlers(battleState) {
   }
 
   const compatiFnc1 = async (atcIsMe) => {
-    const { weaponInfo, atcInfo, defInfo } = await getUseInCalcDamageInfo(atcIsMe);
-    const { realDamage, isHit, isCritical } = calcTrueDamage(weaponInfo, atcInfo, defInfo);
-    isIncident.current = weaponInfo.incidenceRate ? Math.random() * 100 < weaponInfo.incidenceRate : false;
-    damage.current = realDamage;
-    const defPokeName = getBattlePokeStatics(!atcIsMe).name;
-    const defBattlePokeDynamics = getBattlePokeDynamics(!atcIsMe);
-    const defTextRef = getTextRef(!atcIsMe);
+    const { weaponInfo, atcInfo, defInfo } = getUseInCalcDamageInfo(atcIsMe);
+    const { isHit, isCritical } = calcTrueDamage(atcPokeInfo.current.selectedWeapon, atcInfo, defInfo);
+    isIncident.current = atcPokeInfo.current.selectedWeapon.incidenceRate ? Math.random() * 100 < atcPokeInfo.current.selectedWeapon.incidenceRate : false;
+    const defPokeName = defPokeInfo.current.name;
+
+    checkSecondaryEffect(atcIsMe);
 
     await displayTextArea(atcIsMe, 0);    //技テキスト表示
-    await attackEffect(atcIsMe, isHit, weaponInfo.atcTarget);   //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
+    await attackEffect(atcIsMe, isHit, atcPokeInfo.current.selectedWeapon.atcTarget);   //ジャンプと同時に鳴き声再生→攻撃モーションと同時に技SE再生
 
-    if (weaponInfo.kind !== "変化") {
+    if (atcPokeInfo.current.selectedWeapon.kind !== "変化") {
       //無効ではない場合
-      if (defTextRef.current.content !== compatiTexts.mukou) {
+      if (multiplierRef.current) {
         if (isHit) {
-          if (defTextRef.current.content !== compatiTexts.toubai)
+          if (multiplierRef.current !== 1)
             await displayTextArea(!atcIsMe, 0);   //相性テキスト表示
           if (isCritical)
             textAreaRef.current.textContent = `${textAreaRef.current.textContent}\n急所に当たった！`;
 
           adjustHpBar(!atcIsMe, "damage");
           await damageEffect(!atcIsMe);
-          if (newHp.current !== defBattlePokeDynamics.currentHp)
+          if (newHp.current !== defPokeInfo.current.currentHp)
             setBattlePokeDynamics(!atcIsMe, "currentHp", newHp.current);
         }
         else {
@@ -1348,18 +1336,21 @@ export function useBattleHandlers(battleState) {
       else
         await displayTextArea(!atcIsMe, 2000);   //相性テキスト表示
     }
-    else if (weaponInfo.kind === "変化") {
+    else if (atcPokeInfo.current.selectedWeapon.kind === "変化") {
       if (isHit) {
         await doSecondaryEffect(atcIsMe);
       }
       else {
-        textAreaRef.current.textContent = `${defPokeName}にはあたらなかった`;
+        if (!moveFailed.current)
+          textAreaRef.current.textContent = `${defPokeName}には当たらなかった`;
+        else
+          textAreaRef.current.textContent = `しかしうまく決まらなかった`;
         await stopProcessing(2000);
       }
     }
 
     //受け側のHPを更新しない場合は、次へ進む
-    if (defTextRef.current.content === compatiTexts.mukou || !isHit || isHeal.current && healHp.current === 0)
+    if (!multiplierRef.current || !isHit || isHeal.current && healHp.current === 0)
       if (atcIsMe !== iAmFirst.current)
         await toDoWhenTurnEnd();
       else
@@ -1367,25 +1358,21 @@ export function useBattleHandlers(battleState) {
   }
 
   const deadFnc1 = async (isMe) => {
-    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false }));
-    const setAreaVisible = getSetAreaVisible(isMe, true);
     const pokeIMGElm = getDamageEffectElem(isMe);
 
-    // 1秒後に死亡演出を開始
+    setAreaVisible(prev => ({ ...prev, actionCmd: false }));
     await stopProcessing(1000);
     await displayTextArea(isMe, 0);
     await playPokeVoice(isMe);
     pokeIMGElm.classList.add("pokemon-dead");
-
-    // さらに2秒後に非表示
-    await stopProcessing(3001);
-    setAreaVisible(prev => ({ ...prev, poke: false }));
+    await stopProcessing(2000);
+    setAreaVisible(prev => ({ ...prev, [isMe ? "myPoke" : "opPoke"]: false }));
     setLife(isMe);
 
     if ((isMe ? myLife : opLife).current > 0) {
       if (!isMe) {
-        const nextOpPokeIndex = await selectNextOpPoke();
-        setBattlePokeIndex(isMe, nextOpPokeIndex);
+        opChangePokeIndex.current = selectNextOpPoke();
+        setBattlePokeIndex(isMe, opChangePokeIndex.current);
       }
     } else
       setWinner(!isMe);
@@ -1393,6 +1380,7 @@ export function useBattleHandlers(battleState) {
 
 
   const buffFnc = async () => {
+    await displayTextArea("other", 1500);
     if ((iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeDynamics[opBattlePokeIndex].currentHp > 0
       || !iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeDynamics[myBattlePokeIndex].currentHp > 0)) {
       await atcFlowFnc(!iAmFirst.current);
@@ -1410,9 +1398,6 @@ export function useBattleHandlers(battleState) {
     else if (iAmFirst.current && opTextRef.current.kind === "weapon" && myPokeDynamics[myBattlePokeIndex].currentHp > 0
       || !iAmFirst.current && myTextRef.current.kind === "weapon" && opPokeDynamics[opBattlePokeIndex].currentHp > 0)
       await toDoWhenTurnEnd();
-    isHealAtc.current = false;
-    isHeal.current = false;
-    healHp.current = 0;
   }
 
   const conditionFnc = async () => {
@@ -1436,6 +1421,33 @@ export function useBattleHandlers(battleState) {
       await toDoWhenTurnEnd();
   }
 
+  const toDoWhenTurnStart = (atcIsMe) => {
+    const [atcPokeSt, atcPokeDy, atcPokeBuff] = atcIsMe ? [myPokeStatics.current[myBattlePokeIndex], myPokeDynamics[myBattlePokeIndex], myPokeBuff] : [opPokeStatics.current[opBattlePokeIndex], opPokeDynamics[opBattlePokeIndex], opPokeBuff];
+    const [defPokeSt, defPokeDy, defPokeBuff] = atcIsMe ? [opPokeStatics.current[opBattlePokeIndex], opPokeDynamics[opBattlePokeIndex], opPokeBuff] : [myPokeStatics.current[myBattlePokeIndex], myPokeDynamics[myBattlePokeIndex], myPokeBuff];
+    atcPokeInfo.current = {
+      name: atcPokeSt.name, img: atcPokeSt.img, voice: atcPokeSt.voice,
+      type1: atcPokeSt.type1, type2: atcPokeSt.type2, terastal: atcPokeSt.terastal,
+      hp: atcPokeSt.hp, a: atcPokeSt.a, b: atcPokeSt.b, c: atcPokeSt.c, d: atcPokeSt.d, s: atcPokeSt.s,
+      currentHp: atcPokeDy.currentHp, condition: atcPokeDy.condition,
+      aBuff: atcPokeBuff.a, bBuff: atcPokeBuff.b, cBuff: atcPokeBuff.c, dBuff: atcPokeBuff.d, sBuff: atcPokeBuff.s,
+      selectedWeapon: getSelectedWeaponInfo(atcIsMe),
+    };
+    defPokeInfo.current = {
+      name: defPokeSt.name, img: defPokeSt.img, voice: defPokeSt.voice,
+      type1: defPokeSt.type1, type2: defPokeSt.type2, terastal: defPokeSt.terastal,
+      hp: defPokeSt.hp, a: defPokeSt.a, b: defPokeSt.b, c: defPokeSt.c, d: defPokeSt.d, s: defPokeSt.s,
+      currentHp: defPokeDy.currentHp, condition: defPokeDy.condition,
+      aBuff: defPokeBuff.a, bBuff: defPokeBuff.b, cBuff: defPokeBuff.c, dBuff: defPokeBuff.d, sBuff: defPokeBuff.s,
+      selectedWeapon: getSelectedWeaponInfo(!atcIsMe),
+    };
+
+    multiplierRef.current = 1;
+    moveFailed.current = false;
+    secondaryTextRef.current = { kind: "", content: "" };
+    isHealAtc.current = false;
+    isHeal.current = false;
+    healHp.current = 0;
+  }
 
 
   return {
@@ -1449,7 +1461,6 @@ export function useBattleHandlers(battleState) {
     setCompatiText,
     setLife,
     setWinner,
-    checkIsAttackWeapon,
     setHpOnHeal,
     setHealText,
     consolePokeHp,
@@ -1473,8 +1484,6 @@ export function useBattleHandlers(battleState) {
     playBgm,
     decideOpAction,
     setTextWhenClickWeaponBtn,
-    initializeState,
-    getAreaVisible,
     toDoWhenTurnEnd,
     stopProcessing,
     setPokeInfos,
@@ -1490,5 +1499,6 @@ export function useBattleHandlers(battleState) {
     setBattlePokeIndex,
     adjustHpBar,
     doSecondaryEffect,
+    toDoWhenTurnStart,
   };
 }

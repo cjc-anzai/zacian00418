@@ -28,28 +28,27 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        {battleState.otherAreaVisible.top && (
+        {battleState.areaVisible.top && (
           <TopScreen
             battleHandlers={battleHandlers}
-            setOtherAreaVisible={battleState.setOtherAreaVisible}
+            setAreaVisible={battleState.setAreaVisible}
           />
         )}
-        {battleState.otherAreaVisible.select && (
+        {battleState.areaVisible.select && (
           <SelectScreen
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
         )}
-        {battleState.otherAreaVisible.battle && (
+        {battleState.areaVisible.battle && (
           <BattleCommandArea
             battleState={battleState}
             battleHandlers={battleHandlers}
           />
         )}
-        {!battleState.otherAreaVisible.top && !battleState.otherAreaVisible.select && !battleState.otherAreaVisible.battle && (
+        {!battleState.areaVisible.top && !battleState.areaVisible.select && !battleState.areaVisible.battle && (
           <ResultScreen
             resultText={battleState.resultText}
-            initializeState={battleHandlers.initializeState}
           />
         )}
       </header>

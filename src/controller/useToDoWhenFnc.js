@@ -5,7 +5,7 @@ export function useToDoWhenFnc(battleState) {
 
   //インポートの取得===========================================================
   const {
-    setOtherAreaVisible,
+    setAreaVisible,
     isTerastalActive, setIsTerastalActive,
     otherTextRef, textAreaRef,
     opTerastalFlg, burned, poisoned, isHeal, isHealAtc,
@@ -18,6 +18,10 @@ export function useToDoWhenFnc(battleState) {
     isIncident,
     healHp,
     myDeathFlg, opDeathFlg,
+    myPokeBuff,
+    setMyPokeBuff, setOpPokeBuff,
+    myPoisonedCnt, opPoisonedCnt,
+    secondaryTextRef
   } = battleState;
 
   const {
@@ -41,7 +45,6 @@ export function useToDoWhenFnc(battleState) {
     conditionFnc,
     cantMoveFnc,
     displayTextArea,
-    checkIsAttackWeapon,
     getCantMoveFlg,
     atcFlowFnc,
     getBattlePokeDynamics,
@@ -49,10 +52,15 @@ export function useToDoWhenFnc(battleState) {
     setBattlePokeIndex,
     adjustHpBar,
     doSecondaryEffect,
+    toDoWhenTurnStart,
   } = useBattleHandlers(battleState);
 
 
   const toDoWhenSetBattlePokeIndex = async (isMe) => {
+    const setPokeBuff = isMe ? setMyPokeBuff : setOpPokeBuff;
+    const poisonedCnt = isMe ? myPoisonedCnt : opPoisonedCnt;
+    setPokeBuff(prev => ({ ...prev, a: 0, b: 0, c: 0, d: 0, s: 0 }));
+    poisonedCnt.current = 1;
     adjustHpBar(isMe, "appearance");
     setGoText(isMe);
     await controllAreaVisibleForApp(isMe);
@@ -61,9 +69,10 @@ export function useToDoWhenFnc(battleState) {
     if (opBattlePokeIndex === -1) {
       setBattlePokeIndex(!isMe, 0);
     }
-    //バトル開始時の相手の登場後 OR 死亡後の登場後
-    else if ((turnCnt.current === 1 && myBattlePokeIndex === 0 && opBattlePokeIndex === 0) || (!myChangeTurn.current && !opChangeTurn.current)) {
-      setOtherAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
+    //バトル開始時の相手の登場後
+    else if (turnCnt.current === 0) {
+      turnCnt.current = 1;
+      setAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
     }
     //ポケモン交代時
     else if (myChangeTurn.current || opChangeTurn.current) {
@@ -91,6 +100,11 @@ export function useToDoWhenFnc(battleState) {
           await toDoWhenTurnEnd();
       }
     }
+    //死亡後の登場後
+    else {
+      (isMe ? myChangePokeIndex : opChangePokeIndex).current = null;
+      setAreaVisible(prev => ({ ...prev, textArea: false, actionCmd: true }));
+    }
   }
 
 
@@ -106,18 +120,11 @@ export function useToDoWhenFnc(battleState) {
         return;
       }
 
-      if (isHeal.current) {
-        // if (isHealAtc.current)
-        // if (healHp.current > 0)
-        //   await setHpOnHeal(!isMe);
-        // else
-        //   await healFnc();
-        // else {
-        setHealText(isMe);
-        await displayTextArea("other", 2000);
+      if (isHeal.current && healHp.current) {
+        otherTextRef.current = { kind: "heal", content: secondaryTextRef.current.content };
+        await displayTextArea("other", 1500);
         if (!(isMe ? myDeathFlg : opDeathFlg).current)
           await healFnc();
-        // }
       }
       else if (burned.current || poisoned.current) {
         burned.current = false;
@@ -127,21 +134,6 @@ export function useToDoWhenFnc(battleState) {
         await atcFlowFnc(isMe);
       else if (isMe === iAmFirst.current)
         await toDoWhenTurnEnd();
-      else if (otherTextRef.current.content) {
-        const kind = otherTextRef.current.kind;
-        if (kind === "buff")  //攻撃技の追加効果用
-          await buffFnc();
-        else if (kind === "heal")   //攻撃回復技用
-          await healFnc();
-        else if (kind === "condition")  //攻撃技の追加効果用
-          await conditionFnc();
-        else if (kind === "cantMove") // ひるみ用
-          await cantMoveFnc();
-
-        //何のために初期化するか確認しコメント記載！！
-        otherTextRef.current.content = "";
-      }
-
     }
     //死亡の場合、死亡テキストをセット
     else {
@@ -149,29 +141,19 @@ export function useToDoWhenFnc(battleState) {
       if (isIncident.current) {
         await doSecondaryEffect(!isMe);
         isIncident.current = false;
-        if(isHeal.current)
+        if (isHeal.current)
           stopProcessing(3000);
       }
-      // if (isHeal.current) {
-      //   if (isHealAtc.current)
-      //     await setHpOnHeal(!isMe)
-      //   else {
-      //     setHealText(isMe);
-      //     await displayTextArea("other", 2000);
-      //     await healFnc();
-      //   }
-      // }
       //火傷によるダメージ
       if (burned.current || poisoned.current) {
         burned.current = false;
         poisoned.current = false;
       }
-      await setDeadText(isMe);
+      setDeadText(isMe);
       await deadFnc1(isMe);
-      await stopProcessing(1000);
       await toDoWhenTurnEnd();
       if (isMe)
-        setOtherAreaVisible(prev => ({ ...prev, textArea: false, nextPokeCmd: true }));
+        setAreaVisible(prev => ({ ...prev, textArea: false, nextPokeCmd: true }));
     };
   }
 
@@ -183,16 +165,17 @@ export function useToDoWhenFnc(battleState) {
     //一方のみテラスタルする場合、先攻の技テキストをセット
     if (isTerastalActive !== opTerastalFlg.current) {
       const atcIsMe = (iAmFirst.current || opChangeTurn.current) && !myChangeTurn.current;
+      toDoWhenTurnStart(atcIsMe);
       await setWeaponText(atcIsMe);
       isTerastalActive ? setIsTerastalActive(false) : opTerastalFlg.current = false;
       const cantMove = getCantMoveFlg(isMe);
       if (!cantMove) {
-        await setCompatiText(atcIsMe);
+        setCompatiText(atcIsMe);
         await compatiFnc1(atcIsMe);
       }
       else {
-        await displayTextArea("other", 2000);
-        await cantMoveFnc();
+        await displayTextArea("other", 1500);
+        await cantMoveFnc(isMe);
       }
     }
     else {
@@ -211,19 +194,19 @@ export function useToDoWhenFnc(battleState) {
 
 
   const toDoWhenSetPokeCondition = async (isMe) => {
-    // const isAtcWeapon = await checkIsAttackWeapon(!isMe);
-    await displayTextArea("other", 2000);
-    // setOtherAreaVisible(prev => ({ ...prev, textArea: true }));
-    // delay(() => textAreaRef.current.textContent = otherTextRef.current.content, 1);
-    // await stopProcessing(2000);
-    // if (!isAtcWeapon)
+    await displayTextArea("other", 1500);
     await conditionFnc();
+  }
+
+  const toDoWhenSetPokeBuff = async () => {
+    await buffFnc();
   }
 
   return {
     toDoWhenSetCurrentHp,
     toDoWhenSetBattlePokeIndex,
     toDoWhenSetTerastalPokeNum,
-    toDoWhenSetPokeCondition
+    toDoWhenSetPokeCondition,
+    toDoWhenSetPokeBuff
   };
 }

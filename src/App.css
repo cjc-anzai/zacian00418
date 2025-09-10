@@ -151,7 +151,7 @@
 .select-area button.active:hover {
   background-color: #17e71e;
   font-weight: bold;
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .select-area button.inactive {
@@ -423,7 +423,7 @@
 }
 
 .cmd-area button:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
   font-weight: bold;
 }
 
@@ -648,7 +648,7 @@
 }
 
 .result-screen button:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
   font-weight: bold;
 }
 

@@ -547,7 +547,7 @@ export const predictMyActionLogic = (weaponInfos, atcInfos, defInfos, randomMult
   const myStrongestWeaponIndex = damageList.reduce((maxIdx, current, idx, arr) =>
     current > arr[maxIdx] ? idx : maxIdx, 0
   );
-  
+
   const myMaxDamage = damageList[myStrongestWeaponIndex] * randomMultiplier;
   const myMaxDamageWeaponType = weaponInfos[myStrongestWeaponIndex].type;
 
@@ -610,41 +610,6 @@ export const damageEffectLogic = (isMe) => {
   const elem = getDamageEffectElem(isMe);
   elem.classList.add("pokemon-damage-effect");
   delay(() => elem.classList.remove("pokemon-damage-effect"), 1000);
-}
-
-//ダメージ計算　ダメージ数/命中判定/急所判定　を返す
-export const calcTrueDamage = (weaponInfo, atcInfo, defInfo) => {
-  let trueDamage = 0;
-  let realDamage = 0;
-  const isHit = weaponInfo.hitRate ? Math.random() * 100 < weaponInfo.hitRate : true;    //命中判定
-  let isCritical = false;   //急所フラグ
-
-  //命中時のみダメージ計算する
-  if (isHit && weaponInfo.kind !== "変化") {
-    let { pureDamage, basicDamage, isSameTerastal, isSameType, multiplier, atcBuffMultiplier, defBuffMultiplier } = calcPureDamage(weaponInfo, atcInfo, defInfo);
-    const randomMultiplier = Math.floor((Math.random() * 0.16 + 0.85) * 100) / 100;    //乱数 0.85~1.00
-    isCritical = Math.random() < 0.0417 && multiplier !== 0;;   //急所フラグ 4.17%で急所にあたる
-    // isCritical = true;   //テスト用
-
-    //急所に当たった際には攻撃系のデバフと防御系のバフを無視する
-    if (isCritical) {
-      atcBuffMultiplier = atcBuffMultiplier >= 1 ? 1 : atcBuffMultiplier;
-      defBuffMultiplier = defBuffMultiplier <= 1 ? 1 : defBuffMultiplier
-      pureDamage = (pureDamage - 2) / atcBuffMultiplier * defBuffMultiplier + 2;
-      atcInfo.isBurned = false;
-    }
-
-    trueDamage = Math.floor(pureDamage * randomMultiplier);    // 乱数
-    trueDamage = Math.floor(trueDamage * (isCritical ? 1.5 : 1));   //急所
-    trueDamage = weaponInfo.kind === "物理" && atcInfo.isBurned ? Math.floor(trueDamage * 0.5) : trueDamage;  //やけど補正
-    realDamage = trueDamage > defInfo.currentHp ? defInfo.currentHp : trueDamage;
-
-    console.log(`${defInfo.name}に${realDamage}ダメージ(${trueDamage})\n基礎ダメージ：${basicDamage}\n乱数：${randomMultiplier}\nタイプ一致：${isSameTerastal ? 2 : (isSameType ? 1.5 : 1)}\n相性：${multiplier}\n急所：${isCritical ? 1.5 : 1}\nやけど：${weaponInfo.kind === "物理" && atcInfo.isBurned ? 0.5 : 1}`);
-  }
-  else if (!isHit && weaponInfo.kind !== "変化")
-    console.log(`${atcInfo.name}の攻撃は当たらなかった`);
-
-  return { realDamage, isHit, isCritical };
 }
 
 //adjustHpBar()のロジック HPバーの制御

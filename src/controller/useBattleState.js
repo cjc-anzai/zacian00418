@@ -3,9 +3,8 @@ import { useState, useRef } from "react";
 export function useBattleState() {
 
   //表示制御のState
-  const [myAreaVisible, setMyAreaVisible] = useState({ poke: false });
-  const [opAreaVisible, setOpAreaVisible] = useState({ poke: false });
-  const [otherAreaVisible, setOtherAreaVisible] = useState({
+  const [areaVisible, setAreaVisible] = useState({
+    myPoke: false, opPoke: false,
     top: true, select: false, battle: false, textArea: false,
     actionCmd: false, weaponCmd: false, changeCmd: false, status: false, nextPokeCmd: false
   });
@@ -34,8 +33,7 @@ export function useBattleState() {
 
   // 変わる情報（HP・状態異常・バフ）
   const defaultPokeDynamic = {    //値が確実に入る要素以外はnullにしない
-    currentHp: null, condition: "",
-    aBuff: 0, bBuff: 0, cBuff: 0, dBuff: 0, sBuff: 0,
+    currentHp: null, condition: null,
   };
   const [myPokeDynamics, setMyPokeDynamics] = useState([
     { ...defaultPokeDynamic },
@@ -47,6 +45,23 @@ export function useBattleState() {
     { ...defaultPokeDynamic },
     { ...defaultPokeDynamic },
   ]);
+
+  const defaultPokeBuff = {
+    a: 0, b: 0, c: 0, d: 0, s: 0
+  };
+  const [myPokeBuff, setMyPokeBuff] = useState({ ...defaultPokeBuff });
+  const [opPokeBuff, setOpPokeBuff] = useState({ ...defaultPokeBuff });
+
+  const defaultBattlePokeInfo = {
+    name: null, img: null, voice: null,
+    type1: null, type2: null, terastal: null,
+    hp: null, a: null, b: null, c: null, d: null, s: null,
+    currentHp: null, condition: null,
+    aBuff: 0, bBuff: 0, cBuff: 0, dBuff: 0, sBuff: 0,
+    selectedWeapon: null, text: null,
+  };
+  const atcPokeInfo = useRef({ ...defaultBattlePokeInfo }); //攻撃するポケモンの情報
+  const defPokeInfo = useRef({ ...defaultBattlePokeInfo }); //防御するポケモンの情報
 
   //ポケモンの技１～４のstate
   const defaultWeapons = {
@@ -82,16 +97,20 @@ export function useBattleState() {
   const myTextRef = useRef({ kind: "", content: "" });                          //自分向けの一般のテキスト
   const opTextRef = useRef({ kind: "", content: "" });                          //相手向けの一般のテキスト
   const otherTextRef = useRef({ kind: "", content: "" });                       //イレギュラーなテキスト
-  const textAreaRef = useRef("");                                               //テキストエリアに表示するテキスト
+  const secondaryTextRef = useRef({ kind: "", content: "" });                    //追加効果のテキスト
+  const textAreaRef = useRef(null);                                               //テキストエリアに表示するテキスト
   const [myLife, opLife] = [useRef(3), useRef(3)];                              //手持ち3体のライフ
   const [myChangeTurn, opChangeTurn] = [useRef(false), useRef(false)];          //交代ターンフラグ
   const [myChangePokeIndex, opChangePokeIndex] = [useRef(null), useRef(null)];    //交代するポケモン
   const [myCantMoveFlg, opCantMoveFlg] = [useRef(false), useRef(false)];              //
   const [myDeathFlg, opDeathFlg] = [useRef(false), useRef(false)];              //定数ダメージによって死亡する場合のフラグ
   const iAmFirst = useRef(false);                                               //先攻後攻
+  const moveFailed = useRef(false);                                            //技が失敗したかどうか
   const newHp = useRef(0);
   const damage = useRef(0);
+  const multiplierRef = useRef(1);                                              
   const isIncident = useRef(false);
+  const newBuff = useRef(null);                                                   //バフの増減値
   const isHeal = useRef(false);                                                 //回復の変化技or回復の攻撃技
   const isHealAtc = useRef(false);                                              //回復の攻撃技
   const healHp = useRef(0);                                                 //回復技によって回復するHP
@@ -99,13 +118,11 @@ export function useBattleState() {
   const poisoned = useRef(false);                                               //毒ダメージをセットしたフラグ
   const [myPoisonedCnt, opPoisonedCnt] = [useRef(1), useRef(1)];                //猛毒状態のカウント
   const resultText = useRef(null);                                              //勝敗
-  const turnCnt = useRef(1);                                                    //デバッグ用ターンカウント    
+  const turnCnt = useRef(0);                                                    //デバッグ用ターンカウント    
   const loopAudioRef = useRef(null);                                            //再生中のBGM
 
   return {
-    myAreaVisible, setMyAreaVisible,
-    opAreaVisible, setOpAreaVisible,
-    otherAreaVisible, setOtherAreaVisible,
+    areaVisible, setAreaVisible,
     myTerastalState, setMyTerastalState,
     opTerastalState, setOpTerastalState,
     isTerastalActive, setIsTerastalActive,
@@ -132,7 +149,12 @@ export function useBattleState() {
     turnCnt,
     loopAudioRef,
     damage, newHp,
-    defaultPokeStatic, defaultPokeDynamic, defaultWeapons, defaultTerastalState,
-    isIncident
+    isIncident,
+    myPokeBuff, setMyPokeBuff,
+    opPokeBuff, setOpPokeBuff,
+    moveFailed,
+    atcPokeInfo, defPokeInfo,
+    secondaryTextRef, newBuff,
+    multiplierRef,
   };
 }

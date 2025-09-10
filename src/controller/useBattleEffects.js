@@ -8,13 +8,18 @@ export function useBattleEffects(battleState) {
     myPokeDynamics, opPokeDynamics,
     myTerastalState, opTerastalState,
     myTextRef, opTextRef,
+    myChangeTurn, opChangeTurn, turnCnt,
+    myPokeBuff, opPokeBuff,
+    areaVisible,
+    myChangePokeIndex, opChangePokeIndex,
   } = battleState;
 
   const {
     toDoWhenSetCurrentHp,
     toDoWhenSetBattlePokeIndex,
     toDoWhenSetTerastalPokeNum,
-    toDoWhenSetPokeCondition
+    toDoWhenSetPokeCondition,
+    toDoWhenSetPokeBuff,
   } = useToDoWhenFnc(battleState);
 
   // useEffect(() => {
@@ -88,6 +93,22 @@ export function useBattleEffects(battleState) {
       await toDoWhenSetPokeCondition(false);
     })();
   }, [opPokeDynamics[0].condition, opPokeDynamics[1].condition, opPokeDynamics[2].condition]);
+
+
+  //バフ
+  useEffect(() => {
+    if(turnCnt.current === 0 || myChangePokeIndex.current !== null) return;
+    (async () => {
+      await toDoWhenSetPokeBuff();
+    })();
+  }, [myPokeBuff]);
+
+  useEffect(() => {
+    if(turnCnt.current === 0 || opChangePokeIndex.current !== null) return;
+    (async () => {
+      await toDoWhenSetPokeBuff();
+    })();
+  }, [opPokeBuff]);
 
 
   return {};

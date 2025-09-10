@@ -5,7 +5,7 @@ import StatusArea from "./StatusArea";
 const CommandTextArea = ({ battleState, battleHandlers, }) => {
   //インポートする変数や関数の取得
   const {
-    otherAreaVisible, setOtherAreaVisible,
+    areaVisible, setAreaVisible,
     mySelectedWeaponInfo,
     isTerastalActive, setIsTerastalActive,
     textAreaRef,
@@ -36,30 +36,30 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
   //たたかうボタン押下時、コマンド表示を切り替える
   const openBattleCmdArea = () => {
     soundList.general.decide.cloneNode().play();
-    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, weaponCmd: true }));
+    setAreaVisible(prev => ({ ...prev, actionCmd: false, weaponCmd: true }));
   };
 
   //交代ボタン押下時、コマンド表示を切り替える
   const openChangeCmdArea = () => {
     soundList.general.decide.cloneNode().play();
-    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, changeCmd: true }));
+    setAreaVisible(prev => ({ ...prev, actionCmd: false, changeCmd: true }));
   };
 
   //ステータスボタン押下時、コマンド表示を切り替える
   const openStatusArea = () => {
     soundList.general.decide.cloneNode().play();
-    setOtherAreaVisible(prev => ({ ...prev, actionCmd: false, status: true }));
+    setAreaVisible(prev => ({ ...prev, actionCmd: false, status: true }));
   };
 
   // 戻るボタン押下時、コマンド表示を切り替える
   const backCmd = () => {
     soundList.general.cancel.cloneNode().play();
     setIsTerastalActive(false);
-    setOtherAreaVisible(prev => ({ ...prev, actionCmd: true, weaponCmd: false, changeCmd: false, status: false }));
+    setAreaVisible(prev => ({ ...prev, actionCmd: true, weaponCmd: false, changeCmd: false, status: false }));
   };
 
   //技ボタンマウスオーバー時に技情報をセットする
-  const handleMouseEnter = async (weaponIndex) => {
+  const handleMouseEnter = (weaponIndex) => {
     //技の情報を取得
     const [type, kind, power, hitrate, priority] = [
       myWeapons.current[myBattlePokeIndex][weaponIndex].type,
@@ -89,17 +89,17 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
   //技名ボタン押下時
   const setWeapons = async (weaponIndex) => {
     soundList.general.decide.cloneNode().play();
-    setOtherAreaVisible(prev => ({ ...prev, weaponCmd: false }));
+    setAreaVisible(prev => ({ ...prev, weaponCmd: false }));
     mySelectedWeaponInfo.current = myWeapons.current[myBattlePokeIndex][weaponIndex];
     await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
-    await setMyTurn();
+    setMyTurn();
     await setTextWhenClickWeaponBtn();
   };
 
   //〇〇に交代ボタン押下時、交代するポケモン名を保存し、交代フラグを立てる
   const changeMyPoke = async (changePokeIndex) => {
     soundList.general.decide.cloneNode().play();
-    setOtherAreaVisible(prev => ({ ...prev, changeCmd: false }));
+    setAreaVisible(prev => ({ ...prev, changeCmd: false }));
     mySelectedWeaponInfo.current = null;
     myChangeTurn.current = true;    //交代フラグ
     myChangePokeIndex.current = changePokeIndex;    //交代するポケモンをrefに保存
@@ -111,28 +111,29 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
 
   //倒れた後、次に出すポケモンボタン押下時、次のポケモン名を保存し、HPをセット
   const setNextMyPoke = (nextMyPokeIndex) => {
+    myChangePokeIndex.current = nextMyPokeIndex;
     soundList.general.decide.cloneNode().play();
-    setOtherAreaVisible(prev => ({ ...prev, nextPokeCmd: false }));
-    delay(() => setBattlePokeIndex(true, nextMyPokeIndex), 1000);
+    setAreaVisible(prev => ({ ...prev, nextPokeCmd: false }));
+    delay(() => setBattlePokeIndex(true, myChangePokeIndex.current), 1000);
   }
 
 
   return (
     <div className="cmd-text-area">
-      {otherAreaVisible.textArea && (
+      {areaVisible.textArea && (
         <div ref={textAreaRef} className="text-area"></div>
       )}
 
-      {!otherAreaVisible.textArea && (otherAreaVisible.actionCmd || otherAreaVisible.weaponCmd || otherAreaVisible.changeCmd || otherAreaVisible.nextPokeCmd) && (
-        <div className="cmd-area" style={{ height: otherAreaVisible.weaponCmd ? '80%' : '40%' }}>
-          {otherAreaVisible.actionCmd && (
+      {!areaVisible.textArea && (areaVisible.actionCmd || areaVisible.weaponCmd || areaVisible.changeCmd || areaVisible.nextPokeCmd) && (
+        <div className="cmd-area" style={{ height: areaVisible.weaponCmd ? '80%' : '40%' }}>
+          {areaVisible.actionCmd && (
             <div className="action-cmd-area">
               <button className="green" onClick={openBattleCmdArea}>たたかう</button>
               <button className="light-blue" onClick={openChangeCmdArea}>交代</button>
               <button className="white" onClick={openStatusArea}>ステータス</button>
             </div>
           )}
-          {otherAreaVisible.weaponCmd && (
+          {areaVisible.weaponCmd && (
             <div className="weapon-cmd-area">
               <div className="weapon-cmd-btns">
                 <button
@@ -192,7 +193,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
               )}
             </div>
           )}
-          {otherAreaVisible.changeCmd && (
+          {areaVisible.changeCmd && (
             <div className="change-cmd-area">
               {[0, 1, 2].map(i => {
                 const name = myPokeStatics.current[i].name;
@@ -209,7 +210,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
               <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
             </div>
           )}
-          {otherAreaVisible.nextPokeCmd &&  (
+          {areaVisible.nextPokeCmd &&  (
             <div className="next-poke-cmd-area">
               {[0, 1, 2].map(i => {
                 const name = myPokeStatics.current[i].name;
@@ -228,7 +229,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
         </div>
       )}
 
-      {otherAreaVisible.status && (
+      {areaVisible.status && (
         <div className="status-area-wrap">
           <div className="status-area">
             <StatusArea isMe={false} battleState={battleState} battleHandlers={battleHandlers} />
