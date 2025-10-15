@@ -57,11 +57,11 @@ export function useBattleControllers(battleStates) {
 
 
   //選出確定ボタン押下時
-  const handleBattleStartBtnClick = async (myPokesKanaName, opPokesKanaName) => {
+  const handleBattleStartBtnClick = async (opPokesKanaName) => {
     soundList.general.decide.cloneNode().play();
     setAreaVisible(prev => ({ ...prev, select: false, battle: true }));
     playBgm("battle");
-    await setBattleStartData(myPokesKanaName, opPokesKanaName);
+    await setBattleStartData(opPokesKanaName);
   };
 
   //技名ボタン押下時

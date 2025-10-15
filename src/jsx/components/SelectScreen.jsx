@@ -75,7 +75,7 @@ const SelectScreen = ({ battleStates, battleControllers, battleExecutors, }) => 
 
       <button
         className={mySelectedOrder.length === 3 ? "active" : "inactive"}
-        onClick={() => handleBattleStartBtnClick(myPokesKanaName, opPokesKanaName)}
+        onClick={() => handleBattleStartBtnClick(opPokesKanaName)}
         disabled={mySelectedOrder.length !== 3}
       >
         バトル開始！
