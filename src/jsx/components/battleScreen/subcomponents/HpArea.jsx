@@ -1,14 +1,12 @@
-import { typeColors, conditionColors, getPokeIndicatorsColor } from "../../../model/model";
+import { conditionColors } from "../../../../js/constants";
 
 const HpArea = ({
-    isMe,
-    battleState,
-    battleHandlers,
+    isMe, battleStates, battleExecutors,
 }) => {
 
     //インポートする変数や関数の取得
-    const { areaVisible, myPokeStatics, opPokeStatics, myPokeDynamics, opPokeDynamics, myBattlePokeIndex } = battleState;
-    const { getBattlePokeStatics, getBattlePokeDynamics } = battleHandlers;
+    const { areaVisible, myPokeStatics, opPokeStatics, myPokeDynamics, opPokeDynamics, myBattlePokeIndex } = battleStates;
+    const { getBattlePokeStatics, getBattlePokeDynamics, getPokeIndicatorsColor } = battleExecutors;
 
     const battlePokeStatics = getBattlePokeStatics(isMe);
     const pokeStatics = isMe ? myPokeStatics : opPokeStatics;

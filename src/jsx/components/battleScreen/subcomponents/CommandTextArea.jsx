@@ -1,120 +1,76 @@
 import React, { useState } from "react";
-import { soundList, typeColors, getCompatiTextForWeaponInfoList, delay, } from "../../../model/model";
+import { soundList, typeColors } from "../../../../js/constants";
 import StatusArea from "./StatusArea";
 
-const CommandTextArea = ({ battleState, battleHandlers, }) => {
+const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) => {
   //インポートする変数や関数の取得
   const {
     areaVisible, setAreaVisible,
-    mySelectedWeaponInfo,
-    isTerastalActive, setIsTerastalActive,
     textAreaRef,
-    iAmFirst,
-    myChangePokeIndex,
-    myChangeTurn,
+    isTerastalActive, setIsTerastalActive,
     myPokeStatics, opPokeStatics,
     myPokeDynamics,
     myBattlePokeIndex, opBattlePokeIndex,
-    myWeapons,
     myTerastalState,
-  } = battleState;
+  } = battleStates;
 
   const {
-    setMyTurn,
-    setBackText,
-    decideOpAction,
-    setTextWhenClickWeaponBtn,
+    handleWeaponBtnClick,
+    handleChangePokeClick,
+    handleNextPokeBtnClick,
+  } = battleControllers;
+
+  const {
     checkIsTerastal,
-    changeFnc1,
-    setBattlePokeIndex,
-  } = battleHandlers;
+    getWeaponInfoList,
+    playTerastalBtnSound,
+    getCompatiTextForWeaponInfoList,
+  } = battleExecutors;
 
   const [weaponInfoList, setWeaponInfoList] = useState(null);
-
   const isTerastal = checkIsTerastal(true);
 
-  //たたかうボタン押下時、コマンド表示を切り替える
+  //たたかうボタン押下時
   const openBattleCmdArea = () => {
     soundList.general.decide.cloneNode().play();
     setAreaVisible(prev => ({ ...prev, actionCmd: false, weaponCmd: true }));
-  };
+  }
 
-  //交代ボタン押下時、コマンド表示を切り替える
+  //交代ボタン押下時
   const openChangeCmdArea = () => {
     soundList.general.decide.cloneNode().play();
     setAreaVisible(prev => ({ ...prev, actionCmd: false, changeCmd: true }));
-  };
+  }
 
-  //ステータスボタン押下時、コマンド表示を切り替える
+  //ステータスボタン押下時
   const openStatusArea = () => {
     soundList.general.decide.cloneNode().play();
     setAreaVisible(prev => ({ ...prev, actionCmd: false, status: true }));
-  };
+  }
 
-  // 戻るボタン押下時、コマンド表示を切り替える
+  // 戻るボタン押下時
   const backCmd = () => {
     soundList.general.cancel.cloneNode().play();
     setIsTerastalActive(false);
     setAreaVisible(prev => ({ ...prev, actionCmd: true, weaponCmd: false, changeCmd: false, status: false }));
-  };
+  }
 
-  //技ボタンマウスオーバー時に技情報をセットする
+  //技ボタンマウスオーバー時
   const handleMouseEnter = (weaponIndex) => {
-    //技の情報を取得
-    const [type, kind, power, hitrate, priority] = [
-      myWeapons.current[myBattlePokeIndex][weaponIndex].type,
-      myWeapons.current[myBattlePokeIndex][weaponIndex].kind,
-      myWeapons.current[myBattlePokeIndex][weaponIndex].power,
-      myWeapons.current[myBattlePokeIndex][weaponIndex].hitrate,
-      myWeapons.current[myBattlePokeIndex][weaponIndex].priority,
-    ]
+    const { type, kind, power, hitrate, priority } = getWeaponInfoList(weaponIndex);
     const compatiText = getCompatiTextForWeaponInfoList(type, opPokeStatics.current[opBattlePokeIndex].type1, opPokeStatics.current[opBattlePokeIndex].type2);
-    //表示する技情報としてセットする
     setWeaponInfoList({ type, kind, power, hitrate, priority, compatiText });
-  };
+  }
 
-  //マウスオーバー解除時にセットした情報を消去する
+  //マウスオーバー解除時
   const handleMouseLeave = () => {
     setWeaponInfoList(null);
-  };
+  }
 
-  //テラスタルボタン押下時、状態を切り替える
+  //テラスタルボタン押下時
   const togglTerastal = () => {
-    isTerastalActive
-      ? soundList.general.cancel.cloneNode().play()
-      : soundList.general.terastal.cloneNode().play();
+    playTerastalBtnSound();
     setIsTerastalActive(prev => !prev);
-  }
-
-  //技名ボタン押下時
-  const setWeapons = async (weaponIndex) => {
-    soundList.general.decide.cloneNode().play();
-    setAreaVisible(prev => ({ ...prev, weaponCmd: false }));
-    mySelectedWeaponInfo.current = myWeapons.current[myBattlePokeIndex][weaponIndex];
-    await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
-    setMyTurn();
-    await setTextWhenClickWeaponBtn();
-  };
-
-  //〇〇に交代ボタン押下時、交代するポケモン名を保存し、交代フラグを立てる
-  const changeMyPoke = async (changePokeIndex) => {
-    soundList.general.decide.cloneNode().play();
-    setAreaVisible(prev => ({ ...prev, changeCmd: false }));
-    mySelectedWeaponInfo.current = null;
-    myChangeTurn.current = true;    //交代フラグ
-    myChangePokeIndex.current = changePokeIndex;    //交代するポケモンをrefに保存
-    await decideOpAction();   //相手の行動を決める(交代/テラス/技選択)
-    await setMyTurn();
-    setBackText(iAmFirst.current);    //先攻のbackテキストをセット
-    changeFnc1(iAmFirst.current);
-  }
-
-  //倒れた後、次に出すポケモンボタン押下時、次のポケモン名を保存し、HPをセット
-  const setNextMyPoke = (nextMyPokeIndex) => {
-    myChangePokeIndex.current = nextMyPokeIndex;
-    soundList.general.decide.cloneNode().play();
-    setAreaVisible(prev => ({ ...prev, nextPokeCmd: false }));
-    delay(() => setBattlePokeIndex(true, myChangePokeIndex.current), 1000);
   }
 
 
@@ -138,7 +94,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
               <div className="weapon-cmd-btns">
                 <button
                   className="weapon-cmd-btn"
-                  onClick={async () => await setWeapons(0)}
+                  onClick={() => handleWeaponBtnClick(0)}
                   onMouseEnter={() => handleMouseEnter(0)}
                   onMouseLeave={handleMouseLeave}
                 >
@@ -146,7 +102,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
                 </button>
                 <button
                   className="weapon-cmd-btn"
-                  onClick={async () => await setWeapons(1)}
+                  onClick={() => handleWeaponBtnClick(1)}
                   onMouseEnter={() => handleMouseEnter(1)}
                   onMouseLeave={handleMouseLeave}
                 >
@@ -154,7 +110,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
                 </button>
                 <button
                   className="weapon-cmd-btn"
-                  onClick={async () => await setWeapons(2)}
+                  onClick={() => handleWeaponBtnClick(2)}
                   onMouseEnter={() => handleMouseEnter(2)}
                   onMouseLeave={handleMouseLeave}
                 >
@@ -162,7 +118,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
                 </button>
                 <button
                   className="weapon-cmd-btn"
-                  onClick={async () => await setWeapons(3)}
+                  onClick={() => handleWeaponBtnClick(3)}
                   onMouseEnter={() => handleMouseEnter(3)}
                   onMouseLeave={handleMouseLeave}
                 >
@@ -201,7 +157,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
 
                 return (
                   name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0 && (
-                    <button key={name} className="change-cmd-btn" onClick={async () => await changeMyPoke(i)}>
+                    <button key={name} className="change-cmd-btn" onClick={() => handleChangePokeClick(i)}>
                       {name}
                     </button>
                   )
@@ -210,7 +166,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
               <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
             </div>
           )}
-          {areaVisible.nextPokeCmd &&  (
+          {areaVisible.nextPokeCmd && (
             <div className="next-poke-cmd-area">
               {[0, 1, 2].map(i => {
                 const name = myPokeStatics.current[i].name;
@@ -218,7 +174,7 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
 
                 return (
                   name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0 && (
-                    <button key={name} className="change-cmd-btn" onClick={() => setNextMyPoke(i)}>
+                    <button key={name} className="change-cmd-btn" onClick={() => handleNextPokeBtnClick(i)}>
                       {name}
                     </button>
                   )
@@ -232,8 +188,8 @@ const CommandTextArea = ({ battleState, battleHandlers, }) => {
       {areaVisible.status && (
         <div className="status-area-wrap">
           <div className="status-area">
-            <StatusArea isMe={false} battleState={battleState} battleHandlers={battleHandlers} />
-            <StatusArea isMe={true} battleState={battleState} battleHandlers={battleHandlers} />
+            <StatusArea isMe={false} battleStates={battleStates} battleExecutors={battleExecutors} />
+            <StatusArea isMe={true} battleStates={battleStates} battleExecutors={battleExecutors} />
           </div>
           <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
         </div>

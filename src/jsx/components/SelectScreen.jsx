@@ -1,13 +1,12 @@
 import React from "react";
-import { soundList, delay } from "../model/model";
+import { soundList } from "../../js/constants";
 
-const SelectScreen = ({ battleState, battleHandlers, }) => {
+const SelectScreen = ({ battleStates, battleControllers, battleExecutors, }) => {
 
   //インポートする変数や関数の取得
-  const { setAreaVisible, mySelectedOrder, setMySelectedOrder, setMyBattlePokeIndex } = battleState;
-  const { setBgm, playBgm,
-    setPokeInfos, setWeaponInfos, chooseHowToSelectOpPoke, getPokeInfos,
-    getWeaponInfos, setBattlePokeIndex } = battleHandlers;
+  const { mySelectedOrder } = battleStates;
+  const { handleBattleStartBtnClick } = battleControllers;
+  const { selectMyPokeOrder } = battleExecutors;
 
   const getPokeImg = (pokeName) => {
     const url = `https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/img/pokeImg/${pokeName}.png`
@@ -22,27 +21,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
   //選出画面のポケモン押下時
   const handleSelect = (pokeName) => {
     soundList.general.select.cloneNode().play();
-    setMySelectedOrder((prev) => {
-      if (prev.includes(pokeName))
-        return prev.filter((name) => name !== pokeName); // クリックで解除
-      if (prev.length < 3)
-        return [...prev, pokeName]; // 3体まで選択OK
-      return prev; // 3体以上は無視
-    });
-  };
-
-  //選出確定ボタン
-  const confirmSelection = async () => {
-    soundList.general.decide.cloneNode().play();
-    setAreaVisible(prev => ({ ...prev, select: false, battle: true }));
-    setBgm("battle");
-    delay(() => playBgm(), 50);
-    const opSelectedOrder = await chooseHowToSelectOpPoke(myPokesKanaName, opPokesKanaName, "hard");    //相手の選出方法を選択
-    const { myPokeInfos, opPokeInfos } = await getPokeInfos(opSelectedOrder);                           //DBからお互いのポケモン３体の情報を取得
-    const { myWeaponInfos, opWeaponInfos } = await getWeaponInfos(myPokeInfos, opPokeInfos);            //DBからお互いのポケモン３体の技情報を取得
-    setPokeInfos(myPokeInfos, opPokeInfos);
-    setWeaponInfos(myWeaponInfos, opWeaponInfos);
-    setBattlePokeIndex(true, 0);
+    selectMyPokeOrder(pokeName);
   };
 
   return (
@@ -96,7 +75,7 @@ const SelectScreen = ({ battleState, battleHandlers, }) => {
 
       <button
         className={mySelectedOrder.length === 3 ? "active" : "inactive"}
-        onClick={confirmSelection}
+        onClick={() => handleBattleStartBtnClick(myPokesKanaName, opPokesKanaName)}
         disabled={mySelectedOrder.length !== 3}
       >
         バトル開始！

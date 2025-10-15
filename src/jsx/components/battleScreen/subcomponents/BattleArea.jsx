@@ -1,15 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { terastalImgList, } from "../../../model/model";
+import { terastalImgList, } from "../../../../js/constants";
 
 const BattleArea = ({
-    isMe,
-    battleState,
-    battleHandlers,
+    isMe, battleStates, battleExecutors,
 }) => {
 
     //インポートする変数や関数の取得
-    const { areaVisible } = battleState;
-    const { checkIsTerastal, getBattlePokeStatics, getBattlePokeDynamics } = battleHandlers;
+    const { areaVisible } = battleStates;
+    const { checkIsTerastal, getBattlePokeStatics, getBattlePokeDynamics } = battleExecutors;
 
     const battlePokeStatics = getBattlePokeStatics(isMe);
     const battlePokeDynamics = getBattlePokeDynamics(isMe);

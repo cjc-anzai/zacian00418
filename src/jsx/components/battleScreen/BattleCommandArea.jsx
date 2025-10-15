@@ -3,8 +3,7 @@ import HpArea from "./subcomponents/HpArea";
 import CommandTextArea from "./subcomponents/CommandTextArea";
 
 const BattleCommandArea = ({
-  battleState,
-  battleHandlers,
+  battleStates, battleControllers, battleHandlers, battleExecutors,
 }) => {
 
   return (
@@ -13,32 +12,37 @@ const BattleCommandArea = ({
         <div className="op-area">
           <BattleArea
             isMe={false}
-            battleState={battleState}
+            battleStates={battleStates}
             battleHandlers={battleHandlers}
+            battleExecutors={battleExecutors}
           />
           <HpArea
             isMe={false}
-            battleState={battleState}
+            battleStates={battleStates}
             battleHandlers={battleHandlers}
+            battleExecutors={battleExecutors}
           />
         </div>
 
         <div className="my-area">
           <BattleArea
             isMe={true}
-            battleState={battleState}
+            battleStates={battleStates}
             battleHandlers={battleHandlers}
+            battleExecutors={battleExecutors}
           />
           <HpArea
             isMe={true}
-            battleState={battleState}
+            battleStates={battleStates}
             battleHandlers={battleHandlers}
+            battleExecutors={battleExecutors}
           />
         </div>
       </div>
       <CommandTextArea
-        battleState={battleState}
-        battleHandlers={battleHandlers}
+        battleStates={battleStates}
+        battleControllers={battleControllers}
+        battleExecutors={battleExecutors}
       />
     </div>
   );

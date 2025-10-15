@@ -1,37 +1,16 @@
-import React, { useState } from "react";
-import {
-  typeColors,
-} from "../../../model/model";
+import { typeColors } from "../../../../js/constants";
 
 const StatusArea = ({
-  isMe,
-  battleState,
-  battleHandlers
+  isMe, battleStates, battleExecutors
 }) => {
 
-  //インポートする変数や関数の取得
-  const { myPokeBuff, opPokeBuff } = battleState;
-  const { getBattlePokeStatics} = battleHandlers;
+  const { myPokeBuff, opPokeBuff } = battleStates;
+  const { getBattlePokeStatics } = battleExecutors;
 
   const battlePokeStatics = getBattlePokeStatics(isMe);
   const pokeBuff = isMe ? myPokeBuff : opPokeBuff;
 
-  //ステータス状況をUIに反映させる
-  const renderBuffShapes = (value) => {
-    const max = 6;
-    const up = Math.max(0, value);
-    const down = Math.max(0, -value);
-    const neutral = max - up - down;
-    const shapes = [];
-    for (let i = 0; i < up; i++) 
-      shapes.push(<span className="shape up" key={`up-${i}`}></span>);
-    for (let i = 0; i < down; i++) 
-      shapes.push(<span className="shape down" key={`down-${i}`}></span>);
-    for (let i = 0; i < neutral; i++) 
-      shapes.push(<span className="shape neutral" key={`neutral-${i}`}></span>);
-    return shapes;
-  };
-
+  //ステータス画面の表示内容
   const StatusRow = ({ label, value }) => (
     <div className="status-row">
       <p className="label">{label}</p>
@@ -42,6 +21,24 @@ const StatusArea = ({
     </div>
   );
 
+  //ステータス状況をUIに反映させる
+  const renderBuffShapes = (value) => {
+    const max = 6;
+    const up = Math.max(0, value);
+    const down = Math.max(0, -value);
+    const neutral = max - up - down;
+    const shapes = [];
+    for (let i = 0; i < up; i++) {
+      shapes.push(<span className="shape up" key={`up-${i}`}></span>);
+    }
+    for (let i = 0; i < down; i++) {
+      shapes.push(<span className="shape down" key={`down-${i}`}></span>);
+    }
+    for (let i = 0; i < neutral; i++) {
+      shapes.push(<span className="shape neutral" key={`neutral-${i}`}></span>);
+    }
+    return shapes;
+  }
 
   return (
     <div className="status">
