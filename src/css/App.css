@@ -323,7 +323,7 @@
 .hp-text {
   position: absolute;
   right: 0.5rem;
-  top: 50%;
+  top: 0%;
   color: white;
   font-size: 1rem;
   pointer-events: none;
