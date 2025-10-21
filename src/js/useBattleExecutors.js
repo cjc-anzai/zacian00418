@@ -15,6 +15,7 @@ export function useBattleExecutors(battleState) {
         myPoisonedCnt, opPoisonedCnt,
         healHp,
         iAmFirst, myChangeTurn, opChangeTurn,
+        mySleepCnt, opSleepCnt,
         turnCnt,
         loopAudioRef,
         cantMoveFlg,
@@ -88,14 +89,15 @@ export function useBattleExecutors(battleState) {
     }
 
     const getWeaponInfoList = (weaponIndex) => {
-        const [type, kind, power, hitrate, priority] = [
+        const [type, kind, power, hitRate, priority, explanation] = [
             myWeapons.current[myBattlePokeIndex][weaponIndex].type,
             myWeapons.current[myBattlePokeIndex][weaponIndex].kind,
             myWeapons.current[myBattlePokeIndex][weaponIndex].power,
-            myWeapons.current[myBattlePokeIndex][weaponIndex].hitrate,
+            myWeapons.current[myBattlePokeIndex][weaponIndex].hitRate,
             myWeapons.current[myBattlePokeIndex][weaponIndex].priority,
+            myWeapons.current[myBattlePokeIndex][weaponIndex].explanation,
         ];
-        return { type, kind, power, hitrate, priority };
+        return { type, kind, power, hitRate, priority, explanation };
     }
 
     // 相性倍率を求めて、相性テキストを返す
@@ -474,6 +476,8 @@ export function useBattleExecutors(battleState) {
             conditionSe = "paralyzed";
         } else if (pokeCondition === "こおり") {
             conditionSe = "frozen";
+        } else if (pokeCondition === "ねむり") {
+            conditionSe = "slept";
         }
         soundList.general[conditionSe].play();
     }
@@ -614,6 +618,10 @@ export function useBattleExecutors(battleState) {
                         if (checkIsTerastal(!atcIsMe) ? defPokeInfo.current.terastal !== "こおり" : defPokeInfo.current.type1 !== "こおり" || defPokeInfo.current.type2 !== "こおり") {
                             secondaryTextRef.current = { kind: "condition", content: `${effTargetName}は凍ってしまった` };
                         }
+                    } else if (condition.includes("ねむり")) {
+                        const sleepCnt = myEffectiveness ? mySleepCnt : opSleepCnt;
+                        sleepCnt.current = getRandomInt(1, 3) + 1;
+                        secondaryTextRef.current = { kind: "condition", content: `${effTargetName}は眠ってしまった` };
                     }
 
                     if (moveFailed.current && isAtcWeapon) {
@@ -1245,7 +1253,7 @@ export function useBattleExecutors(battleState) {
             const res = await fetch(url);
             if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
             const result = await res.json();
-            const keys = ["Type", "Kind", "Power", "HitRate", "Priority", "Sound", "AtcTarget", "EffTarget", "IncidenceRate", "Effectiveness"];
+            const keys = ["Type", "Kind", "Power", "HitRate", "Priority", "Sound", "AtcTarget", "EffTarget", "IncidenceRate", "Effectiveness", "Explanation"];
             const weaponInfo = { name: weaponName };
             keys.forEach(k => {
                 weaponInfo[k.toLowerCase()] = result.data?.[k] ?? null;
@@ -1263,8 +1271,52 @@ export function useBattleExecutors(battleState) {
             Promise.all(mySelectedOrder.map(getPokeInfo)),
             Promise.all(opSelectedOrder.map(getPokeInfo))
         ]);
-        return { myPokeInfos, opPokeInfos };
-    }
+
+        // レベル５０の実数値計算(1つのステータス)
+        const calculateActualStat = (kind, base, iv, ev, up, down) => {
+            const level = 50;
+            let nature = 1.0;
+            if (kind === up) nature = 1.1;
+            if (kind === down) nature = 0.9;
+
+            if (kind === "hp") {
+                return Math.floor((base * 2 + iv + Math.floor(ev / 4)) * level / 100) + level + 10;
+            } else {
+                return Math.floor(((base * 2 + iv + Math.floor(ev / 4)) * level / 100 + 5) * nature);
+            }
+        };
+
+        // IV, EV, Natureは仮固定
+        const iv = 31;
+        const ev = 0;
+        const up = "";   // 性格補正なし
+        const down = ""; // 性格補正なし
+
+        const kinds = ["hp", "a", "b", "c", "d", "s"]; // HP, 攻撃, 防御, 特攻, 特防, 素早さ
+
+        // 実数値に上書きするヘルパー
+        const calcAllStats = (pokeInfo) => {
+            const newStats = { ...pokeInfo }; // 元をコピー
+            kinds.forEach(kind => {
+                const base = pokeInfo[kind];
+                newStats[kind] = calculateActualStat(kind, base, iv, ev, up, down);
+            });
+            return newStats;
+        };
+
+        // 各ポケモン情報を実数値に上書き
+        const myActualPokes = myPokeInfos.map(calcAllStats);
+        const opActualPokes = opPokeInfos.map(calcAllStats);
+
+        // ここでコンソールに出力
+        console.log("=== My Pokémons (Actual Stats) ===");
+        console.table(myActualPokes);
+
+        console.log("=== Opponent Pokémons (Actual Stats) ===");
+        console.table(opActualPokes);
+
+        return { myPokeInfos: myActualPokes, opPokeInfos: opActualPokes };
+    };
 
     //お互いのポケモン３体の技情報を取得して返す
     const getWeaponInfos = async (myPokeInfos, opPokeInfos) => {
@@ -1347,6 +1399,7 @@ export function useBattleExecutors(battleState) {
                 myWeapons.current[pokeIndex][weaponIndex].effTarget = weapon.efftarget;
                 myWeapons.current[pokeIndex][weaponIndex].incidenceRate = weapon.incidencerate;
                 myWeapons.current[pokeIndex][weaponIndex].effectiveness = weapon.effectiveness;
+                myWeapons.current[pokeIndex][weaponIndex].explanation = weapon.explanation;
             });
         });
 
@@ -1363,6 +1416,7 @@ export function useBattleExecutors(battleState) {
                 opWeapons.current[pokeIndex][weaponIndex].effTarget = weapon.efftarget;
                 opWeapons.current[pokeIndex][weaponIndex].incidenceRate = weapon.incidencerate;
                 opWeapons.current[pokeIndex][weaponIndex].effectiveness = weapon.effectiveness;
+                opWeapons.current[pokeIndex][weaponIndex].explanation = weapon.explanation;
             });
         });
     };
@@ -1486,6 +1540,10 @@ export function useBattleExecutors(battleState) {
             aBuff: defPokeBuff.a, bBuff: defPokeBuff.b, cBuff: defPokeBuff.c, dBuff: defPokeBuff.d, sBuff: defPokeBuff.s,
             selectedWeapon: getSelectedWeaponInfo(!atcIsMe),
         };
+    }
+
+    const getRandomInt = (min, max) => {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
 

@@ -74,6 +74,12 @@ export const soundList = {
       a.load();
       return a;
     })(),
+    slept: (() => {
+      const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/slept.mp3');
+      a.preload = 'auto';
+      a.load();
+      return a;
+    })(),
     win: (() => {
       const a = new Audio('https://pokemon-battle-bucket.s3.ap-northeast-1.amazonaws.com/sound/general/winSe.mp3');
       a.preload = 'auto';

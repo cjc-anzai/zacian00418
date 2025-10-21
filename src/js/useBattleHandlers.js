@@ -21,6 +21,7 @@ export function useBattleHandlers(battleStates) {
     secondaryTextRef, newBuff,
     multiplierRef,
     burned, poisoned,
+    mySleepCnt, opSleepCnt,
   } = battleStates;
 
   const {
@@ -134,13 +135,15 @@ export function useBattleHandlers(battleStates) {
             : secondaryTextRef.current.content.includes("猛毒") ? "もうどく"
               : secondaryTextRef.current.content.includes("毒") ? "どく"
                 : secondaryTextRef.current.content.includes("凍") ? "こおり"
-                  : null;
+                  : secondaryTextRef.current.content.includes("眠") ? "ねむり"
+                    : null;
         const myEffectiveness = secondaryTextRef.current.content.includes(myPokeStatics.current[myBattlePokeIndex].name);
         const conditionSe = condition === "まひ" ? "paralyzed"
           : condition === "やけど" ? "burned"
             : condition === "どく" || condition === "もうどく" ? "poisoned"
               : condition === "こおり" ? "frozen"
-                : null;
+                : condition === "ねむり" ? "slept"
+                  : null;
         soundList.general[conditionSe].play();
         otherTextRef.current = { kind: "condition", content: secondaryTextRef.current.content };
         setBattlePokeDynamics(myEffectiveness, "condition", condition);
@@ -206,12 +209,19 @@ export function useBattleHandlers(battleStates) {
       cantMoveFlg.current = Math.random() <= 0.80;
       // cantMoveFlg.current = Math.random() <= 0;   //テスト用
       cantMoveText = cantMoveFlg.current ? `${pokeName}は凍ってしまって動けない` : "";
+    } else if (pokeCondition === "ねむり") {
+      const sleepCnt = isMe ? mySleepCnt : opSleepCnt;
+      sleepCnt.current--;
+      // sleepCnt.current = sleepCnt.current -4;  //テスト用
+      cantMoveFlg.current = sleepCnt.current > 0;
+      cantMoveText = cantMoveFlg.current ? `${pokeName}はぐうぐう眠っている` : "";
     }
 
     if (!cantMoveFlg.current) {
-      if (pokeCondition === "こおり") {
+      if (pokeCondition === "こおり" || pokeCondition === "ねむり") {
         setBattlePokeDynamics(isMe, "condition", "");
-        otherTextRef.current = { kind: "general", content: `${pokeName}は氷が溶けた` };
+        const text = pokeCondition === "こおり" ? "氷が溶けた" : "目を覚ました";
+        otherTextRef.current = { kind: "general", content: `${pokeName}は${text}` };
         await displayTextArea("other", 1500);
       }
       setTextRef(isMe, "weapon");

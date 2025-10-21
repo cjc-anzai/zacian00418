@@ -96,6 +96,10 @@ export function useBattleStates() {
 
   //自分が選出するポケモン3体
   const [mySelectedOrder, setMySelectedOrder] = useState([]);
+  //技詳細ボタン
+  const [selectedWeaponIndex, setSelectedWeaponIndex] = useState(null);
+  //ポケモン詳細ボタン
+  const [selectedPokeIndex, setSelectedPokeIndex] = useState(null);
 
   //useRef
   const textAreaRef = useRef(null);                                             //テキストエリアに表示するテキスト
@@ -122,6 +126,8 @@ export function useBattleStates() {
   const poisoned = useRef(false);                                               //毒ダメージをセットしたフラグ
   const myPoisonedCnt = useRef(1);                                              //猛毒状態のカウント
   const opPoisonedCnt = useRef(1);
+  const mySleepCnt = useRef(0);                                                //眠り状態のカウント
+  const opSleepCnt = useRef(0);
   const turnCnt = useRef(0);                                                    //デバッグ用ターンカウント    
   const loopAudioRef = useRef(null);                                            //再生中のBGM
 
@@ -148,6 +154,7 @@ export function useBattleStates() {
     healHp,
     burned, poisoned,
     myPoisonedCnt, opPoisonedCnt,
+    mySleepCnt, opSleepCnt,
     turnCnt,
     loopAudioRef,
     damage, newHp,
@@ -159,5 +166,7 @@ export function useBattleStates() {
     secondaryTextRef, newBuff,
     multiplierRef,
     defaultBattlePokeInfo,
+    selectedWeaponIndex, setSelectedWeaponIndex,
+    selectedPokeIndex, setSelectedPokeIndex,
   };
 }

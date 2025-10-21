@@ -22,7 +22,9 @@ export function useBattleControllers(battleStates) {
     burned, poisoned,
     opPokeDynamics, myPokeDynamics,
     atcPokeInfo, defPokeInfo,
-    myPokeStatics, 
+    myPokeStatics,
+    selectedWeaponIndex, setSelectedWeaponIndex,
+    selectedPokeIndex, setSelectedPokeIndex
   } = battleStates;
 
   const {
@@ -67,6 +69,7 @@ export function useBattleControllers(battleStates) {
   //技名ボタン押下時
   const handleWeaponBtnClick = async (weaponIndex) => {
     soundList.general.decide.cloneNode().play();
+    setSelectedWeaponIndex(null);
     mySelectedWeaponInfo.current = myWeapons.current[myBattlePokeIndex][weaponIndex];
     setAreaVisible(prev => ({ ...prev, weaponCmd: false }));
     await decideOpAction();
@@ -77,6 +80,7 @@ export function useBattleControllers(battleStates) {
   //交代ボタン押下時
   const handleChangePokeClick = async (changePokeIndex) => {
     soundList.general.decide.cloneNode().play();
+    setSelectedPokeIndex(null);
     setAreaVisible(prev => ({ ...prev, changeCmd: false }));
     setChangeTurn(true, changePokeIndex);
     await decideOpAction();
@@ -87,6 +91,7 @@ export function useBattleControllers(battleStates) {
   //倒れた後、次に出すポケモンボタン押下時
   const handleNextPokeBtnClick = (nextMyPokeIndex) => {
     soundList.general.decide.cloneNode().play();
+    setSelectedPokeIndex(null);
     setAreaVisible(prev => ({ ...prev, nextPokeCmd: false }));
     setBattlePokeIndex(true, nextMyPokeIndex);
   }

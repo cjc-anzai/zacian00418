@@ -12,6 +12,8 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
     myPokeDynamics,
     myBattlePokeIndex, opBattlePokeIndex,
     myTerastalState,
+    selectedWeaponIndex, setSelectedWeaponIndex,
+    selectedPokeIndex, setSelectedPokeIndex,
   } = battleStates;
 
   const {
@@ -27,7 +29,6 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
     getCompatiTextForWeaponInfoList,
   } = battleExecutors;
 
-  const [weaponInfoList, setWeaponInfoList] = useState(null);
   const isTerastal = checkIsTerastal(true);
 
   //たたかうボタン押下時
@@ -51,20 +52,36 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
   // 戻るボタン押下時
   const backCmd = () => {
     soundList.general.cancel.cloneNode().play();
+    setSelectedWeaponIndex(null);
+    setSelectedPokeIndex(null);
     setIsTerastalActive(false);
     setAreaVisible(prev => ({ ...prev, actionCmd: true, weaponCmd: false, changeCmd: false, status: false }));
   }
 
-  //技ボタンマウスオーバー時
-  const handleMouseEnter = (weaponIndex) => {
-    const { type, kind, power, hitrate, priority } = getWeaponInfoList(weaponIndex);
-    const compatiText = getCompatiTextForWeaponInfoList(type, opPokeStatics.current[opBattlePokeIndex].type1, opPokeStatics.current[opBattlePokeIndex].type2);
-    setWeaponInfoList({ type, kind, power, hitrate, priority, compatiText });
+  // 技詳細ボタン/閉じるボタン押下時
+  const toggleWeaponDetail = (weaponIndex) => {
+    if (selectedWeaponIndex === weaponIndex) {
+      // 同じボタンがクリックされたら詳細を閉じる
+      soundList.general.cancel.cloneNode().play();
+      setSelectedWeaponIndex(null);
+    } else {
+      // 別の詳細ボタンがクリックされたら詳細を開く
+      soundList.general.decide.cloneNode().play();
+      setSelectedWeaponIndex(weaponIndex);
+    }
   }
 
-  //マウスオーバー解除時
-  const handleMouseLeave = () => {
-    setWeaponInfoList(null);
+  // ポケモン詳細ボタン/閉じるボタン押下時
+  const togglePokeDetail = (pokeIndex) => {
+    if (selectedPokeIndex === pokeIndex) {
+      // 同じボタンがクリックされたら詳細を閉じる
+      soundList.general.cancel.cloneNode().play();
+      setSelectedPokeIndex(null);
+    } else {
+      // 別の詳細ボタンがクリックされたら詳細を開く
+      soundList.general.decide.cloneNode().play();
+      setSelectedPokeIndex(pokeIndex);
+    }
   }
 
   //テラスタルボタン押下時
@@ -72,6 +89,41 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
     playTerastalBtnSound();
     setIsTerastalActive(prev => !prev);
   }
+
+  const getWeaponInfo = (weaponIndex) => {
+    const { type, kind, power, hitRate, priority, explanation } = getWeaponInfoList(weaponIndex);
+    const compatiText = getCompatiTextForWeaponInfoList(type, opPokeStatics.current[opBattlePokeIndex].type1, opPokeStatics.current[opBattlePokeIndex].type2);
+    return { type, kind, power, hitRate, priority, compatiText, explanation };
+  }
+
+  const getPokeInfoForDetail = (pokeIndex) => {
+    const statics = myPokeStatics.current[pokeIndex];
+    const dynamics = myPokeDynamics[pokeIndex];
+    const terastalType = checkIsTerastal(true, pokeIndex) ? statics.terastal : null;
+    return { ...statics, ...dynamics, terastalType };
+  }
+
+  // ポケモン詳細ツールチップコンポーネント
+  const PokeDetailTooltip = () => {
+    if (selectedPokeIndex === null) {
+      return null;
+    }
+
+    const pokeInfo = getPokeInfoForDetail(selectedPokeIndex);
+    return (
+      <div className="tooltip">
+        <p>{pokeInfo.name}</p>
+        <p>タイプ:{pokeInfo.type1}{pokeInfo.type2 !== "なし" && `・${pokeInfo.type2}`}</p>
+        <p>テラスタイプ：{pokeInfo.terastal}</p>
+        <p>HP: {pokeInfo.currentHp} / {pokeInfo.hp}</p>
+        <p>状態異常: {pokeInfo.condition || "なし"}</p>
+        <p>{pokeInfo.weapon1} | {pokeInfo.weapon2}</p>
+        <p>{pokeInfo.weapon3} | {pokeInfo.weapon4}</p>
+      </div>
+    );
+  };
+
+
 
 
   return (
@@ -92,42 +144,46 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
           {areaVisible.weaponCmd && (
             <div className="weapon-cmd-area">
               <div className="weapon-cmd-btns">
-                <button
-                  className="weapon-cmd-btn"
-                  onClick={() => handleWeaponBtnClick(0)}
-                  onMouseEnter={() => handleMouseEnter(0)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  {myPokeStatics.current[myBattlePokeIndex].weapon1}
-                </button>
-                <button
-                  className="weapon-cmd-btn"
-                  onClick={() => handleWeaponBtnClick(1)}
-                  onMouseEnter={() => handleMouseEnter(1)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  {myPokeStatics.current[myBattlePokeIndex].weapon2}
-                </button>
-                <button
-                  className="weapon-cmd-btn"
-                  onClick={() => handleWeaponBtnClick(2)}
-                  onMouseEnter={() => handleMouseEnter(2)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  {myPokeStatics.current[myBattlePokeIndex].weapon3}
-                </button>
-                <button
-                  className="weapon-cmd-btn"
-                  onClick={() => handleWeaponBtnClick(3)}
-                  onMouseEnter={() => handleMouseEnter(3)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  {myPokeStatics.current[myBattlePokeIndex].weapon4}
-                </button>
+                <div className="weapon-btn-wrap">
+                  <button
+                    className="weapon-cmd-btn"
+                    onClick={() => handleWeaponBtnClick(0)}
+                  >
+                    {myPokeStatics.current[myBattlePokeIndex].weapon1}
+                  </button>
+                  <button className="weapon-detail-btn" onClick={() => toggleWeaponDetail(0)}>{selectedWeaponIndex === 0 ? "閉じる" : "詳細"}</button>
+                </div>
+                <div className="weapon-btn-wrap">
+                  <button
+                    className="weapon-cmd-btn"
+                    onClick={() => handleWeaponBtnClick(1)}
+                  >
+                    {myPokeStatics.current[myBattlePokeIndex].weapon2}
+                  </button>
+                  <button className="weapon-detail-btn" onClick={() => toggleWeaponDetail(1)}>{selectedWeaponIndex === 1 ? "閉じる" : "詳細"}</button>
+                </div>
+                <div className="weapon-btn-wrap">
+                  <button
+                    className="weapon-cmd-btn"
+                    onClick={() => handleWeaponBtnClick(2)}
+                  >
+                    {myPokeStatics.current[myBattlePokeIndex].weapon3}
+                  </button>
+                  <button className="weapon-detail-btn" onClick={() => toggleWeaponDetail(2)}>{selectedWeaponIndex === 2 ? "閉じる" : "詳細"}</button>
+                </div>
+                <div className="weapon-btn-wrap">
+                  <button
+                    className="weapon-cmd-btn"
+                    onClick={() => handleWeaponBtnClick(3)}
+                  >
+                    {myPokeStatics.current[myBattlePokeIndex].weapon4}
+                  </button>
+                  <button className="weapon-detail-btn" onClick={() => toggleWeaponDetail(3)}>{selectedWeaponIndex === 3 ? "閉じる" : "詳細"}</button>
+                </div>
               </div>
               <div className="other-btns">
                 <button
-                  onClick={() => togglTerastal()}
+                  onClick={togglTerastal}
                   disabled={!myTerastalState.canTerastal}
                   className={`terastal-cmd-btn ${isTerastalActive || isTerastal ? 'active' : ''}`}
                   style={isTerastalActive || isTerastal ? { backgroundColor: typeColors[myPokeStatics.current[myBattlePokeIndex].terastal] } : undefined}
@@ -137,16 +193,20 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
                 <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
               </div>
 
-              {weaponInfoList && (
-                <div className="tooltip">
-                  <p>タイプ: {weaponInfoList.type}</p>
-                  <p>種類: {weaponInfoList.kind}</p>
-                  <p>威力: {weaponInfoList.power}</p>
-                  <p>命中率: {weaponInfoList.hitrate}</p>
-                  <p>優先度: {weaponInfoList.priority}</p>
-                  <p>技相性: {weaponInfoList.compatiText}</p>
-                </div>
-              )}
+              {selectedWeaponIndex !== null && (() => {
+                const weaponInfo = getWeaponInfo(selectedWeaponIndex);
+                return (
+                  <div className="tooltip">
+                    <p>タイプ: {weaponInfo.type}</p>
+                    <p>種類: {weaponInfo.kind}</p>
+                    <p>威力: {weaponInfo.power}</p>
+                    <p>命中率: {weaponInfo.hitRate}</p>
+                    <p>優先度: {weaponInfo.priority}</p>
+                    <p>技相性: {weaponInfo.compatiText}</p>
+                    <p>説明: {weaponInfo.explanation}</p>
+                  </div>
+                );
+              })()}
             </div>
           )}
           {areaVisible.changeCmd && (
@@ -156,13 +216,18 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
                 const hp = myPokeDynamics[i].currentHp;
 
                 return (
-                  name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0 && (
-                    <button key={name} className="change-cmd-btn" onClick={() => handleChangePokeClick(i)}>
+                  (name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0) &&
+                  <div key={name} className="poke-btn-wrap">
+                    <button className="change-cmd-btn" onClick={() => handleChangePokeClick(i)}>
                       {name}
                     </button>
-                  )
+                    <button className="poke-detail-btn" onClick={() => togglePokeDetail(i)}>
+                      {selectedPokeIndex === i ? "閉じる" : "詳細"}
+                    </button>
+                  </div>
                 );
               })}
+              <PokeDetailTooltip />
               <button className="cancel-cmd-btn" onClick={backCmd}>戻る</button>
             </div>
           )}
@@ -173,13 +238,18 @@ const CommandTextArea = ({ battleStates, battleControllers, battleExecutors, }) 
                 const hp = myPokeDynamics[i].currentHp;
 
                 return (
-                  name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0 && (
-                    <button key={name} className="change-cmd-btn" onClick={() => handleNextPokeBtnClick(i)}>
+                  (name !== myPokeStatics.current[myBattlePokeIndex].name && hp > 0) &&
+                  <div key={name} className="poke-btn-wrap">
+                    <button className="change-cmd-btn" onClick={() => handleNextPokeBtnClick(i)}>
                       {name}
                     </button>
-                  )
+                    <button className="poke-detail-btn" onClick={() => togglePokeDetail(i)}>
+                      {selectedPokeIndex === i ? "閉じる" : "詳細"}
+                    </button>
+                  </div>
                 );
               })}
+              <PokeDetailTooltip />
             </div>
           )}
         </div>
