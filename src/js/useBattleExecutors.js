@@ -4,6 +4,7 @@ export function useBattleExecutors(battleState) {
 
     //インポートの取得===========================================================
     const {
+        myTeam,
         setAreaVisible,
         mySelectedOrder,
         isTerastalActive,
@@ -63,24 +64,40 @@ export function useBattleExecutors(battleState) {
     }
 
     //相手の選出を返す
-    const selectOpPokeOrder = async (opPokeNames, how) => {
+    const selectOpPokeOrder = async (opPokeNames, kind, how) => {
         let opSelectedOrder = [];
-        if (how === "hard") {
+        if (kind === "teamBuilding") {
             //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
             const [myPokeInfos, opPokeInfos] = await Promise.all([
-                Promise.all(mySelectedOrder.map(name => getPokeInfo(name))),
-                Promise.all(opPokeNames.map(name => getPokeInfo(name)))
+                Promise.all(myTeam.map(pokemon => getPokeInfo(pokemon.kanaName))),
+                Promise.all(opPokeNames.map((poke, index) => 
+                    getPokeInfo(poke.kanaName).then(info => ({
+                        ...info,
+                        romaName: poke.romaName
+                    }))
+                ))
             ]);
-            opSelectedOrder = selectOpPokeOrderLogic(myPokeInfos, opPokeInfos);
-        } else {
-            //テスト用で相手の選出を固定  
-            opSelectedOrder = ["エレキブル", "グライオン", "ラプラス"];
+            //相手の６体選択ロジック
+            opSelectedOrder = selectOpPokeOrderLogic(kind, myPokeInfos, opPokeInfos);
+        } else if (kind === "battle") {
+            if (how === "hard") {
+                //ハードモード(相手は自分が選択した３体に対して相性の良い３体を選ぶ)
+                const [myPokeInfos, opPokeInfos] = await Promise.all([
+                    Promise.all(mySelectedOrder.map(name => getPokeInfo(name))),
+                    Promise.all(opPokeNames.map(name => getPokeInfo(name)))
+                ]);
+                opSelectedOrder = selectOpPokeOrderLogic("battle", myPokeInfos, opPokeInfos);
+            } else {
+                //テスト用で相手の選出を固定  
+                opSelectedOrder = ["エレキブル", "グライオン", "ラプラス"];
+            }
         }
+
         return opSelectedOrder;
     }
 
     const setBattleStartData = async (opPokesKanaName) => {
-        const opSelectedOrder = await selectOpPokeOrder(opPokesKanaName, "hard");
+        const opSelectedOrder = await selectOpPokeOrder(opPokesKanaName, "battle", "hard");
         const { myPokeInfos, opPokeInfos } = await getPokeInfos(opSelectedOrder);
         const { myWeaponInfos, opWeaponInfos } = await getWeaponInfos(myPokeInfos, opPokeInfos);
         setPokeInfos(myPokeInfos, opPokeInfos);
@@ -870,7 +887,7 @@ export function useBattleExecutors(battleState) {
 
     //相性倍率を取得する
     const calcMultiplier = (weaponType, defType1, defType2) => {
-        const multiplier = (typeChart[weaponType][defType1] ?? 1) * (typeChart[weaponType][defType2] ?? 1);
+        const multiplier = (typeChart[weaponType]?.[defType1] ?? 1) * (typeChart[weaponType]?.[defType2] ?? 1);
         return multiplier;
     }
 
@@ -1154,7 +1171,7 @@ export function useBattleExecutors(battleState) {
     }
 
     //相手６体の耐性などをまとめた情報を受け取り、ソートして選出する３体を選ぶ
-    const selectOpPokeOrderLogic = (myPokeInfos, opPokeInfos) => {
+    const selectOpPokeOrderLogic = (kind, myPokeInfos, opPokeInfos) => {
         const resistanceMap = calcResistanceForAllOpPokes(myPokeInfos, opPokeInfos);
 
         const sortedResistanceList = Object.entries(resistanceMap)
@@ -1171,23 +1188,32 @@ export function useBattleExecutors(battleState) {
             .map(([key, value]) => ({ key, ...value }));
 
         // まずは3体を選出
-        let betterOpPokes = sortedResistanceList.slice(0, 3);
+        let betterOpPokes
+        if (kind === "teamBuilding") {
+            betterOpPokes = sortedResistanceList.slice(0, 6);
+        } else {
+            betterOpPokes = sortedResistanceList.slice(0, 3);
+        }
 
         //ハードモード
         //自分の1体目に対して「最も耐性が高い（受けが良い）相手」を先頭にする
-        betterOpPokes.sort((a, b) => {
-            const calcDefenseScore = (opPoke) => {
-                const m1 = calcMultiplier(myPokeInfos[0].type1, opPoke.type1, opPoke.type2);
-                const m2 = myPokeInfos[0].type2 !== "なし"
-                    ? calcMultiplier(myPokeInfos[0].type2, opPoke.type1, opPoke.type2)
-                    : 0;
-                let maxVal = Math.max(m1, m2);
-                return maxVal; // 小さい方が耐性高い
-            };
-            return calcDefenseScore(a) - calcDefenseScore(b); // 昇順（耐性が高い順）
-        });
-        betterOpPokes = betterOpPokes.map(poke => poke.name);
-        console.log(`相手のポケモン\n１体目：${betterOpPokes[0]}\n２体目：${betterOpPokes[1]}\n３体目：${betterOpPokes[2]}`);
+        if (kind === "battle") {
+            betterOpPokes.sort((a, b) => {
+                const calcDefenseScore = (opPoke) => {
+                    const m1 = calcMultiplier(myPokeInfos[0].type1, opPoke.type1, opPoke.type2);
+                    const m2 = myPokeInfos[0].type2 !== "なし"
+                        ? calcMultiplier(myPokeInfos[0].type2, opPoke.type1, opPoke.type2)
+                        : 0;
+                    let maxVal = Math.max(m1, m2);
+                    return maxVal; // 小さい方が耐性高い
+                };
+                return calcDefenseScore(a) - calcDefenseScore(b); // 昇順（耐性が高い順）
+            });
+            betterOpPokes = betterOpPokes.map(poke => poke.name);
+            console.log(`相手のポケモン\n１体目：${betterOpPokes[0]}\n２体目：${betterOpPokes[1]}\n３体目：${betterOpPokes[2]}`);
+        }
+        
+        
         return betterOpPokes;
     }
 
@@ -1195,7 +1221,7 @@ export function useBattleExecutors(battleState) {
     const calcResistanceForAllOpPokes = (myPokeInfos, opPokeInfos) => {
         const result = {};
         opPokeInfos.forEach((opPoke, index) => {
-            const [name, type1, type2] = [opPoke.name, opPoke.type1, opPoke.type2];
+            const [name, romaName, type1, type2] = [opPoke.name, opPoke.romaName, opPoke.type1, opPoke.type2];
 
             // resistance（自分6体 → 相手1体）
             const resistance = myPokeInfos.reduce((total, myPoke) => {
@@ -1221,7 +1247,7 @@ export function useBattleExecutors(battleState) {
                 return total + maxVal;
             }, 0);
             result[`opPoke${index + 1}`] = {
-                name, type1, type2, resistance, effectiveness, s: opPoke.s
+                name, romaName, type1, type2, resistance, effectiveness, s: opPoke.s
             };
         });
         return result;
@@ -1307,13 +1333,6 @@ export function useBattleExecutors(battleState) {
         // 各ポケモン情報を実数値に上書き
         const myActualPokes = myPokeInfos.map(calcAllStats);
         const opActualPokes = opPokeInfos.map(calcAllStats);
-
-        // ここでコンソールに出力
-        console.log("=== My Pokémons (Actual Stats) ===");
-        console.table(myActualPokes);
-
-        console.log("=== Opponent Pokémons (Actual Stats) ===");
-        console.table(opActualPokes);
 
         return { myPokeInfos: myActualPokes, opPokeInfos: opActualPokes };
     };
@@ -1599,5 +1618,6 @@ export function useBattleExecutors(battleState) {
         getUseInCalcDamageInfo,
         getTextRef,
         initializeTurnEnd,
+        getPokeInfo,
     };
 }

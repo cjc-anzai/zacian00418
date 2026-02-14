@@ -1,6 +1,7 @@
 import "../css/App.css";
 import { useEffect } from 'react';
 import TopScreen from './components/TopScreen';
+import TeamBuildingScreen from './components/TeamBuildingScreen';
 import SelectScreen from "./components/SelectScreen";
 import BattleCommandArea from "./components/battleScreen/BattleCommandArea";
 import ResultScreen from "./components/ResultScreen";
@@ -38,6 +39,13 @@ function App() {
             setAreaVisible={battleStates.setAreaVisible}
           />
         )}
+        {battleStates.areaVisible.teamBuilding && (
+          <TeamBuildingScreen
+            battleStates={battleStates}
+            battleControllers={battleControllers}
+            battleExecutors={battleExecutors}
+          />
+        )}
         {battleStates.areaVisible.select && (
           <SelectScreen
             battleStates={battleStates}
@@ -53,7 +61,7 @@ function App() {
             battleExecutors={battleExecutors}
           />
         )}
-        {!battleStates.areaVisible.top && !battleStates.areaVisible.select && !battleStates.areaVisible.battle && (
+        {!battleStates.areaVisible.top && !battleStates.areaVisible.select && !battleStates.areaVisible.battle && !battleStates.areaVisible.teamBuilding && (
           <ResultScreen
             otherTextRef={battleStates.otherTextRef}
           />

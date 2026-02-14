@@ -1,9 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { terastalImgList, } from "../../../../js/constants";
 
-const BattleArea = ({
-    isMe, battleStates, battleExecutors,
-}) => {
+const BattleArea = ({isMe, battleStates, battleExecutors,}) => {
 
     //インポートする変数や関数の取得
     const { areaVisible } = battleStates;

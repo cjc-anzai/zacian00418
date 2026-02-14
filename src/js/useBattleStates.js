@@ -5,7 +5,7 @@ export function useBattleStates() {
   //表示制御のState
   const [areaVisible, setAreaVisible] = useState({
     myPoke: false, opPoke: false,
-    top: true, select: false, battle: false, textArea: false,
+    top: true, teamBuilding: false, select: false, battle: false, textArea: false,
     actionCmd: false, weaponCmd: false, changeCmd: false, status: false, nextPokeCmd: false
   });
 
@@ -96,6 +96,9 @@ export function useBattleStates() {
 
   //自分が選出するポケモン3体
   const [mySelectedOrder, setMySelectedOrder] = useState([]);
+  //チーム構築用：ポケモン6体の名前
+  const [myTeam, setMyTeam] = useState(Array(6).fill(null));
+  const [opTeam, setOpTeam] = useState(Array(6).fill(null));
   //技詳細ボタン
   const [selectedWeaponIndex, setSelectedWeaponIndex] = useState(null);
   //ポケモン詳細ボタン
@@ -144,6 +147,8 @@ export function useBattleStates() {
     myWeapons, opWeapons,
     mySelectedWeaponInfo, opSelectedWeaponInfo,
     mySelectedOrder, setMySelectedOrder,
+    myTeam, setMyTeam,
+    opTeam, setOpTeam,
     myTextRef, opTextRef, otherTextRef, textAreaRef,
     myLife, opLife,
     myChangeTurn, opChangeTurn,

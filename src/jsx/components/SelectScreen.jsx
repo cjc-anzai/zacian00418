@@ -4,7 +4,7 @@ import { soundList } from "../../js/constants";
 const SelectScreen = ({ battleStates, battleControllers, battleExecutors, }) => {
 
   //インポートする変数や関数の取得
-  const { mySelectedOrder } = battleStates;
+  const { mySelectedOrder, myTeam, opTeam } = battleStates;
   const { handleBattleStartBtnClick } = battleControllers;
   const { selectMyPokeOrder } = battleExecutors;
 
@@ -13,10 +13,11 @@ const SelectScreen = ({ battleStates, battleControllers, battleExecutors, }) => 
     return url;
   }
 
-  const opPokesRomaName = ["erekiburu", "erureido", "rapurasu", "manmu", "guraion", "hapinasu"];
-  const opPokesKanaName = ["エレキブル", "エルレイド", "ラプラス", "マンムー", "グライオン", "ハピナス"];
-  const myPokesRomaName = ["gaburiasu", "goukazaru", "sanda", "genga", "mirokarosu", "jukain"];
-  const myPokesKanaName = ["ガブリアス", "ゴウカザル", "サンダー", "ゲンガー", "ミロカロス", "ジュカイン"];
+  // const opPokesRomaName = ["erekiburu", "erureido", "rapurasu", "manmu", "guraion", "hapinasu"];
+  // const opPokesKanaName = ["エレキブル", "エルレイド", "ラプラス", "マンムー", "グライオン", "ハピナス"];
+  const opPokesKanaName = Object.values(opTeam).map(poke => poke.name);
+  // const myPokesRomaName = ["gaburiasu", "goukazaru", "sanda", "genga", "mirokarosu", "jukain"];
+  // const myPokesKanaName = ["ガブリアス", "ゴウカザル", "サンダー", "ゲンガー", "ミロカロス", "ジュカイン"];
 
   //選出画面のポケモン押下時
   const handleSelect = (pokeName) => {
@@ -29,45 +30,43 @@ const SelectScreen = ({ battleStates, battleControllers, battleExecutors, }) => 
       <p className="select-screen-text">相手のポケモン</p>
       <div className="op-pokes-wrap">
         <div className="op-poke">
-          <img src={getPokeImg(opPokesRomaName[0])} alt={opPokesKanaName[0]} />
-          <p>{opPokesKanaName[0]}</p>
+          <img src={getPokeImg(opTeam[0].romaName)} alt={opTeam[0].name} />
+          <p>{opTeam[0].name}</p>
         </div>
         <div className="op-poke">
-          <img src={getPokeImg(opPokesRomaName[1])} alt={opPokesKanaName[1]} />
-          <p>{opPokesKanaName[1]}</p>
+          <img src={getPokeImg(opTeam[1].romaName)} alt={opTeam[1].name} />
+          <p>{opTeam[1].name}</p>
         </div>
         <div className="op-poke">
-          <img src={getPokeImg(opPokesRomaName[2])} alt={opPokesKanaName[2]} />
-          <p>{opPokesKanaName[2]}</p>
+          <img src={getPokeImg(opTeam[2].romaName)} alt={opTeam[2].name} />
+          <p>{opTeam[2].name}</p>
         </div>
         <div className="op-poke">
-          <img src={getPokeImg(opPokesRomaName[3])} alt={opPokesKanaName[3]} />
-          <p>{opPokesKanaName[3]}</p>
+          <img src={getPokeImg(opTeam[3].romaName)} alt={opTeam[3].name} />
+          <p>{opTeam[3].name}</p>
         </div>
         <div className="op-poke">
-          <img src={getPokeImg(opPokesRomaName[4])} alt={opPokesKanaName[4]} />
-          <p>{opPokesKanaName[4]}</p>
+          <img src={getPokeImg(opTeam[4].romaName)} alt={opTeam[4].name} />
+          <p>{opTeam[4].name}</p>
         </div>
         <div className="op-poke">
-          <img src={getPokeImg(opPokesRomaName[5])} alt={opPokesKanaName[5]} />
-          <p>{opPokesKanaName[5]}</p>
+          <img src={getPokeImg(opTeam[5].romaName)} alt={opTeam[5].name} />
+          <p>{opTeam[5].name}</p>
         </div>
       </div>
 
       <p className="select-screen-text">自分のポケモンを3体選出</p>
       <div className="my-pokes-wrap">
-        {[{ name: myPokesKanaName[0], img: getPokeImg(myPokesRomaName[0]) }, { name: myPokesKanaName[1], img: getPokeImg(myPokesRomaName[1]) },
-        { name: myPokesKanaName[2], img: getPokeImg(myPokesRomaName[2]) }, { name: myPokesKanaName[3], img: getPokeImg(myPokesRomaName[3]) },
-        { name: myPokesKanaName[4], img: getPokeImg(myPokesRomaName[4]) }, { name: myPokesKanaName[5], img: getPokeImg(myPokesRomaName[5]) },].map((poke) => (
+        {myTeam.map((poke) => (
           <div
-            key={poke.name}
-            className={`my-poke ${mySelectedOrder.includes(poke.name) ? "selected" : ""}`}
-            onClick={() => handleSelect(poke.name)}
+            key={poke.kanaName}
+            className={`my-poke ${mySelectedOrder.includes(poke.kanaName) ? "selected" : ""}`}
+            onClick={() => handleSelect(poke.kanaName)}
           >
-            <img src={poke.img} alt={poke.name} />
-            <p>{poke.name}</p>
+            <img src={poke.img} alt={poke.kanaName} />
+            <p>{poke.kanaName}</p>
             <p className="order-num">
-              {mySelectedOrder.includes(poke.name) && `${mySelectedOrder.indexOf(poke.name) + 1}番目`}
+              {mySelectedOrder.includes(poke.kanaName) && `${mySelectedOrder.indexOf(poke.kanaName) + 1}番目`}
             </p>
           </div>
         ))}

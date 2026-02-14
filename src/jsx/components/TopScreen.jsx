@@ -12,10 +12,16 @@ const TopScreen = ({ battleExecutors, setAreaVisible }) => {
     playBgm("selection");
   }
 
+  const openTeamBuildingScreen = () => {
+    soundList.general.decide.cloneNode().play();
+    setAreaVisible(prev => ({ ...prev, top: false, teamBuilding: true }));
+    playBgm("selection");
+  }
+
   return (
     <div className="top-screen">
       <h1>ポケモンバトル</h1>
-      <button onClick={openSelectScreen}>スタート</button>
+      <button onClick={openTeamBuildingScreen}>スタート</button>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useBattleControllers } from "./useBattleControllers";
 export function useBattleEffects(battleState) {
 
   const {
+    myTeam, opTeam, setAreaVisible,
     myBattlePokeIndex, opBattlePokeIndex,
     myPokeDynamics, opPokeDynamics,
     myTerastalState, opTerastalState,
@@ -20,14 +21,25 @@ export function useBattleEffects(battleState) {
     handlePokeBuffChange,
   } = useBattleControllers(battleState);
 
+  //opTeam========================
+  useEffect(() => {
+    if (opTeam[0] === null) return;
+    setAreaVisible((prev) => ({ ...prev, teamBuilding: false, select: true }));
+  }, [opTeam]);
+
+  //myTeam========================
+  useEffect(() => {
+    if (myTeam === null) return;
+  }, [myBattlePokeIndex]);
+
   //battlePokeIndex========================
-useEffect(() => {
-  if (myBattlePokeIndex === -1) return;
-  const run = async () => {
-    await handleBattlePokeIndexChange(true);
-  };
-  run();
-}, [myBattlePokeIndex]);
+  useEffect(() => {
+    if (myBattlePokeIndex === -1) return;
+    const run = async () => {
+      await handleBattlePokeIndexChange(true);
+    };
+    run();
+  }, [myBattlePokeIndex]);
 
   useEffect(() => {
     if (opBattlePokeIndex === -1) return;
